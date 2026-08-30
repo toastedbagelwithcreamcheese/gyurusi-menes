@@ -47,3 +47,10 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
+
+# graphify: graph.json + wiki verziózva (mentés), a többi újratermelhető
+graphify-out/cache/
+graphify-out/graph.html
+graphify-out/.graphify_analysis.json
+graphify-out/20*/
+graphify-out.bak*/
