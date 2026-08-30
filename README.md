@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gyűrűsi Ménes — weboldal + admin (demó)
 
-## Getting Started
+Modern, fotóvezérelt bemutatkozó oldal a Gyűrűsi Ménesnek (hucul, gidrán, shagya arab — Gyűrűs, Zala), egyszerű, nem-technikai adminnal.
 
-First, run the development server:
-
+## Indítás
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # ADMIN_USER / ADMIN_PASSWORD kötelező
+npm run dev                  # http://localhost:3000
+```
+Admin: `/admin` (HTTP Basic Auth az `.env.local` szerint).
+
+## Mi hol van
+- `data/site.json` — a szerkeszthető tartalom (hero, bemutatkozás, programok, események, hírek, galéria, kapcsolat, feltöltések, üzenetek). Az admin ezt írja.
+- `src/content/photos.json` + `public/images/photos/` — a kurált, optimalizált fotók. Forrás: `scripts/images.config.mjs`, generálás: `node scripts/prep-images.mjs`.
+- `src/app/page.tsx` — főoldal; `src/components/site/Sections.tsx` — szekciók.
+- `src/app/admin/` — admin (eseménye, hírek, programok, képek, szövegek/kapcsolat, üzenetek); `actions.ts` a server actionök.
+- `src/app/api/contact/route.ts` — kapcsolati űrlap: menti az üzenetet és Resend-del e-mailt küld (`RESEND_API_KEY`, `CONTACT_TO`).
+- `docs/RESEARCH.md` — forrásolt kutatás; `docs/PHOTOS.md` — fotóelemzés; `DESIGN.md` — design rendszer; `docs/verified-facts.json` — tiltott/kötelező tartalom-minták a `scripts/verify.mjs`-hez.
+
+## Ellenőrzés
+```bash
+npm run lint && npx tsc --noEmit && npm run build
+node scripts/verify.mjs images
+node scripts/verify.mjs content-no-fabrication
+node scripts/verify.mjs css-motion
+ADMIN_USER=… ADMIN_PASSWORD=… BASE_URL=http://localhost:3000 node scripts/verify.mjs http   # futó szerver mellett
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Élesítés
+Netlify (`netlify.toml`, `@netlify/plugin-nextjs`). **Fontos:** az admin fájlba ír (`data/site.json`, `public/uploads`) — ez lokálisan és saját VPS-en (`npm run build && npm start`) működik; Netlify/Vercel read-only fájlrendszerén az admin írásaihoz a `src/lib/store.ts` egyetlen fájlját kell Netlify Blobs-ra vagy Supabase-re cserélni. A demóhoz szándékosan nem építettünk adatbázist.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Ami szándékosan nincs benne
+Árak, nyitvatartás, hektár- és lólétszám-adatok, díjak — a kutatás szerint nem igazoltak vagy ellentmondóak; egyeztetés után az adminban pótolhatók.

@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# admin által feltöltött képek (helyi demó-adat)
+/public/uploads/*
+!/public/uploads/.gitkeep
+/data/site.json.tmp

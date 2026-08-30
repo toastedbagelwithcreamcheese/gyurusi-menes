@@ -1,0 +1,245 @@
+{
+  "dron-naplemente-v": {
+    "src": "/images/photos/dron-naplemente-v.webp",
+    "width": 2400,
+    "height": 1599,
+    "alt": "Drónfelvétel naplementében: lovasok V-alakban a gyűrűsi versenypályán, két oldalt nézők",
+    "bytes": 522718,
+    "blur": "data:image/webp;base64,UklGRkAAAABXRUJQVlA4IDQAAADQAQCdASoQAAsAA4BaJZACdADp2ayWAAD+0DTgG/trXZw0MPI1dMPhGrsMJyTJbKBriQAA",
+    "color": "rgb(152,120,88)"
+  },
+  "dron-naplemente-sorfal": {
+    "src": "/images/photos/dron-naplemente-sorfal.webp",
+    "width": 2400,
+    "height": 1599,
+    "alt": "Drónfelvétel: lovas sorfal a pályán a lenyugvó nap előtt, a Zalai-dombság erdőivel",
+    "bytes": 424728,
+    "blur": "data:image/webp;base64,UklGRkgAAABXRUJQVlA4IDwAAADQAQCdASoQAAsAA4BaJQBOgCHfK9ahWAD+rGw04boEqAHH3+VILv9IVXM3DLGhENZZD+AWSLURoRMAAAA=",
+    "color": "rgb(8,8,8)"
+  },
+  "dron-palya": {
+    "src": "/images/photos/dron-palya.webp",
+    "width": 2000,
+    "height": 1332,
+    "alt": "Madártávlatból a gyűrűsi pálya, felsorakozott lovasokkal és a ménes épületeivel",
+    "bytes": 413750,
+    "blur": "data:image/webp;base64,UklGRkYAAABXRUJQVlA4IDoAAADwAQCdASoQAAsAA4BaJZACdADyZPrYUQAA8lH1pHaf/eLAuIOvNonpIpcedKwy9Vw6GGIOLNaK4kAA",
+    "color": "rgb(184,152,104)"
+  },
+  "osveny-ugras-gyuru": {
+    "src": "/images/photos/osveny-ugras-gyuru.webp",
+    "width": 2000,
+    "height": 1333,
+    "alt": "Hucul Ösvény feladat: lovas ugratás közben nyúl a gyűrűért",
+    "bytes": 247944,
+    "blur": "data:image/webp;base64,UklGRkIAAABXRUJQVlA4IDYAAADQAQCdASoQAAsAA4BaJQBWACFqDmN8AAD+0P3TSDncMY29PzwgIPPO4IxHmQo9MmBCucApUAA=",
+    "color": "rgb(40,40,24)"
+  },
+  "osveny-ugras-allo": {
+    "src": "/images/photos/osveny-ugras-allo.webp",
+    "width": 1280,
+    "height": 1600,
+    "alt": "Hucul ló és lovasa ugrás közben a Hucul Ösvény akadályán",
+    "bytes": 162528,
+    "blur": "data:image/webp;base64,UklGRmQAAABXRUJQVlA4IFgAAADwAwCdASoQABQAPu1iqU2ppaOiMAgBMB2JQBYdg3SJ8ziHfK7JLEvoAP23q7vobc65uzCJVzw6xfo2ny//8b3L60n3gfo+SbaoHCmhaVUubsgur2aaiAAA",
+    "color": "rgb(72,56,40)"
+  },
+  "osveny-kosar": {
+    "src": "/images/photos/osveny-kosar.webp",
+    "width": 1600,
+    "height": 1067,
+    "alt": "Lovas kosárral a kezében a Hucul Ösvény ügyességi feladatán",
+    "bytes": 128282,
+    "blur": "data:image/webp;base64,UklGRkAAAABXRUJQVlA4IDQAAACwAQCdASoQAAsAA4BaJQBOgCHm6s8gAP6DGBhrVUlrQ7qMU4SggCm6leVb8m2JCrJiY5AA",
+    "color": "rgb(184,168,152)"
+  },
+  "istallo-lofej": {
+    "src": "/images/photos/istallo-lofej.webp",
+    "width": 1600,
+    "height": 1067,
+    "alt": "Pej ló feje közelről a világos istállóban, szalmán",
+    "bytes": 125138,
+    "blur": "data:image/webp;base64,UklGRkoAAABXRUJQVlA4ID4AAAAQAgCdASoQAAsAA4BaJQBOgCP2r2hne5PAAPlp04929YuKgDSQL+T3i1XvcPdfrrk72XwU4+LL537yBgAAAA==",
+    "color": "rgb(40,40,24)"
+  },
+  "csiko-portre": {
+    "src": "/images/photos/csiko-portre.webp",
+    "width": 1067,
+    "height": 1600,
+    "alt": "Fiatal csikó fejportréja, anyja mellett az istállóban",
+    "bytes": 160308,
+    "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAADwAwCdASoQABgAPu1iqk4ppaQiMAgBMB2JQA7gAIrhvt4ShMUlvxQAAP7vxG5GT9+tlKSmxh2XaZufoXLxc1ysXQfzUh/S+7JWmMOg+sflopmyMssxM5suSO4VqVdt/wEwwScAAAA=",
+    "color": "rgb(248,248,248)"
+  },
+  "lany-es-lo": {
+    "src": "/images/photos/lany-es-lo.webp",
+    "width": 1600,
+    "height": 1067,
+    "alt": "Fiatal nő narancssárga kötőfékes pej lóval a karám mellett",
+    "bytes": 98468,
+    "blur": "data:image/webp;base64,UklGRkYAAABXRUJQVlA4IDoAAADQAQCdASoQAAsAA4BaJaACdAEPgtw30AD+wEW2AMWQ43bx9LexEoHC7bWrj65cuJah3Ep1/CEoAAAA",
+    "color": "rgb(56,56,40)"
+  },
+  "palya-szalmabalak": {
+    "src": "/images/photos/palya-szalmabalak.webp",
+    "width": 2000,
+    "height": 1333,
+    "alt": "A versenypálya messziről: szalmabálák, lovasok és nézők a domboldal alatt",
+    "bytes": 426718,
+    "blur": "data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAADQAQCdASoQAAsAA4BaJQBOgB4KFi0QAADLN8MVfqserAZnJXS73CLSNXk9YQAA",
+    "color": "rgb(168,152,120)"
+  },
+  "hucul-fej-gyerek": {
+    "src": "/images/photos/hucul-fej-gyerek.webp",
+    "width": 1067,
+    "height": 1600,
+    "alt": "Sötét hucul ló feje közelről, nyergében gyerek lovas",
+    "bytes": 82904,
+    "blur": "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAACwAwCdASoQABgAPu1mqk4ppaOiMAgBMB2JZQC/OBKC56NTiD6J4AD5NJ2ytK9mx0PZGyt+uO6xqbE/sq6a+yGPoFQwv0j8FdCA1lqNw0ufyaywiTsD+UcTbubAAA==",
+    "color": "rgb(56,40,40)"
+  },
+  "gyerek-lovas": {
+    "src": "/images/photos/gyerek-lovas.webp",
+    "width": 1600,
+    "height": 1067,
+    "alt": "Gyerek lovas fakó huculon, sisakban, a pálya szélén",
+    "bytes": 148180,
+    "blur": "data:image/webp;base64,UklGRj4AAABXRUJQVlA4IDIAAADQAQCdASoQAAsAA4BaJQBOgB0j5L1AAAD+nZ/MXEWV4zbknJZ4j5Mi7QkD6IELTrgAAA==",
+    "color": "rgb(136,120,88)"
+  },
+  "lovas-fako-hucul": {
+    "src": "/images/photos/lovas-fako-hucul.webp",
+    "width": 1067,
+    "height": 1600,
+    "alt": "Fiatal nő fakó hucul lovon, a háttérben nézők",
+    "bytes": 85102,
+    "blur": "data:image/webp;base64,UklGRnIAAABXRUJQVlA4IGYAAADQAwCdASoQABgAPu1kqk4ppaQiMAgBMB2JYgCdACHWtHIKUxfgDAAA/u2Mm2vAHEUS+gDbUM4qEl+d1C0iXxXrp4Gsixogfvz1t3FdjjQlQEJ+O3i64mubx+eqOOjBXzguloCAAAA=",
+    "color": "rgb(232,248,248)"
+  },
+  "fekete-men": {
+    "src": "/images/photos/fekete-men.webp",
+    "width": 2000,
+    "height": 1333,
+    "alt": "Fekete hucul mén oldalról, kézen bemutatva a pályán",
+    "bytes": 252502,
+    "blur": "data:image/webp;base64,UklGRkIAAABXRUJQVlA4IDYAAADwAQCdASoQAAsAA4BaJQBOgBpGtjH6+HAA/sxSvMr7PruOaAe8Gt1dM4T+5ihXevtHG8KsAAA=",
+    "color": "rgb(200,184,168)"
+  },
+  "feher-lo-szabadon": {
+    "src": "/images/photos/feher-lo-szabadon.webp",
+    "width": 1600,
+    "height": 1067,
+    "alt": "Fehér ló szabadon fut a bemutatón, mellette futó vezető",
+    "bytes": 150400,
+    "blur": "data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACwAQCdASoQAAsAA4BaJQBWACIjNQqAAP7r5fP6ybjGszZQcdgWyPpXL2/ygAAA",
+    "color": "rgb(56,56,40)"
+  },
+  "ket-lo-taj": {
+    "src": "/images/photos/ket-lo-taj.webp",
+    "width": 2000,
+    "height": 1333,
+    "alt": "Két sötét hucul kézen vezetve, a háttérben a zalai erdős dombok",
+    "bytes": 336134,
+    "blur": "data:image/webp;base64,UklGRkgAAABXRUJQVlA4IDwAAAAQAgCdASoQAAsAA4BaJYgCdH8AGAoMaFYAAPyPwbiRJzUJzNkpcEynE9UvG49Bh1UQaJ60qmRAz1zIAAA=",
+    "color": "rgb(184,168,136)"
+  },
+  "lo-es-no-bokeh": {
+    "src": "/images/photos/lo-es-no-bokeh.webp",
+    "width": 2000,
+    "height": 1333,
+    "alt": "Fekete ló feje és fiatal nő, aki a kantárt fogja, zöld háttérrel",
+    "bytes": 95788,
+    "blur": "data:image/webp;base64,UklGRj4AAABXRUJQVlA4IDIAAADQAQCdASoQAAsAA4BaJQBWABuN7UhXgAD+ucobAXF2nLMQZp2dVxW65DdQQhZ9ZANoAA==",
+    "color": "rgb(104,104,72)"
+  },
+  "csikos-agaskodo": {
+    "src": "/images/photos/csikos-agaskodo.webp",
+    "width": 1066,
+    "height": 1600,
+    "alt": "Csikósbemutató: ágaskodó hucul ló a csikós mellett",
+    "bytes": 174158,
+    "blur": "data:image/webp;base64,UklGRl4AAABXRUJQVlA4IFIAAACQAgCdASoQABgAA4BaJQBdgBueIxk1ruvKoSM8gAD+2fexy1qoHQgDykWrFn3WEA+UzupH+OQNOQU6GRI+xeWdII2cAnaKzc/CCh54UaAJAAAA",
+    "color": "rgb(40,56,40)"
+  },
+  "csikos-portre": {
+    "src": "/images/photos/csikos-portre.webp",
+    "width": 2000,
+    "height": 1333,
+    "alt": "Csikós hagyományos bő gatyában, kalapban, lova nyergében",
+    "bytes": 141186,
+    "blur": "data:image/webp;base64,UklGRkgAAABXRUJQVlA4IDwAAADwAQCdASoQAAsAA4BaJQBOgBZtCulNdQAA/qgiOmpn/xydkiLlM4Q2dUGmInh+bXWXEgKoRvBTS+GQAAA=",
+    "color": "rgb(88,88,56)"
+  },
+  "csikos-vagta-satrak": {
+    "src": "/images/photos/csikos-vagta-satrak.webp",
+    "width": 1600,
+    "height": 1067,
+    "alt": "Vágtató csikós a pályán, a háttérben sátrak és nézők",
+    "bytes": 182406,
+    "blur": "data:image/webp;base64,UklGRjgAAABXRUJQVlA4ICwAAACQAQCdASoQAAsAA4BaJYwC7ADyHnAA/s22ujXHLlGiM8aiBYu8oOsNX5E4AA==",
+    "color": "rgb(168,152,136)"
+  },
+  "csikos-vagta-kek": {
+    "src": "/images/photos/csikos-vagta-kek.webp",
+    "width": 2000,
+    "height": 1333,
+    "alt": "Csikós vágtában, kék kendővel a kezében",
+    "bytes": 126842,
+    "blur": "data:image/webp;base64,UklGRkAAAABXRUJQVlA4IDQAAAAQAgCdASoQAAsAA4BaJYwC7AD6d6y33qUAAP5yYvkjP1ZksGvhTPiOBrZuBWNllP9udjgA",
+    "color": "rgb(184,168,152)"
+  },
+  "aranyfeny-lovas-gyerek": {
+    "src": "/images/photos/aranyfeny-lovas-gyerek.webp",
+    "width": 1067,
+    "height": 1600,
+    "alt": "Ellenfényben lovas és gyerek a ló mellett, esti aranyfényben",
+    "bytes": 72330,
+    "blur": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAAAwBACdASoQABgAPu1kq04ppaQiMAgBMB2JYgCw7CHccCeAEvh5q21NkeAA/rBlXhX1v0FCsUifsFKFcTP5y2EyU5ostkkY2qGWhlivwB/X5udKKYAAAA==",
+    "color": "rgb(88,72,40)"
+  },
+  "aranyfeny-sorfal": {
+    "src": "/images/photos/aranyfeny-sorfal.webp",
+    "width": 2400,
+    "height": 1600,
+    "alt": "Fiatal lovasok sorban, esti ellenfényben, porban",
+    "bytes": 221486,
+    "blur": "data:image/webp;base64,UklGRjwAAABXRUJQVlA4IDAAAACQAQCdASoQAAsAA4BaJQBOgBqw+wAA/FyWmsM6R/j/PVWhIYVy2n3uc5/52TvEAAA=",
+    "color": "rgb(152,136,104)"
+  },
+  "sorfal-eg": {
+    "src": "/images/photos/sorfal-eg.webp",
+    "width": 2400,
+    "height": 1600,
+    "alt": "Lovas sorfal a pályán, felette kék ég, mögötte erdős dombok",
+    "bytes": 543616,
+    "blur": "data:image/webp;base64,UklGRkAAAABXRUJQVlA4IDQAAACwAQCdASoQAAsAA4BaJQBOgCHWvzEMAPzZeNWKCtmAT2s/YdAS6KjzBqPjHEuVoRBgAAAA",
+    "color": "rgb(168,136,120)"
+  },
+  "lovas-feher-ruha": {
+    "src": "/images/photos/lovas-feher-ruha.webp",
+    "width": 1600,
+    "height": 1067,
+    "alt": "Fehér ruhás nő fogja egy hucul kantárját, a lovas gyerek a nyeregben",
+    "bytes": 230586,
+    "blur": "data:image/webp;base64,UklGRkQAAABXRUJQVlA4IDgAAADwAQCdASoQAAsAA4BaJZACdH8AGBcGYrAAy07v9bNn/agaGq1H9ISDhc3Q5SUKENq4fvyQMOAAAA==",
+    "color": "rgb(200,168,136)"
+  },
+  "kozosseg-fozes": {
+    "src": "/images/photos/kozosseg-fozes.webp",
+    "width": 1600,
+    "height": 1067,
+    "alt": "Vendégek beszélgetnek a napernyők alatt, a háttérben bográcsok",
+    "bytes": 353136,
+    "blur": "data:image/webp;base64,UklGRkgAAABXRUJQVlA4IDwAAADwAQCdASoQAAsAA4BaJQBOgCP4dj5qmoAA/LTtsxgh4xJF6IDfqMxvR/kfFMy149T9Wpo8UXnki8FJgAA=",
+    "color": "rgb(104,72,56)"
+  },
+  "pej-lo-vezetve": {
+    "src": "/images/photos/pej-lo-vezetve.webp",
+    "width": 1600,
+    "height": 1066,
+    "alt": "Pej ló kézen vezetve a bemutatón, nézők a kordonnál",
+    "bytes": 147970,
+    "blur": "data:image/webp;base64,UklGRjwAAABXRUJQVlA4IDAAAADwAQCdASoQAAsAA4BaJYwC7AERB4Nn74AA/nVwSj/4XD4GkC4Ihl7swYhlx4clAAA=",
+    "color": "rgb(168,152,136)"
+  }
+}
