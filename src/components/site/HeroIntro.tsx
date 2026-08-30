@@ -30,6 +30,8 @@ export function HeroIntro({ children }: { children: React.ReactNode }) {
     root.dataset.js = "true";
     const hero = root.closest(".hero");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /* Telefonon a CSS-belépő fut (globals.css), a GSAP-koreográfia csak 640 px fölött. */
+    if (window.matchMedia("(max-width: 639px)").matches) { hero?.classList.add("in"); return; }
     const sweeps = Array.from(root.querySelectorAll<HTMLElement>("[data-sweep]"));
     const seqs = Array.from(root.querySelectorAll<HTMLElement>("[data-seq]"));
     const finish = (el: HTMLElement, color: string) => { el.style.backgroundImage = "none"; el.style.color = color; };
@@ -37,7 +39,7 @@ export function HeroIntro({ children }: { children: React.ReactNode }) {
     const ctx = gsap.context(() => {
       if (reduced) { sweeps.forEach((el) => finish(el, el.dataset.sweep || "#f3efe6")); gsap.set(seqs, { autoAlpha: 1, y: 0 }); hero?.classList.add("in"); return; }
       requestAnimationFrame(() => hero?.classList.add("in"));
-      const tl = gsap.timeline({ delay: 0.25, defaults: { ease: "expo.out" } });
+      const tl = gsap.timeline({ delay: 0.05, defaults: { ease: "expo.out" } });
       const first = seqs.filter((e) => e.dataset.seq === "first");
       const rest = seqs.filter((e) => e.dataset.seq !== "first");
       if (first.length) tl.to(first, { autoAlpha: 1, y: 0, duration: 0.7 }, 0);
@@ -45,8 +47,8 @@ export function HeroIntro({ children }: { children: React.ReactNode }) {
         const finalColor = el.dataset.sweep || "#f3efe6";
         const state = { pos: -BAND_HALF };
         el.style.backgroundImage = gradient(state.pos, finalColor);
-        tl.to(state, { pos: 100 + BAND_HALF, duration: 1.25, ease: "power2.inOut",
-          onUpdate: () => { el.style.backgroundImage = gradient(state.pos, finalColor); }, onComplete: () => finish(el, finalColor) }, i === 0 ? 0.15 : "-=0.85");
+        tl.to(state, { pos: 100 + BAND_HALF, duration: 1.0, ease: "power2.inOut",
+          onUpdate: () => { el.style.backgroundImage = gradient(state.pos, finalColor); }, onComplete: () => finish(el, finalColor) }, i === 0 ? 0.05 : "-=0.7");
       });
       tl.to(rest, { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, "-=0.55");
     }, root);

@@ -37,7 +37,7 @@ export function Gallery({ items }: { items: Array<{ id: string } & ImageMeta & {
         {items.map((im, i) => (
           <li key={im.id} className={im.height > im.width ? "tall" : ""}>
             <button type="button" className="gal-btn" onClick={() => setOpen(i)} aria-label={`${im.alt} – nagyítás`}>
-              <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 400px" placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} loading="lazy" />
+              <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes="(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 400px" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} loading="lazy" />
             </button>
           </li>
         ))}

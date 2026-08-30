@@ -17,7 +17,7 @@ export function Paragraphs({ text, className = "" }: { text: string; className?:
 
 function Img({ im, sizes, className = "", priority }: { im: ImageMeta | null; sizes: string; className?: string; priority?: boolean }) {
   if (!im) return null;
-  return <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes={sizes} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} className={className} priority={priority} />;
+  return <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes={sizes} quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} className={className} priority={priority} />;
 }
 
 /* ---------------- HERO ---------------- */
@@ -28,7 +28,7 @@ export function Hero({ site }: { site: SiteContent }) {
     <section id="top" className="hero on-dark" aria-label="Bevezető">
       <HeroParallax>
         <div className="hero-media" data-layer="media">
-          {im && <Image src={im.src} alt={im.alt} fill sizes="100vw" priority fetchPriority="high" placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", objectPosition: "50% 45%", backgroundColor: im.color }} />}
+          {im && <Image src={im.src} alt={im.alt} fill sizes="100vw" priority fetchPriority="high" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", objectPosition: "50% 45%", backgroundColor: im.color }} />}
           <div className="hero-shade" aria-hidden="true" />
         </div>
         <div className="wrap hero-in" data-layer="text">

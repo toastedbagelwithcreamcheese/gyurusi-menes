@@ -33,7 +33,7 @@ export function SubPage({ site, eyebrow, title, meta, image, facts = [], related
         </div>
         {image && (
           <Reveal variant="unveil" as="figure" className="sub-ph parallax" trigger="mount" delay={120}>
-            <Image src={image.src} alt={image.alt} width={image.width} height={image.height} sizes="100vw" priority placeholder={image.blur ? "blur" : "empty"} blurDataURL={image.blur} style={{ backgroundColor: image.color }} />
+            <Image src={image.src} alt={image.alt} width={image.width} height={image.height} sizes="100vw" priority quality={62} placeholder={image.blur ? "blur" : "empty"} blurDataURL={image.blur} style={{ backgroundColor: image.color }} />
           </Reveal>
         )}
         <div className="wrap sub-grid">
@@ -59,7 +59,7 @@ export function SubPage({ site, eyebrow, title, meta, image, facts = [], related
               {related.map((r, i) => { const im = resolveImage(r.image, site); return (
                 <Reveal as="li" key={r.href} delay={i * 70}>
                   <Link href={r.href} className="rel-card">
-                    {im && <span className="rel-ph"><Image src={im.src} alt="" width={im.width} height={im.height} sizes="(max-width: 640px) 100vw, 33vw" placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} /></span>}
+                    {im && <span className="rel-ph"><Image src={im.src} alt="" width={im.width} height={im.height} sizes="(max-width: 640px) 100vw, 33vw" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} /></span>}
                     <span className="rel-body">{r.meta && <span className="caption">{r.meta}</span>}<span className="h3">{r.title}</span></span>
                     <Arrow />
                   </Link>

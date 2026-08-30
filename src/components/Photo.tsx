@@ -18,7 +18,7 @@ export function Photo({
       {...(fill ? { fill: true } : { width: p.width, height: p.height })}
       sizes={sizes} priority={priority} placeholder="blur" blurDataURL={p.blur}
       className={className} style={{ backgroundColor: p.color, ...style }}
-      quality={78}
+      quality={62}
     />
   );
 }

@@ -13,7 +13,7 @@
   --color-bone: #f7f4ee;        /* alap, csontfehér – nem krém */
   --color-bone-2: #efeadf;      /* megemelt felület, kártya */
   --color-straw: #d9c48f;       /* szalma – csak vékony vonalak, jelölők */
-  --color-dust: #8a7d66;        /* másodlagos szöveg világoson (≥4.5:1 bone-on) */
+  --color-dust: #6f6354;        /* másodlagos szöveg világoson (≥4.5:1 bone-2-n is) */
   --color-ink: #1d1b17;         /* porfekete, meleg */
   --color-ink-soft: #3d3a33;
   --color-forest: #2d4a37;      /* erdőzöld – strukturális szín (nav, footer, blokk) */
@@ -525,3 +525,16 @@ textarea.input { min-height: 8rem; resize: vertical; }
 .brand-name, .hdr-nav a, .hdr-phone { white-space: nowrap; }
 .hdr.compact .hdr-bar { max-width: 1080px; }
 .sub-ph img { object-position: 50% 38%; }
+
+/* Telefonon a hero címe NEM vár a JS-re: CSS-belépő (maszkos emelkedés), a fénysáv csak 640 px fölött fut.
+   Így az LCP (a címsor) a HTML megérkezésével festődik, nem a hydration után. */
+@media (max-width: 639px) {
+  .hero-seq [data-sweep] { color: var(--color-paper-on-dark) !important; background-image: none !important; -webkit-background-clip: border-box; background-clip: border-box; }
+  .hero-seq[data-js] [data-seq], .hero-seq [data-seq] { opacity: 1; visibility: visible; transform: none; animation: hero-rise 800ms var(--ease-out) both; }
+  .hero-seq [data-seq="first"] { animation-delay: 0ms; }
+  .hero-seq p[data-seq]:not([data-seq="first"]) { animation-delay: 220ms; }
+  .hero-seq div[data-seq] { animation-delay: 340ms; }
+  .hero-seq h1 { animation: hero-rise 900ms var(--ease-out) 90ms both; }
+}
+@keyframes hero-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .hero-seq h1, .hero-seq [data-seq] { animation: none !important; } }
