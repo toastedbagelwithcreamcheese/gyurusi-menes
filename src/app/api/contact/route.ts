@@ -18,8 +18,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Kérjük, add meg a neved, egy érvényes e-mail-címet és az üzeneted." }, { status: 400 });
 
   last.set(ip, now);
-  await writeSite((site) => { site.messages.unshift({ id: uid(), name, email, phone: phone || undefined, message, receivedAt: new Date().toISOString(), read: false }); });
+  /* Két csatorna: fájlba mentés (admin „Üzenetek") és e-mail. Read-only hoszton (Netlify) az első bukik,
+     akkor az e-mail viszi; ha egyik sem sikerül, ezt megmondjuk a látogatónak. */
+  let stored = false;
+  try {
+    await writeSite((site) => { site.messages.unshift({ id: uid(), name, email, phone: phone || undefined, message, receivedAt: new Date().toISOString(), read: false }); });
+    stored = true;
+  } catch (e) { console.warn("[contact] nem tudtam fájlba menteni:", e instanceof Error ? e.message : e); }
   const mail = await sendContactMail({ name, email, phone, message });
   if (!mail.sent) console.warn("[contact] e-mail nem ment ki:", mail.reason);
-  return NextResponse.json({ ok: true, mailed: mail.sent });
+  if (!stored && !mail.sent) {
+    console.error("[contact] ELVESZETT ÜZENET:", { name, email, phone, message });
+    return NextResponse.json({ ok: false, error: `Most nem tudtuk fogadni az üzenetet. Kérjük, hívj minket, vagy írj közvetlenül e-mailt.` }, { status: 503 });
+  }
+  return NextResponse.json({ ok: true, mailed: mail.sent, stored });
 }
