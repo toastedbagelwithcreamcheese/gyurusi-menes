@@ -9,6 +9,7 @@ export const PHOTOS = [
   { src: "DJI_0733.jpg",  slug: "dron-naplemente-sorfal", alt: "Drónfelvétel: lovas sorfal a pályán a lenyugvó nap előtt, a Zalai-dombság erdőivel", maxEdge: 2400 },
   { src: "DJI_0748.jpg",  slug: "dron-palya",             alt: "Madártávlatból a gyűrűsi pálya, felsorakozott lovasokkal és a ménes épületeivel", maxEdge: 2000 },
   { src: "_42A4702.jpg",  slug: "osveny-ugras-gyuru",     alt: "Hucul Ösvény feladat: lovas ugratás közben nyúl a gyűrűért", maxEdge: 2000 },
+  { src: "_42A4658.jpg",  slug: "osveny-ugras-gyerek",     alt: "Gyerek lovas pej huculon ugrat a gyűrűs akadályon, a háttérben nézők a sátor alatt", maxEdge: 1600 },
   { src: "_42A4694.jpg",  slug: "osveny-ugras-allo",      alt: "Hucul ló és lovasa ugrás közben a Hucul Ösvény akadályán", maxEdge: 1600 },
   { src: "_42A5066.jpg",  slug: "osveny-kosar",           alt: "Lovas kosárral a kezében a Hucul Ösvény ügyességi feladatán", maxEdge: 1600 },
   { src: "_42A4842.jpg",  slug: "istallo-lofej",          alt: "Pej ló feje közelről a világos istállóban, szalmán", maxEdge: 1600 },

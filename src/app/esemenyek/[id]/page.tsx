@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { readSite, formatDate } from "@/lib/store";
 import { resolveImage } from "@/lib/images";
 import { SubPage } from "@/components/site/SubPage";
@@ -17,12 +16,16 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
 export default async function EventPage({ params }: P) {
   const { id } = await params; const site = await readSite(); const e = site.events.find((x) => x.id === id && x.published);
   if (!e) notFound();
-  const when = `${formatDate(e.date)}${e.endDate ? ` – ${formatDate(e.endDate, { day: "numeric" })}` : ""}${e.time ? ` · ${e.time}` : ""}${e.location ? ` · ${e.location}` : ""}`;
+  const when = `${formatDate(e.date)}${e.endDate ? ` – ${formatDate(e.endDate, { day: "numeric" })}` : ""}`;
+  const past = (e.endDate ?? e.date) < new Date().toISOString().slice(0, 10);
+  const others = site.events.filter((x) => x.published && x.id !== e.id).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3)
+    .map((x) => ({ href: `/esemenyek/${x.id}`, title: x.title, meta: formatDate(x.date, { year: "numeric", month: "long" }), image: x.image }));
   return (
-    <SubPage site={site} eyebrow="Esemény" title={e.title} meta={when} image={resolveImage(e.image, site)} back={{ href: "/#esemenyek", label: "Vissza az eseményekhez" }}>
+    <SubPage site={site} eyebrow={past ? "Lezajlott esemény" : "Közelgő esemény"} title={e.title} meta={when} image={resolveImage(e.image, site)}
+      facts={[{ k: "Mikor", v: <>{when}{e.time ? <><br />{e.time}</> : null}</> }, { k: "Hol", v: e.location ?? "Gyűrűsi Ménes, Gyűrűs" }, { k: "Cím", v: site.contact.address }]}
+      related={others} relatedTitle="További lovas napok" cta={{ label: "Érdeklődöm", href: "/#kapcsolat" }} back={{ href: "/#esemenyek", label: "Események" }}>
       <p className="lead">{e.summary}</p>
       {e.body && <Paragraphs text={e.body} />}
-      <p style={{ marginTop: 32 }}><Link href="/#kapcsolat" className="btn btn-primary">Kérdésem van</Link></p>
     </SubPage>
   );
 }

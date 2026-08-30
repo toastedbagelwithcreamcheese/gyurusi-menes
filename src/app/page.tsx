@@ -5,6 +5,9 @@ import { Footer } from "@/components/site/Footer";
 import { ContactForm } from "@/components/site/ContactForm";
 import { Gallery } from "@/components/site/Lightbox";
 import { Reveal } from "@/components/Reveal";
+import { Marquee } from "@/components/site/Marquee";
+import { ContactDock } from "@/components/site/ContactDock";
+import { Sheen } from "@/components/site/Sheen";
 import { Hero, QuickFacts, Intro, Programs, Trail, Breeds, Events, ContactBlock } from "@/components/site/Sections";
 
 export default async function Home() {
@@ -30,6 +33,7 @@ export default async function Home() {
       <Header phone={site.contact.phone} />
       <main>
         <Hero site={site} />
+        <Marquee />
         <QuickFacts />
         <Programs site={site} />
         <Intro site={site} />
@@ -48,6 +52,8 @@ export default async function Home() {
         <ContactBlock site={site} form={<ContactForm />} />
       </main>
       <Footer contact={site.contact} />
+      <ContactDock phone={site.contact.phone} />
+      <Sheen />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
     </>
   );

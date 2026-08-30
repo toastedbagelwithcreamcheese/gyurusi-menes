@@ -24,9 +24,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="hu" className={`${fraunces.variable} ${instrument.variable}`}>
       <head>
-        <noscript><style>{`.rise,.unveil{opacity:1!important;transform:none!important;clip-path:none!important}`}</style></noscript>
+        <noscript><style>{`.rise,.unveil{opacity:1!important;transform:none!important;clip-path:none!important} .hdr .brand-line,.hdr .hdr-nav a,.hdr .hdr-phone{opacity:1!important;transform:none!important} .hero-media img{transform:none!important}`}</style></noscript>
       </head>
-      <body>{children}</body>
+      <body><div className="grain" aria-hidden="true" />{children}</body>
     </html>
   );
 }

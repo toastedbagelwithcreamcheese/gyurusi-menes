@@ -35,6 +35,15 @@
     "blur": "data:image/webp;base64,UklGRkIAAABXRUJQVlA4IDYAAADQAQCdASoQAAsAA4BaJQBWACFqDmN8AAD+0P3TSDncMY29PzwgIPPO4IxHmQo9MmBCucApUAA=",
     "color": "rgb(40,40,24)"
   },
+  "osveny-ugras-gyerek": {
+    "src": "/images/photos/osveny-ugras-gyerek.webp",
+    "width": 1066,
+    "height": 1600,
+    "alt": "Gyerek lovas pej huculon ugrat a gyűrűs akadályon, a háttérben nézők a sátor alatt",
+    "bytes": 160540,
+    "blur": "data:image/webp;base64,UklGRmIAAABXRUJQVlA4IFYAAACQAwCdASoQABgAPu1krU6ppaSiMAgBMB2JQBOgAv29ZtkpWEOwAP7ZUnNzw/dQXpXCeO2hA3j/An3wpCjxgzofzj5x7npy6t7iA9cUynBlMJ3zk80AAA==",
+    "color": "rgb(56,56,40)"
+  },
   "osveny-ugras-allo": {
     "src": "/images/photos/osveny-ugras-allo.webp",
     "width": 1280,

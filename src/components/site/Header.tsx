@@ -1,55 +1,140 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { PHOTOS } from "@/components/Photo";
 
 const NAV = [
-  { href: "/#programok", label: "Programok" },
-  { href: "/#menes", label: "A ménes" },
-  { href: "/#esemenyek", label: "Események" },
-  { href: "/#galeria", label: "Galéria" },
-  { href: "/#kapcsolat", label: "Kapcsolat" },
+  { href: "#programok", label: "Programok", id: "programok" },
+  { href: "#menes", label: "A ménes", id: "menes" },
+  { href: "#huculosveny", label: "Huculösvény", id: "huculosveny" },
+  { href: "#esemenyek", label: "Események", id: "esemenyek" },
+  { href: "#galeria", label: "Galéria", id: "galeria" },
+  { href: "#kapcsolat", label: "Kapcsolat", id: "kapcsolat" },
 ];
 
-/** Fejléc: a hero fölött átlátszó, görgetésre csontfehér. Mobilon teljes képernyős menü. */
-export function Header({ phone }: { phone?: string }) {
-  const [solid, setSolid] = useState(false);
+/**
+ * Fejléc három állapottal:
+ *   · a hero fölött: átlátszó, teljes szélességű, világos szöveg;
+ *   · görgetve: a fejléc egy lebegő, üveges pillé húzódik össze középen;
+ *   · lefelé görgetve elbújik, fölfelé visszajön (nem takarja a tartalmat olvasás közben).
+ * A linkek alatt egy közös „csúszka" jár az egér után, és az aktuális szekciót jelöli.
+ * Telefonon teljes képernyős menü: fotó + nagy címek, lépcsősen. Görgetés-figyelő
+ * helyett rAF-fal ritkított scroll, a szekciót IntersectionObserver követi.
+ */
+export function Header({ phone, subpage = false }: { phone?: string; subpage?: boolean }) {
+  const [compact, setCompact] = useState(subpage);
+  const [hidden, setHidden] = useState(false);
   const [open, setOpen] = useState(false);
+  const [active, setActive] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const lastY = useRef(0);
+  const raf = useRef(0);
+
+  useEffect(() => { const r = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(r); }, []);
 
   useEffect(() => {
-    const onScroll = () => setSolid(window.scrollY > 40);
+    const onScroll = () => {
+      cancelAnimationFrame(raf.current);
+      raf.current = requestAnimationFrame(() => {
+        const y = window.scrollY;
+        setCompact(subpage || y > 80);
+        setHidden(y > 240 && y > lastY.current + 4 && !open);
+        if (y < lastY.current - 4) setHidden(false);
+        lastY.current = y;
+      });
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf.current); };
+  }, [open, subpage]);
+
+  useEffect(() => {
+    if (subpage) return;
+    const secs = NAV.map((n) => document.getElementById(n.id)).filter(Boolean) as HTMLElement[];
+    if (!secs.length || !("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver((entries) => {
+      const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (vis) setActive(vis.target.id);
+    }, { rootMargin: "-40% 0px -50% 0px", threshold: [0, 0.2, 0.5] });
+    secs.forEach((s) => io.observe(s));
+    return () => io.disconnect();
+  }, [subpage]);
+
   useEffect(() => { document.body.style.overflow = open ? "hidden" : ""; return () => { document.body.style.overflow = ""; }; }, [open]);
+  useEffect(() => { const k = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, []);
+
+  /* A csúszka: az egér alatti linkre úszik; egér nélkül az aktív szekción áll. */
+  function movePill(target: HTMLElement | null) {
+    const pill = pillRef.current, nav = navRef.current;
+    if (!pill || !nav) return;
+    if (!target) { pill.style.opacity = "0"; return; }
+    const r = target.getBoundingClientRect(), n = nav.getBoundingClientRect();
+    pill.style.opacity = "1";
+    pill.style.transform = `translateX(${r.left - n.left}px)`;
+    pill.style.width = `${r.width}px`;
+  }
+  useEffect(() => {
+    const el = navRef.current?.querySelector<HTMLElement>(`a[data-id="${active}"]`) ?? null;
+    movePill(el);
+  }, [active, compact]);
+
+  const tel = phone ? `tel:${phone.replace(/\s/g, "")}` : undefined;
+  const foal = PHOTOS["csiko-portre"];
 
   return (
-    <header className={`hdr ${solid || open ? "solid" : ""}`}>
-      <div className="wrap hdr-in">
-        <Link href="/" className="brand" onClick={() => setOpen(false)}>
-          <span className="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 32 32" width="28" height="28"><path d="M6 26c1-7 4-12 9-15l2-5 3 4c3 1 5 3 6 7l-4-1c-1 4-4 8-8 10H6z" fill="currentColor"/></svg>
-          </span>
-          <span>Gyűrűsi Ménes</span>
-        </Link>
-        <nav className="hdr-nav" aria-label="Fő menü">
-          {NAV.map((n) => <Link key={n.href} href={n.href}>{n.label}</Link>)}
-        </nav>
-        <div className="hdr-cta">
-          {phone && <a href={`tel:${phone.replace(/\s/g, "")}`} className="btn btn-sm hdr-phone">{phone}</a>}
-          <button type="button" className="burger" aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((o) => !o)}>
-            <span className="sr-only">{open ? "Menü bezárása" : "Menü megnyitása"}</span>
-            <span aria-hidden="true" />
-          </button>
+    <>
+      <header className={`hdr ${compact ? "compact" : ""} ${hidden ? "hidden-up" : ""} ${open ? "open" : ""} ${mounted ? "in" : ""}`}>
+        <div className="hdr-bar">
+          <Link href={subpage ? "/" : "#top"} className="brand" onClick={() => setOpen(false)} aria-label="Gyűrűsi Ménes – főoldal">
+            <span className="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32" width="22" height="22"><path d="M6 26c1-7 4-12 9-15l2-5 3 4c3 1 5 3 6 7l-4-1c-1 4-4 8-8 10H6z" fill="currentColor"/></svg>
+            </span>
+            <span className="brand-name"><span className="brand-line">Gyűrűsi Ménes</span></span>
+          </Link>
+
+          <nav ref={navRef} className="hdr-nav" aria-label="Fő menü" onMouseLeave={() => movePill(navRef.current?.querySelector(`a[data-id="${active}"]`) ?? null)}>
+            <span ref={pillRef} className="hdr-pill" aria-hidden="true" />
+            {NAV.map((n, i) => (
+              <Link key={n.id} href={subpage ? `/${n.href}` : n.href} data-id={n.id} aria-current={active === n.id ? "location" : undefined}
+                style={{ transitionDelay: `${120 + i * 45}ms` }} onMouseEnter={(e) => movePill(e.currentTarget)}>
+                <span className="hdr-link-line">{n.label}</span>
+              </Link>
+            ))}
+          </nav>
+
+          <div className="hdr-cta">
+            {tel && <a href={tel} className="hdr-phone"><span className="hdr-phone-dot" aria-hidden="true" />{phone}</a>}
+            <button type="button" className="burger" aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((o) => !o)}>
+              <span className="sr-only">{open ? "Menü bezárása" : "Menü megnyitása"}</span>
+              <span aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div id="mobile-menu" className="mnav" data-open={open} aria-hidden={!open}>
+        <div className="mnav-photo" aria-hidden="true">
+          {foal && <Image src={foal.src} alt="" fill sizes="50vw" style={{ objectFit: "cover", objectPosition: "50% 30%" }} />}
+        </div>
+        <div className="mnav-body">
+          <nav aria-label="Mobil menü">
+            {NAV.map((n, i) => (
+              <Link key={n.id} href={subpage ? `/${n.href}` : n.href} onClick={() => setOpen(false)} style={{ transitionDelay: open ? `${140 + i * 55}ms` : "0ms" }}>
+                <span className="mnav-idx" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                <span className="mnav-label">{n.label}</span>
+              </Link>
+            ))}
+          </nav>
+          <div className="mnav-foot" style={{ transitionDelay: open ? "520ms" : "0ms" }}>
+            <p className="eyebrow">Gyűrűs, Zala</p>
+            {tel && <a href={tel} className="btn btn-light" onClick={() => setOpen(false)}>Hívás: {phone}</a>}
+          </div>
         </div>
       </div>
-      <div id="mobile-menu" className="mnav" data-open={open}>
-        <nav aria-label="Mobil menü">
-          {NAV.map((n, i) => <Link key={n.href} href={n.href} onClick={() => setOpen(false)} style={{ transitionDelay: open ? `${60 + i * 40}ms` : "0ms" }}>{n.label}</Link>)}
-        </nav>
-        {phone && <a href={`tel:${phone.replace(/\s/g, "")}`} className="btn btn-light" onClick={() => setOpen(false)}>Hívás: {phone}</a>}
-      </div>
-    </header>
+    </>
   );
 }

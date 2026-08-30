@@ -1,11 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
+import { HeroIntro } from "./HeroIntro";
+import { HeroParallax } from "./HeroParallax";
 import { Photo } from "@/components/Photo";
 import { resolveImage, type ImageMeta } from "@/lib/images";
 import { formatDate, type Event, type News, type Program, type SiteContent } from "@/lib/store";
 
 const Arrow = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+
+const Kw = ({ children }: { children: React.ReactNode }) => <span className="kw">{children}<span aria-hidden="true" className="kw-line" /></span>;
 
 export function Paragraphs({ text, className = "" }: { text: string; className?: string }) {
   return <>{text.split(/\n\s*\n/).map((p, i) => <p key={i} className={className}>{p}</p>)}</>;
@@ -19,23 +23,39 @@ function Img({ im, sizes, className = "", priority }: { im: ImageMeta | null; si
 /* ---------------- HERO ---------------- */
 export function Hero({ site }: { site: SiteContent }) {
   const im = resolveImage(site.hero.image, site);
+  const lines = splitTitle(site.hero.title);
   return (
-    <section className="hero on-dark" aria-label="Bevezető">
-      <div className="hero-media">
-        {im && <Image src={im.src} alt={im.alt} fill sizes="100vw" priority fetchPriority="high" placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", objectPosition: "50% 45%", backgroundColor: im.color }} />}
-        <div className="hero-shade" aria-hidden="true" />
-      </div>
-      <div className="wrap hero-in">
-        <Reveal trigger="mount" as="p" className="caption hero-note">Gyűrűs, Zala · a IX. Gyűrűsi Lovas Napok</Reveal>
-        <Reveal trigger="mount" as="h1" className="display" delay={80}>{site.hero.title}</Reveal>
-        <Reveal trigger="mount" as="p" className="lead hero-sub" delay={180}>{site.hero.subtitle}</Reveal>
-        <Reveal trigger="mount" className="hero-cta" delay={280}>
-          <Link href="#programok" className="btn btn-light">Mit lehet nálunk csinálni <Arrow /></Link>
-          <Link href="#kapcsolat" className="btn btn-outline">Kapcsolat</Link>
-        </Reveal>
-      </div>
+    <section id="top" className="hero on-dark" aria-label="Bevezető">
+      <HeroParallax>
+        <div className="hero-media" data-layer="media">
+          {im && <Image src={im.src} alt={im.alt} fill sizes="100vw" priority fetchPriority="high" placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", objectPosition: "50% 45%", backgroundColor: im.color }} />}
+          <div className="hero-shade" aria-hidden="true" />
+        </div>
+        <div className="wrap hero-in" data-layer="text">
+          <HeroIntro>
+            <p className="caption hero-note" data-seq="first">Gyűrűs, Zala · a IX. Gyűrűsi Lovas Napok</p>
+            <h1 className="display">
+              {lines.map((l, i) => <span key={i} className="hero-line" data-sweep="#f3efe6">{l}{i < lines.length - 1 ? " " : ""}</span>)}
+            </h1>
+            <p className="lead hero-sub" data-seq>{site.hero.subtitle}</p>
+            <div className="hero-cta" id="hero-cta" data-seq>
+              <Link href="#programok" className="btn btn-light">Mit lehet nálunk csinálni <Arrow /></Link>
+              <Link href="#kapcsolat" className="btn btn-outline">Kapcsolat</Link>
+            </div>
+          </HeroIntro>
+        </div>
+      </HeroParallax>
+      <p className="hero-scroll" aria-hidden="true">Görgess</p>
     </section>
   );
+}
+
+/** A címsort két sorra bontjuk a söpréshez: az első ~felénél lévő szóköznél. */
+function splitTitle(t: string): string[] {
+  const words = t.split(" ");
+  if (words.length < 4) return [t];
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
 }
 
 /* ---------------- GYORS VÁLASZOK ---------------- */
@@ -66,7 +86,7 @@ export function Intro({ site }: { site: SiteContent }) {
       <div className="wrap intro-grid">
         <div className="intro-text">
           <Reveal as="p" className="eyebrow">{site.intro.eyebrow}</Reveal>
-          <Reveal as="h2" className="h1" delay={60}>{site.intro.title}</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>{site.intro.title}</Reveal>
           <Reveal as="p" className="lead" delay={120}>{site.intro.lead}</Reveal>
           <Reveal delay={180} className="intro-body"><Paragraphs text={site.intro.body} /></Reveal>
         </div>
@@ -88,7 +108,7 @@ export function Programs({ site }: { site: SiteContent }) {
       <div className="wrap">
         <div className="sec-head">
           <Reveal as="p" className="eyebrow">Mit találsz nálunk</Reveal>
-          <Reveal as="h2" className="h1" delay={60}>Lovaglás, túra, tábor — és az ösvény</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>Lovaglás, túra, tábor — és az ösvény</Reveal>
         </div>
         <ul className="prog-grid" role="list">
           {items.map((p: Program, i) => {
@@ -118,12 +138,12 @@ export function Trail() {
   return (
     <section id="huculosveny" className="trail on-dark">
       <div className="trail-media">
-        <Reveal variant="unveil" as="figure" className="trail-ph"><Photo id="osveny-ugras-gyuru" sizes="(max-width: 900px) 100vw, 55vw" /></Reveal>
+        <Reveal variant="unveil" as="figure" className="trail-ph parallax"><Photo id="osveny-ugras-gyuru" sizes="(max-width: 900px) 100vw, 55vw" /></Reveal>
       </div>
       <div className="trail-text">
         <Reveal as="p" className="eyebrow">Huculösvény</Reveal>
-        <Reveal as="h2" className="h1" delay={60}>Nem pálya. Ösvény.</Reveal>
-        <Reveal as="p" className="lead" delay={120}>A huculösvény terepen vezetett teljesítménypróba hucul lovaknak: néhány száz métertől kilométerekig tartó út, tizenkettőtől huszonöt akadállyal — híd, vizesárok, palló, kapunyitás, meredek emelkedő és lejtő —, időnormával és pontozással.</Reveal>
+        <Reveal as="h2" className="h1 mask" delay={60}>Nem pálya. Ösvény.</Reveal>
+        <Reveal as="p" className="lead" delay={120}>A huculösvény <Kw>terepen vezetett</Kw> teljesítménypróba hucul lovaknak: néhány száz métertől kilométerekig tartó út, tizenkettőtől huszonöt akadállyal — híd, vizesárok, palló, kapunyitás, meredek emelkedő és lejtő —, <Kw>időnormával és pontozással</Kw>.</Reveal>
         <Reveal delay={180}>
           <p>Azt méri, amiért a hucult évszázadokon át tenyésztették: a nyugodt idegrendszert, a biztos lábat és a lovas–ló páros összeszokottságát. Gyűrűsön 2017 óta rendezzük, kezdő, nyitott és sport kategóriában.</p>
           <blockquote className="quote">
@@ -149,12 +169,12 @@ export function Breeds() {
       <div className="wrap">
         <div className="sec-head">
           <Reveal as="p" className="eyebrow">Milyen lovakkal találkozol</Reveal>
-          <Reveal as="h2" className="h1" delay={60}>Három fajta, egy ménes</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>Három fajta, egy ménes</Reveal>
         </div>
         <ul className="breeds" role="list">
           {breeds.map((b, i) => (
             <Reveal as="li" key={b.name} delay={i * 90} className="breed">
-              <figure className="photo breed-ph"><Photo id={b.photo} sizes="(max-width: 640px) 100vw, 33vw" /></figure>
+              <figure className="photo breed-ph parallax"><Photo id={b.photo} sizes="(max-width: 640px) 100vw, 33vw" /></figure>
               <p className="caption">{b.origin}</p>
               <h3 className="h3">{b.name}</h3>
               <p>{b.text}</p>
@@ -177,7 +197,7 @@ export function Events({ site, upcomingList, pastList }: { site: SiteContent; up
       <div className="wrap">
         <div className="sec-head">
           <Reveal as="p" className="eyebrow">{nextEv ? "Következő esemény" : "Legutóbbi esemény"}</Reveal>
-          <Reveal as="h2" className="h1" delay={60}>{nextEv ? "Ide várunk legközelebb" : "A Gyűrűsi Lovas Napok"}</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>{nextEv ? "Ide várunk legközelebb" : "A Gyűrűsi Lovas Napok"}</Reveal>
         </div>
         {lead && (
           <Reveal className="ev-lead">
@@ -228,7 +248,7 @@ export function ContactBlock({ site, form }: { site: SiteContent; form: React.Re
       <div className="wrap contact-grid">
         <div>
           <Reveal as="p" className="eyebrow">Kapcsolat</Reveal>
-          <Reveal as="h2" className="h1" delay={60}>Gyere ki Gyűrűsre</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>Gyere ki Gyűrűsre</Reveal>
           <Reveal as="p" className="lead" delay={120}>{c.note}</Reveal>
           <Reveal delay={180} className="contact-data">
             <p><span className="eyebrow">Telefon</span><a href={`tel:${c.phone.replace(/\s/g, "")}`} className="contact-big">{c.phone}</a></p>
