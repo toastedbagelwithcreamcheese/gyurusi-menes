@@ -32,24 +32,29 @@ export function Header({ phone, subpage = false }: { phone?: string; subpage?: b
   const navRef = useRef<HTMLElement>(null);
   const pillRef = useRef<HTMLSpanElement>(null);
   const lastY = useRef(0);
-  const raf = useRef(0);
 
   useEffect(() => { const r = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(r); }, []);
 
+  /* Rejtés hiszterézissel: csak akkor bújik el, ha legalább 28 px-t görgettél LEFELÉ egyhuzamban
+     (és túl vagy a herón), és csak akkor jön vissza, ha 12 px-t FÖLFELÉ. Egy-két pixeles
+     irányváltás így nem kapcsolgatja — ez adta a villogást. */
+  const acc = useRef(0);
   useEffect(() => {
+    lastY.current = window.scrollY;
     const onScroll = () => {
-      cancelAnimationFrame(raf.current);
-      raf.current = requestAnimationFrame(() => {
-        const y = window.scrollY;
-        setCompact(subpage || y > 80);
-        setHidden(y > 240 && y > lastY.current + 4 && !open);
-        if (y < lastY.current - 4) setHidden(false);
-        lastY.current = y;
-      });
+      const y = window.scrollY;
+      const dy = y - lastY.current;
+      lastY.current = y;
+      setCompact(subpage || y > 64);
+      if (open || y < 320) { acc.current = 0; setHidden(false); return; }
+      if (Math.sign(dy) !== Math.sign(acc.current)) acc.current = 0;
+      acc.current += dy;
+      if (acc.current > 28) setHidden(true);
+      else if (acc.current < -12) setHidden(false);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf.current); };
+    return () => window.removeEventListener("scroll", onScroll);
   }, [open, subpage]);
 
   useEffect(() => {
