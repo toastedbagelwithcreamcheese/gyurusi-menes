@@ -83,12 +83,11 @@ img { display: block; max-width: 100%; height: auto; }
   font-weight: 500;
   letter-spacing: -0.015em;
   text-wrap: balance;
-  font-variation-settings: "opsz" 144, "SOFT" 30;
 }
 .display { font-size: clamp(2.6rem, 7vw, 5.6rem); line-height: 0.98; letter-spacing: -0.025em; }
 .h1      { font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 1.04; }
 .h2      { font-size: clamp(1.8rem, 3.6vw, 2.8rem); line-height: 1.1; }
-.h3      { font-size: clamp(1.25rem, 2vw, 1.5rem); line-height: 1.25; font-variation-settings: "opsz" 48, "SOFT" 30; }
+.h3      { font-size: clamp(1.25rem, 2vw, 1.5rem); line-height: 1.25; }
 .lead    { font-size: clamp(1.1rem, 1.5vw, 1.3rem); line-height: 1.55; text-wrap: pretty; }
 .eyebrow {
   font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
@@ -376,7 +375,7 @@ textarea.input { min-height: 8rem; resize: vertical; }
 .trail-text .lead { margin: 0 0 18px; }
 .trail-text p { margin: 0 0 1em; }
 .quote { margin: 28px 0; padding-left: 20px; border-left: 2px solid var(--color-straw); }
-.quote p { font-family: var(--font-display); font-size: 1.25rem; line-height: 1.4; margin: 0 0 8px; font-variation-settings: "opsz" 48, "SOFT" 60; }
+.quote p { font-family: var(--font-display); font-size: 1.25rem; line-height: 1.4; margin: 0 0 8px; }
 .quote cite { font-style: normal; font-size: 0.85rem; color: var(--color-moss); }
 
 /* Fajták */
@@ -494,7 +493,7 @@ textarea.input { min-height: 8rem; resize: vertical; }
 .marquee { overflow: hidden; border-block: 1px solid var(--color-line); padding-block: 14px; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
 .marquee-track { display: flex; width: max-content; animation: roll 60s linear infinite; }
 .marquee:hover .marquee-track { animation-play-state: paused; }
-.marquee-item { display: inline-flex; align-items: center; gap: 22px; padding-inline: 22px; font-family: var(--font-display); font-size: 1.15rem; color: var(--color-ink-soft); white-space: nowrap; font-variation-settings: "opsz" 48, "SOFT" 40; }
+.marquee-item { display: inline-flex; align-items: center; gap: 22px; padding-inline: 22px; font-family: var(--font-display); font-size: 1.15rem; color: var(--color-ink-soft); white-space: nowrap; }
 .marquee-item::after { content: ""; width: 5px; height: 5px; border-radius: 999px; background: var(--color-straw); }
 .marquee-item small { font-family: var(--font-sans); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-dust); }
 @keyframes roll { to { transform: translateX(-50%); } }

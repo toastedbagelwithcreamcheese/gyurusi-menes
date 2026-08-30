@@ -3,10 +3,9 @@ import { Fraunces, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 
 /* Betűk build-időben letöltve és saját domainről kiszolgálva (nincs Google-kapcsolat). */
-const fraunces = Fraunces({
-  subsets: ["latin", "latin-ext"], variable: "--font-fraunces", display: "swap",
-  axes: ["opsz", "SOFT"], weight: "variable",
-});
+/* Egyetlen statikus vágás: a változó betű a két tengellyel (opsz+SOFT) 100+ KB volt fájlonként,
+   és a címsor (LCP) újrafestését késleltette. */
+const fraunces = Fraunces({ subsets: ["latin", "latin-ext"], variable: "--font-fraunces", display: "swap", weight: "500" });
 const instrument = Instrument_Sans({
   subsets: ["latin", "latin-ext"], variable: "--font-instrument", display: "swap", weight: ["400", "500", "600"],
 });
