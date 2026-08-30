@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import { Fraunces, Instrument_Sans } from "next/font/google";
+import { Instrument_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 /* Betűk build-időben letöltve és saját domainről kiszolgálva (nincs Google-kapcsolat). */
-/* Egyetlen statikus vágás: a változó betű a két tengellyel (opsz+SOFT) 100+ KB volt fájlonként,
-   és a címsor (LCP) újrafestését késleltette. */
-const fraunces = Fraunces({ subsets: ["latin", "latin-ext"], variable: "--font-fraunces", display: "swap", weight: "500" });
+/* Fraunces: a Google változó betűjéből (SOFT, WONK, opsz, wght) fontTools-szal készült példány —
+   wght 500, SOFT 0, WONK 0 rögzítve, az opsz tengely megtartva (ez adja a címek finom, vékony rajzát),
+   latin + latin-ext részhalmaz, egyetlen woff2. A teljes változó betű 2×110 KB volt. */
+const fraunces = localFont({
+  variable: "--font-fraunces", display: "swap", weight: "500", style: "normal",
+  src: "../fonts/fraunces-opsz-500.woff2",
+  declarations: [{ prop: "font-optical-sizing", value: "auto" }],
+});
 const instrument = Instrument_Sans({
   subsets: ["latin", "latin-ext"], variable: "--font-instrument", display: "swap", weight: ["400", "500", "600"],
 });
