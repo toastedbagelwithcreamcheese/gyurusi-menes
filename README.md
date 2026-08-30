@@ -8,7 +8,7 @@ npm install
 cp .env.example .env.local   # ADMIN_USER / ADMIN_PASSWORD kötelező
 npm run dev                  # http://localhost:3000
 ```
-Admin: `/admin` (HTTP Basic Auth az `.env.local` szerint).
+Admin: `/admin`. Jelszó csak akkor kell, ha az `ADMIN_USER` + `ADMIN_PASSWORD` be van állítva — a demón nincs.
 
 ## Mi hol van
 - `data/site.json` — a szerkeszthető tartalom (hero, bemutatkozás, programok, események, hírek, galéria, kapcsolat, feltöltések, üzenetek). Az admin ezt írja.

@@ -1,10 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/** HTTP Basic Auth az /admin alá. Egy felhasználó, egy jelszó — a demóhoz ennyi kell. */
+/**
+ * HTTP Basic Auth az /admin alá — CSAK ha ADMIN_USER és ADMIN_PASSWORD be van állítva.
+ * A demón szándékosan nincs: bárki megnézheti az admint. Élesben a két env-változó bekapcsolja.
+ */
 export function proxy(req: NextRequest) {
   const user = process.env.ADMIN_USER;
   const pass = process.env.ADMIN_PASSWORD;
-  if (!user || !pass) return new NextResponse("ADMIN_USER / ADMIN_PASSWORD nincs beállítva.", { status: 500 });
+  if (!user || !pass) return NextResponse.next();
 
   const header = req.headers.get("authorization");
   if (header?.startsWith("Basic ")) {

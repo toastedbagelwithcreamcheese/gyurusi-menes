@@ -46,9 +46,9 @@ if (which === "http") {
   for (const needle of ["<title>", 'name="description"', 'property="og:image"', "<h1", 'lang="hu"', "application/ld+json"]) if (!html.includes(needle)) fail(`főoldal: hiányzik ${needle}`);
   if ((html.match(/<h1/g) || []).length !== 1) fail("nem pontosan egy H1");
   for (const p of ["/robots.txt", "/sitemap.xml"]) { const r = await get(p); if (r.status !== 200) fail(`${p} → ${r.status}`); }
-  const adm = await get("/admin"); if (adm.status !== 401) fail(`/admin hitelesítés nélkül → ${adm.status}`);
-  const admOk = await get("/admin", { headers: { Authorization: "Basic " + Buffer.from(`${process.env.ADMIN_USER}:${process.env.ADMIN_PASSWORD}`).toString("base64") } });
-  if (admOk.status !== 200) fail(`/admin hitelesítéssel → ${admOk.status}`);
+  const guarded = !!(process.env.ADMIN_USER && process.env.ADMIN_PASSWORD);
+  const adm = await get("/admin"); if (adm.status !== (guarded ? 401 : 200)) fail(`/admin hitelesítés nélkül → ${adm.status} (várt: ${guarded ? 401 : 200})`);
+  if (guarded) { const admOk = await get("/admin", { headers: { Authorization: "Basic " + Buffer.from(`${process.env.ADMIN_USER}:${process.env.ADMIN_PASSWORD}`).toString("base64") } }); if (admOk.status !== 200) fail(`/admin hitelesítéssel → ${admOk.status}`); }
   const bad = await get("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "x", email: "nem-email", message: "rövid" }) });
   if (bad.status !== 400) fail(`hibás űrlap → ${bad.status}`);
   const ok = await get("/api/contact", { method: "POST", headers: { "Content-Type": "application/json", "x-forwarded-for": "9.9.9.9" }, body: JSON.stringify({ name: "Teszt Elek", email: "teszt@example.com", message: "Ez egy tesztüzenet a verify scriptből." }) });

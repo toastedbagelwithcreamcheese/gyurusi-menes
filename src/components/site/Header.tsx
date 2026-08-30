@@ -25,37 +25,24 @@ const NAV = [
  */
 export function Header({ phone, subpage = false }: { phone?: string; subpage?: boolean }) {
   const [compact, setCompact] = useState(subpage);
-  const [hidden, setHidden] = useState(false);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const pillRef = useRef<HTMLSpanElement>(null);
-  const lastY = useRef(0);
 
   useEffect(() => { const r = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(r); }, []);
 
   /* Rejtés hiszterézissel: csak akkor bújik el, ha legalább 28 px-t görgettél LEFELÉ egyhuzamban
      (és túl vagy a herón), és csak akkor jön vissza, ha 12 px-t FÖLFELÉ. Egy-két pixeles
      irányváltás így nem kapcsolgatja — ez adta a villogást. */
-  const acc = useRef(0);
+  /* A fejléc mindig látszik; görgetve csak a formája vált (teljes sáv → lebegő pill). */
   useEffect(() => {
-    lastY.current = window.scrollY;
-    const onScroll = () => {
-      const y = window.scrollY;
-      const dy = y - lastY.current;
-      lastY.current = y;
-      setCompact(subpage || y > 64);
-      if (open || y < 320) { acc.current = 0; setHidden(false); return; }
-      if (Math.sign(dy) !== Math.sign(acc.current)) acc.current = 0;
-      acc.current += dy;
-      if (acc.current > 28) setHidden(true);
-      else if (acc.current < -12) setHidden(false);
-    };
+    const onScroll = () => setCompact(subpage || window.scrollY > 64);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [open, subpage]);
+  }, [subpage]);
 
   useEffect(() => {
     if (subpage) return;
@@ -92,7 +79,7 @@ export function Header({ phone, subpage = false }: { phone?: string; subpage?: b
 
   return (
     <>
-      <header className={`hdr ${compact ? "compact" : ""} ${hidden ? "hidden-up" : ""} ${open ? "open" : ""} ${mounted ? "in" : ""}`}>
+      <header className={`hdr ${compact ? "compact" : ""} ${open ? "open" : ""} ${mounted ? "in" : ""}`}>
         <div className="hdr-bar">
           <Link href={subpage ? "/" : "#top"} className="brand" onClick={() => setOpen(false)} aria-label="Gyűrűsi Ménes – főoldal">
             <span className="brand-mark" aria-hidden="true">
