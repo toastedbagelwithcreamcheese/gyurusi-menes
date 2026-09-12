@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node scripts/sharp-linux.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^11.0.3",

@@ -11,7 +11,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ key: st
     headers: {
       "content-type": f.type,
       "content-length": String(f.body.byteLength),
+      /* A kulcs egyedi: a böngésző egy évig tarthatja. A Netlify CDN (durable cache) csak egy óráig —
+         különben egy törölt fájl egy évig kiszolgálható maradna a cache-ből. */
       "cache-control": "public, max-age=31536000, immutable",
+      "netlify-cdn-cache-control": "public, max-age=3600",
       ...(pdf ? { "content-disposition": `inline; filename="${key}"` } : {}),
     },
   });

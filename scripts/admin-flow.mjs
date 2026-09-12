@@ -27,7 +27,20 @@ page.on("pageerror", (e) => errors.push(String(e)));
 const go = async (p) => { const r = await page.goto(BASE + p, { waitUntil: "networkidle" }); if (!r || r.status() >= 400) fail(`${p} → ${r?.status()}`); };
 const fetchText = async (p) => { const r = await ctx.request.get(BASE + p); if (!r.ok()) fail(`${p} → ${r.status()}`); return r.text(); };
 
+/** Egy korábbi, félbeszakadt futás maradékai (teszt-esemény, -beszámoló, -jelentkezés) — mindig előbb kitakarítjuk. */
+async function purge() {
+  await go("/admin/esemenyek");
+  for (const id of await page.locator('[data-event-row]:has-text("Teszt esemény (gate")').evaluateAll((els) => els.map((e) => e.getAttribute("data-event-row")))) {
+    await go(`/admin/esemenyek/${id}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek$/), page.click('button:has-text("Esemény törlése")')]); console.log("purge: esemény", id);
+  }
+  await go("/admin/beszamolok");
+  while (await page.locator('[data-report-row]:has-text("Gate beszámoló")').count()) { const r = page.locator('[data-report-row]:has-text("Gate beszámoló")').first(); const id = await r.getAttribute("data-report-row"); await r.locator('button:has-text("Töröl")').click(); await page.waitForSelector(`[data-report-row="${id}"]`, { state: "detached", timeout: 15000 }); console.log("purge: beszámoló", id); }
+  await go("/admin/kepek");
+  while (await page.locator('[data-image-tile^="u-"]').count()) { const t = page.locator('[data-image-tile^="u-"]').first(); const id = await t.getAttribute("data-image-tile"); await t.hover(); if (await t.locator('button:has-text("Töröl")').count() === 0) break; await t.locator('button:has-text("Töröl")').click(); await page.waitForSelector(`[data-image-tile="${id}"]`, { state: "detached", timeout: 15000 }); console.log("purge: feltöltés", id); }
+}
+
 try {
+  await purge();
   /* 1. esemény */
   const inThirty = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
   await go("/admin/esemenyek/uj");
@@ -95,7 +108,12 @@ try {
   /* 5. takarítás */
   await go("/admin/kepek"); await page.hover(`[data-image-tile="${before}"]`); await page.click(`[data-image-tile="${before}"] button:has-text("Nyitókép")`); await page.waitForSelector(`[data-image-tile="${before}"] .tag.hero`);
   await page.hover(`[data-image-tile="${upId}"]`); await page.click(`[data-image-tile="${upId}"] button:has-text("Töröl")`); await page.waitForSelector(`[data-image-tile="${upId}"]`, { state: "detached", timeout: 15000 });
-  if ((await ctx.request.get(`${BASE}/files/${upId}.webp`)).status() !== 404) fail("a törölt kép még elérhető a /files alól");
+  /* A tár igazsága: az admin már nem listázza (fent, detached). A /files válasz 404 — vagy 200, de KIZÁRÓLAG CDN-cache-találatból
+     (a Netlify durable cache a lekérdezési paramétert is figyelmen kívül hagyja; a netlify-cdn-cache-control egy órán belül elengedi). */
+  const gone = await ctx.request.get(`${BASE}/files/${upId}.webp`);
+  const cs = gone.headers()["cache-status"] ?? "";
+  if (gone.status() !== 404 && !(gone.status() === 200 && /hit/i.test(cs))) fail(`a törölt kép még elérhető a /files alól: ${gone.status()} (cache-status: ${cs || "-"})`);
+  if (gone.status() === 200) console.log("   (a /files még CDN-cache-ből adja a törölt képet — a tárból törölve; cache-status:", cs, ")");
   await go("/admin/beszamolok"); const rr = page.locator(`[data-report-row]:has-text("${REPORT}")`); await rr.locator('button:has-text("Töröl")').click(); await page.waitForTimeout(800);
   await go(`/admin/esemenyek/${evId}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek$/), page.click('button:has-text("Esemény törlése")')]);
   if ((await fetchText("/")).includes(TITLE)) fail("takarítás után is látszik az esemény");

@@ -57,3 +57,6 @@ graphify-out.bak*/
 
 # helyi fájltár (feltöltések, PDF-ek) – élesben Netlify Blobs
 /data/files
+
+# a sharp Linux-binárisainak oldalsó telepítése (scripts/sharp-linux.mjs)
+/.sharp-linux

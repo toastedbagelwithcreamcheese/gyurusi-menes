@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import sharp from "sharp";
 import { writeSite, uid, isPageKey, type Event, type L } from "@/lib/store";
 import { putFile, deleteFile, fileUrl } from "@/lib/files";
 
@@ -90,6 +89,8 @@ export async function uploadImage(fd: FormData) {
   if (!(file instanceof File) || file.size === 0) throw new Error("Nincs fájl.");
   if (file.size > 25 * 1024 * 1024) throw new Error("A fájl túl nagy (max 25 MB).");
   const id = "u-" + uid(); const key = `${id}.webp`;
+  /* A sharp csak itt, feltöltéskor töltődik be — az admin lapjai ne függjenek a natív modultól. */
+  const sharp = (await import("sharp")).default;
   const src = sharp(Buffer.from(await file.arrayBuffer())).rotate().resize({ width: 2000, height: 2000, fit: "inside", withoutEnlargement: true });
   const webp = await src.clone().webp({ quality: 78 }).toBuffer();
   const meta = await sharp(webp).metadata();
