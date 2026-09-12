@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import os from "node:os";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const which = process.argv[2];
@@ -163,16 +164,19 @@ if (which === "http") {
   if (!BASE.includes("localhost")) { console.log("PASS: http"); process.exit(0); }
   const site = await readJson("data/site.json");
   if (!site.messages.some((m) => m.email === "teszt@example.com")) fail("az üzenet nem került a tárba");
+  /* A tesztüzenet ne maradjon a tartalomban (a git-fa tiszta marad a kapu után). */
+  site.messages = site.messages.filter((m) => m.email !== "teszt@example.com");
+  await fs.writeFile(path.join(ROOT, "data/site.json"), JSON.stringify(site, null, 2));
   console.log("PASS: http");
 }
 
 if (which === "lighthouse") {
-  const out = path.join(ROOT, ".lighthouse.json");
+  const out = path.join(os.tmpdir(), "gyurusi-lighthouse.json");
   const chrome = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
   const r = spawnSync("npx", ["--yes", "lighthouse@13", BASE + "/", "--output=json", `--output-path=${out}`, "--only-categories=performance,accessibility", "--form-factor=mobile", "--screenEmulation.mobile", "--throttling-method=simulate", "--quiet", `--chrome-flags=--headless=new --no-sandbox --disable-gpu`],
     { cwd: ROOT, env: { ...process.env, CHROME_PATH: chrome }, stdio: ["ignore", "inherit", "inherit"], timeout: 300_000 });
   if (r.status !== 0) fail(`lighthouse kilépési kód ${r.status}`);
-  const lh = await readJson(".lighthouse.json");
+  const lh = JSON.parse(await fs.readFile(out, "utf8"));
   const perf = Math.round(lh.categories.performance.score * 100), a11y = Math.round(lh.categories.accessibility.score * 100);
   const lcp = lh.audits["largest-contentful-paint"]?.numericValue;
   console.log(`Performance ${perf}, Accessibility ${a11y}, LCP ${lcp ? (lcp / 1000).toFixed(2) + " s" : "?"}`);

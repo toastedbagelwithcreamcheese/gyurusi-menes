@@ -26,3 +26,4 @@ for (const p of PKGS) {
   fs.rmSync(dst(p), { recursive: true, force: true }); fs.cpSync(out, dst(p), { recursive: true });
   console.log("[sharp-linux] bemásolva:", p, ver);
 }
+fs.rmSync(SIDE, { recursive: true, force: true }); /* az oldalsó mappa ne maradjon a repóban (lint, git) */
