@@ -1,12 +1,16 @@
 import type { MetadataRoute } from "next";
-import { readSite } from "@/lib/store";
+import { LANGS } from "@/content/types";
+import { langPath } from "@/lib/paths";
+import { readSite, PAGE_KEYS } from "@/lib/store";
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const s = await readSite();
-  return [
-    { url: `${BASE}/`, changeFrequency: "weekly", priority: 1 },
-    ...s.programs.filter((p) => p.published).map((p) => ({ url: `${BASE}/programok/${p.id}`, changeFrequency: "monthly" as const, priority: 0.8 })),
-    ...s.events.filter((e) => e.published).map((e) => ({ url: `${BASE}/esemenyek/${e.id}`, lastModified: e.date, changeFrequency: "yearly" as const, priority: 0.6 })),
-    ...s.news.filter((n) => n.published).map((n) => ({ url: `${BASE}/hirek/${n.id}`, lastModified: n.date, changeFrequency: "yearly" as const, priority: 0.5 })),
-  ];
+  const out: MetadataRoute.Sitemap = [];
+  for (const l of LANGS) {
+    out.push({ url: BASE + langPath(l), changeFrequency: "weekly", priority: l === "hu" ? 1 : 0.8 });
+    for (const k of PAGE_KEYS) out.push({ url: BASE + langPath(l, `/${k}`), changeFrequency: "monthly", priority: 0.8 });
+    out.push({ url: BASE + langPath(l, "/esemenyek"), changeFrequency: "weekly", priority: 0.7 });
+    for (const e of s.events.filter((e) => e.published)) out.push({ url: BASE + langPath(l, `/esemenyek/${e.id}`), lastModified: e.date, changeFrequency: "yearly", priority: 0.6 });
+  }
+  return out;
 }

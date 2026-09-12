@@ -54,3 +54,6 @@ graphify-out/graph.html
 graphify-out/.graphify_analysis.json
 graphify-out/20*/
 graphify-out.bak*/
+
+# helyi fájltár (feltöltések, PDF-ek) – élesben Netlify Blobs
+/data/files

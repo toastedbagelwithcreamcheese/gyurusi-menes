@@ -1,51 +1,59 @@
-# Gates: Gyűrűsi Ménes weboldal + admin demo
+# Gates: Gyűrűsi Ménes — 2. kör, az ügyfél 2026-09-12-i specifikációja
 
 OWNS: **
 
-Scope: Modern, fotóvezérelt Gyűrűsi Ménes weboldal (Next.js) egyszerű adminnal, hiteles tartalommal, gyors és mobilbarát kivitelben, git repóban a többi weboldal mellett.
+Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táborok, Egyesület), Netlify Blobs-alapú admin (fájl-driver helyben), eseménynaptár kiemelt eseménnyel és jelentkezéssel (csak igényfelmérés, adminban látszik), egyesületi beszámolók (PDF-feltöltés), HU/EN/DE i18n automatikus felismeréssel és váltóval, a tulajdonos (Vörös József) mindig elöl, aloldalanként saját kapcsolati rész, galéria kivéve, hero és eseményképek szerkeszthetők, üzenetek az info@gyurusimenes.hu-ra (Resend, env-gated).
 
-- [x] G1: A projekt hibátlanul buildel
+- [ ] G1: A projekt hibátlanul buildel
   CHECK: npm run build
   EXPECT: Compiled successfully
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=90cc8f65e301/24 entries; EXPECT=matched; output-sha256=332254825ff9399b1f421724c787917e4d13c7f3f30bcf38ee00f4100f2540cd; output-bytes=1550
 
-- [x] G2: TypeScript hibamentes
+- [ ] G2: TypeScript hibamentes
   CHECK: npx tsc --noEmit && echo TSC_OK
   EXPECT: TSC_OK
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=90cc8f65e301/24 entries; EXPECT=matched; output-sha256=d018f66bb24b65f8f3c86936c97cc0c033c796f2f7b335753a186d3d2c5818a4; output-bytes=7
 
-- [x] G3: ESLint hibamentes
+- [ ] G3: ESLint hibamentes
   CHECK: npm run lint && echo LINT_OK
   EXPECT: LINT_OK
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=90cc8f65e301/24 entries; EXPECT=matched; output-sha256=fef1998fdb610a910f5d80fa66c0bb36f27e7937385d20f502b3148773c9ae42; output-bytes=46
 
-- [x] G4: Kurált, optimalizált képkészlet alt szövegekkel, méretkorláton belül
+- [ ] G4: Kurált, optimalizált képkészlet alt szövegekkel, méretkorláton belül
   CHECK: node scripts/verify.mjs images
   EXPECT: PASS: images
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=90cc8f65e301/24 entries; EXPECT=matched; output-sha256=d1bf6267f5a52a51b93c23a8e134c3c225ced30da38fa5014ec0757b1d2bc14e; output-bytes=48
 
-- [x] G5: A tartalom nem tartalmaz kitalált tényt (tiltott minták + kötelező igazolt adatok)
+- [ ] G5: A tartalom (mindhárom nyelven) nem tartalmaz kitalált tényt; a tulajdonos telefonszáma üresen marad, amíg nem kapjuk meg
   CHECK: node scripts/verify.mjs content-no-fabrication
   EXPECT: PASS: content-no-fabrication
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=90cc8f65e301/24 entries; EXPECT=matched; output-sha256=79259f423b0252201cdb155872f88fec117c121dba3e8b2e09dbbf7d381a0b7f; output-bytes=29
 
-- [x] G6: Futó oldal: SEO-alapok, egy H1, robots/sitemap, admin 401 hitelesítés nélkül és 200 vele, kapcsolati API validál és tárol
-  CHECK: ADMIN_USER=admin ADMIN_PASSWORD=valtoztasd-meg BASE_URL=http://localhost:3012 node scripts/verify.mjs http
-  EXPECT: PASS: http
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=90cc8f65e301/24 entries; EXPECT=matched; output-sha256=b37f425154827d75a4edd24ce30b88792d74769225ef39282273f84e24450405; output-bytes=11
+- [ ] G6: Minden L-mező (hu/en/de) kitöltött a tartalomban, az en/de szótár kulcsai azonosak a hu szótáréval
+  CHECK: node scripts/verify.mjs i18n
+  EXPECT: PASS: i18n
 
-- [x] G7: Reduced-motion kezelve, nincs `transition: all`
+- [ ] G7: Reduced-motion kezelve, nincs `transition: all`; az új CSS-blokkok osztályai ténylegesen a stíluslapban vannak (blokk-csere nem vágta le a fájl végét)
   CHECK: node scripts/verify.mjs css-motion
   EXPECT: PASS: css-motion
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=90cc8f65e301/24 entries; EXPECT=matched; output-sha256=96f4deedfbeca393ad92640f80877a615835629813920934eae6e0ddb356e2c7; output-bytes=17
 
-- [x] G8: Vizuális review böngészőben desktop (1440) és mobil (390) nézetben: hero-crop nem vágja le a témát, nincs vízszintes görgetés, konzol hibamentes
-  EVIDENCE: Chrome 1440×900 végiggörgetve (hero, tények, programok, bemutatkozás, huculösvény, fajták, események, galéria, lightbox, kapcsolat, lábléc); Playwright 390×844: scrollWidth 390 = innerWidth, hero V-alakzat a mobil cropban is látszik (scratchpad/pw/shots/m-hero.png, m-full.png, m-menu.png); konzol: nincs hiba/figyelmeztetés.
+- [ ] G8: Nincs galéria: sem /galeria útvonal, sem Lightbox-import az app alatt, sem id="galeria" a főoldalon
+  CHECK: node scripts/verify.mjs no-gallery
+  EXPECT: PASS: no-gallery
 
-- [x] G9: Admin végigpróbálva: esemény létrehozás → megjelenik a főoldalon; kép feltöltés → galériába tehető; közzététel/elrejtés működik
-  EVIDENCE: Playwright admin-flow.mjs: „upload tiles: 1 / event on home: true | upload in gallery: true / after hide, event on home: false / cleanup done" — esemény létrehozva, kép feltöltve (public/uploads/u-*.webp), galériába téve, elrejtve, majd törölve; site.json visszaállt (events 4, uploads 0, gallery 16).
+- [ ] G9: Futó oldal (fájl-driver): / /en /de 200 helyes lang-attribútummal; /hu → 308 /; Accept-Language: de a gyökéren → 302 /de, robot UA → 200 magyar; mind az 5 aloldal ×3 nyelv 200; /esemenyek és egy esemény 200; admin lapok 200; /api/contact és /api/register validál és tárol; a tulajdonos neve minden lapon a kapcsolattartó előtt áll; minden aloldalon saját kapcsolati blokk; egy H1; robots/sitemap
+  CHECK: BASE_URL=http://localhost:3012 node scripts/verify.mjs http
+  EXPECT: PASS: http
 
-- [x] G10: Git repo inicializálva a /Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes alatt, első commit elkészült
-  CHECK: git log --oneline | head -1 && echo GIT_OK
-  EXPECT: GIT_OK
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=90cc8f65e301/24 entries; EXPECT=matched; output-sha256=ee2e61ce5ffc8c089d9d960776eb04d7904974af2838aeedf336b1afe66ad17f; output-bytes=72
+- [ ] G10: Admin végigpróbálva Playwrighttal (fájl-driver): esemény létrehozás kiemeltként + jelentkezés nyitva → a főoldalon kiemelt blokkban jelenik meg; nyilvános jelentkezés → megjelenik az /admin/jelentkezesek listában a létszámmal; PDF-beszámoló feltöltés → megjelenik az /egyesulet lapon; hero-kép csere adminból → a főoldal új képet ad; takarítás után a tartalom visszaáll
+  CHECK: BASE_URL=http://localhost:3012 node scripts/admin-flow.mjs
+  EXPECT: ADMIN_FLOW_OK
+
+- [ ] G11: Lighthouse mobil Performance ≥ 85 és Accessibility ≥ 95 a főoldalon (production build)
+  CHECK: BASE_URL=http://localhost:3012 node scripts/verify.mjs lighthouse
+  EXPECT: PASS: lighthouse
+
+- [ ] G12: Vizuális review desktop (1440) és mobil (390): főoldal, egy aloldal, események, esemény-részletek jelentkezési űrlappal, admin; nincs vízszintes görgetés, a nyelvváltó a fejlécben mindkét nézetben elérhető, konzol hibamentes
+
+- [ ] G13: Élesben (Netlify, Blobs-driver): deploy után /, /en, /de, /egyesulet 200; admin-flow ugyanezt a kört a Blobs ellen végigfutja (esemény létrehozás → látszik → törlés), bizonyítva, hogy a tartalom Netlify-on is megmarad
+  CHECK: BASE_URL=https://gyurusi-menes-demo.netlify.app node scripts/admin-flow.mjs
+  EXPECT: ADMIN_FLOW_OK
+
+- [ ] G14: Git commit + push, graphify frissítve, projektmemória frissítve a kör eredményével és a nyitott ügyféladatokkal (tulajdonos telefonszáma, DNS, Resend kulcs, admin jelszó)
+  CHECK: git status --porcelain | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{if(s.trim()){console.log('DIRTY');process.exit(1)}console.log('CLEAN_TREE')})"
+  EXPECT: CLEAN_TREE

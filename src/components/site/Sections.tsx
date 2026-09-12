@@ -5,27 +5,30 @@ import { HeroIntro } from "./HeroIntro";
 import { HeroParallax } from "./HeroParallax";
 import { Photo } from "@/components/Photo";
 import { resolveImage, type ImageMeta } from "@/lib/images";
-import { formatDate, type Event, type News, type Program, type SiteContent } from "@/lib/store";
+import type { Dictionary, Lang } from "@/content/types";
+import { langPath } from "@/lib/paths";
+import { formatRange, formatDate, featuredEvent, upcoming, past, t, PAGE_KEYS, type Event, type SiteContent } from "@/lib/store";
 
-const Arrow = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
-
-const Kw = ({ children }: { children: React.ReactNode }) => <span className="kw">{children}<span aria-hidden="true" className="kw-line" /></span>;
+export const Arrow = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const tel = (p: string) => `tel:${p.replace(/\s/g, "")}`;
 
 export function Paragraphs({ text, className = "" }: { text: string; className?: string }) {
   return <>{text.split(/\n\s*\n/).map((p, i) => <p key={i} className={className}>{p}</p>)}</>;
 }
 
-function Img({ im, sizes, className = "", priority }: { im: ImageMeta | null; sizes: string; className?: string; priority?: boolean }) {
+export function Img({ im, sizes, className = "", priority }: { im: ImageMeta | null; sizes: string; className?: string; priority?: boolean }) {
   if (!im) return null;
   return <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes={sizes} quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} className={className} priority={priority} />;
 }
 
-/* ---------------- HERO ---------------- */
-export function Hero({ site }: { site: SiteContent }) {
+type P = { site: SiteContent; lang: Lang; d: Dictionary };
+
+/* ---------------- HERO (a kép az adminból cserélhető) ---------------- */
+export function Hero({ site, lang, d }: P) {
   const im = resolveImage(site.hero.image, site);
-  const lines = splitTitle(site.hero.title);
+  const lines = splitTitle(t(site.hero.title, lang));
   return (
-    <section id="top" className="hero on-dark" aria-label="Bevezető">
+    <section id="top" className="hero on-dark" aria-label={t(site.hero.title, lang)}>
       <HeroParallax>
         <div className="hero-media" data-layer="media">
           {im && <Image src={im.src} alt={im.alt} fill sizes="100vw" priority fetchPriority="high" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", objectPosition: "50% 45%", backgroundColor: im.color }} />}
@@ -33,228 +36,188 @@ export function Hero({ site }: { site: SiteContent }) {
         </div>
         <div className="wrap hero-in" data-layer="text">
           <HeroIntro>
-            <p className="caption hero-note" data-seq="first">Gyűrűs, Zala · a IX. Gyűrűsi Lovas Napok</p>
-            <h1 className="display">
-              {lines.map((l, i) => <span key={i} className="hero-line" data-sweep="#f3efe6">{l}{i < lines.length - 1 ? " " : ""}</span>)}
-            </h1>
-            <p className="lead hero-sub" data-seq>{site.hero.subtitle}</p>
+            <p className="caption hero-note" data-seq="first">{d.hero.note}</p>
+            <h1 className="display">{lines.map((l, i) => <span key={i} className="hero-line" data-sweep="#f3efe6">{l}{i < lines.length - 1 ? " " : ""}</span>)}</h1>
+            <p className="lead hero-sub" data-seq>{t(site.hero.subtitle, lang)}</p>
             <div className="hero-cta" id="hero-cta" data-seq>
-              <Link href="#programok" className="btn btn-light">Mit lehet nálunk csinálni <Arrow /></Link>
-              <Link href="#kapcsolat" className="btn btn-outline">Kapcsolat</Link>
+              <Link href={langPath(lang, "/esemenyek")} className="btn btn-light">{d.hero.ctaPrimary} <Arrow /></Link>
+              <Link href="#kapcsolat" className="btn btn-outline">{d.hero.ctaSecondary}</Link>
             </div>
           </HeroIntro>
         </div>
       </HeroParallax>
-      <p className="hero-scroll" aria-hidden="true">Görgess</p>
+      <p className="hero-scroll" aria-hidden="true">{d.hero.scroll}</p>
     </section>
   );
 }
-
-/** A címsort két sorra bontjuk a söpréshez: az első ~felénél lévő szóköznél. */
-function splitTitle(t: string): string[] {
-  const words = t.split(" ");
-  if (words.length < 4) return [t];
+function splitTitle(tt: string): string[] {
+  const words = tt.split(" ");
+  if (words.length < 4) return [tt];
   const mid = Math.ceil(words.length / 2);
   return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
 }
 
-/* ---------------- GYORS VÁLASZOK ---------------- */
-export function QuickFacts() {
-  const facts = [
-    { k: "Hol", v: "Gyűrűs, Zala vármegye — zsákfalu Zalaegerszegtől északkeletre, a Zalai-dombság erdei között." },
-    { k: "Milyen lovak", v: "Hucul, gidrán és shagya arab. A hucul a lovasiskola alapja, a gidrán a tenyésztés büszkesége." },
-    { k: "Kinek", v: "Kezdő és haladó lovasoknak, gyerekeknek táborba, családoknak a lovas napokra, hucul-lovasoknak versenyre." },
-  ];
+/* ---------------- A TULAJDONOS — elöl ---------------- */
+export function Owner({ site, lang, d }: P) {
+  const o = site.owner;
+  const im = resolveImage(o.image, site);
   return (
-    <section className="section-tight" aria-label="Röviden">
-      <div className="wrap facts">
-        {facts.map((f, i) => (
-          <Reveal key={f.k} delay={i * 70} className="fact">
-            <p className="eyebrow">{f.k}</p>
-            <p>{f.v}</p>
+    <section id="tulajdonos" className="section owner" data-owner>
+      <div className="wrap owner-grid">
+        <Reveal variant="unveil" as="figure" className="photo owner-ph"><Img im={im} sizes="(max-width: 800px) 100vw, 50vw" /></Reveal>
+        <div className="owner-text">
+          <Reveal as="p" className="eyebrow">{d.owner.eyebrow}</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>{o.name}</Reveal>
+          <Reveal as="p" className="owner-role" delay={100}>{t(o.role, lang)}</Reveal>
+          <Reveal as="p" className="owner-note" delay={140}>{t(o.note, lang)}</Reveal>
+          <Reveal className="owner-actions" delay={200}>
+            {o.phone && <a href={tel(o.phone)} className="owner-big">{o.phone}</a>}
+            {o.email && <a href={`mailto:${o.email}`} className="btn btn-outline">{d.owner.write} <Arrow /></a>}
           </Reveal>
-        ))}
+        </div>
       </div>
     </section>
   );
 }
 
-/* ---------------- BEMUTATKOZÁS ---------------- */
-export function Intro({ site }: { site: SiteContent }) {
+/* ---------------- BEMUTATKOZÁS + fajták ---------------- */
+export function Intro({ site, lang, d }: P) {
   return (
     <section id="menes" className="section intro">
       <div className="wrap intro-grid">
         <div className="intro-text">
-          <Reveal as="p" className="eyebrow">{site.intro.eyebrow}</Reveal>
-          <Reveal as="h2" className="h1 mask" delay={60}>{site.intro.title}</Reveal>
-          <Reveal as="p" className="lead" delay={120}>{site.intro.lead}</Reveal>
-          <Reveal delay={180} className="intro-body"><Paragraphs text={site.intro.body} /></Reveal>
+          <Reveal as="p" className="eyebrow">{t(site.intro.eyebrow, lang)}</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>{t(site.intro.title, lang)}</Reveal>
+          <Reveal as="p" className="lead" delay={120}>{t(site.intro.lead, lang)}</Reveal>
+          <Reveal delay={180} className="intro-body"><Paragraphs text={t(site.intro.body, lang)} /></Reveal>
+          <Reveal delay={220} className="breed-strip">
+            {d.intro.breeds.map((b) => <div key={b.name}><p className="caption">{b.origin}</p><h3 className="h3">{b.name}</h3><p>{b.text}</p></div>)}
+          </Reveal>
         </div>
         <div className="intro-photos">
           <Reveal variant="unveil" as="figure" className="photo ph-a"><Photo id="csiko-portre" sizes="(max-width: 900px) 60vw, 360px" /></Reveal>
           <Reveal variant="unveil" as="figure" className="photo ph-b" delay={150}><Photo id="lo-es-no-bokeh" sizes="(max-width: 900px) 90vw, 520px" /></Reveal>
-          <p className="caption ph-cap">Csikó az istállóban · a ménes lovai</p>
+          <p className="caption ph-cap">{d.intro.photoCaption}</p>
         </div>
       </div>
     </section>
   );
 }
 
-/* ---------------- PROGRAMOK ---------------- */
-export function Programs({ site }: { site: SiteContent }) {
-  const items = site.programs.filter((p) => p.published).sort((a, b) => a.order - b.order);
+/* ---------------- ESEMÉNYEK a főoldalon: kiemelt nagyban + a következők ---------------- */
+export function EventCard({ e, site, lang, d, tag }: { e: Event; site: SiteContent; lang: Lang; d: Dictionary; tag: string }) {
+  const im = resolveImage(e.image, site);
   return (
-    <section id="programok" className="section on-bone-2">
-      <div className="wrap">
-        <div className="sec-head">
-          <Reveal as="p" className="eyebrow">Mit találsz nálunk</Reveal>
-          <Reveal as="h2" className="h1 mask" delay={60}>Lovaglás, túra, tábor — és az ösvény</Reveal>
-        </div>
-        <ul className="prog-grid" role="list">
-          {items.map((p: Program, i) => {
-            const im = resolveImage(p.image, site);
-            return (
-              <Reveal as="li" key={p.id} delay={(i % 3) * 80} className="prog">
-                <Link href={`/programok/${p.id}`} className="prog-link">
-                  <figure className="photo prog-ph"><Img im={im} sizes="(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 400px" /></figure>
-                  <div className="prog-body">
-                    <h3 className="h3">{p.title}</h3>
-                    {p.audience && <p className="note">{p.audience}</p>}
-                    <p className="prog-sum">{p.summary}</p>
-                    <span className="prog-more">Részletek <Arrow /></span>
-                  </div>
-                </Link>
-              </Reveal>
-            );
-          })}
-        </ul>
+    <Link href={langPath(lang, `/esemenyek/${e.id}`)} className="ev-feat" data-featured-event>
+      <figure className="photo ev-feat-ph"><Img im={im} sizes="(max-width: 800px) 100vw, 55vw" /></figure>
+      <div className="ev-feat-body">
+        <span className="ev-feat-tag">{tag}</span>
+        <p className="caption">{formatRange(e, lang)}{e.location ? ` · ${e.location}` : ""}</p>
+        <h3 className="h2">{t(e.title, lang)}</h3>
+        <p className="lead">{t(e.summary, lang)}</p>
+        <span className="btn btn-primary">{e.registration ? d.events.register : d.events.details} <Arrow /></span>
       </div>
-    </section>
+    </Link>
   );
 }
 
-/* ---------------- HUCULÖSVÉNY ---------------- */
-export function Trail() {
+export function EventList({ list, lang, d, pastList = false }: { list: Event[]; lang: Lang; d: Dictionary; pastList?: boolean }) {
   return (
-    <section id="huculosveny" className="trail on-dark">
-      <div className="trail-media">
-        <Reveal variant="unveil" as="figure" className="trail-ph parallax"><Photo id="osveny-ugras-gyuru" sizes="(max-width: 900px) 100vw, 55vw" /></Reveal>
-      </div>
-      <div className="trail-text">
-        <Reveal as="p" className="eyebrow">Huculösvény</Reveal>
-        <Reveal as="h2" className="h1 mask" delay={60}>Nem pálya. Ösvény.</Reveal>
-        <Reveal as="p" className="lead" delay={120}>A huculösvény <Kw>terepen vezetett</Kw> teljesítménypróba hucul lovaknak: néhány száz métertől kilométerekig tartó út, tizenkettőtől huszonöt akadállyal — híd, vizesárok, palló, kapunyitás, meredek emelkedő és lejtő —, <Kw>időnormával és pontozással</Kw>.</Reveal>
-        <Reveal delay={180}>
-          <p>Azt méri, amiért a hucult évszázadokon át tenyésztették: a nyugodt idegrendszert, a biztos lábat és a lovas–ló páros összeszokottságát. Gyűrűsön 2017 óta rendezzük, kezdő, nyitott és sport kategóriában.</p>
-          <blockquote className="quote">
-            <p>„Sokkal inkább baráti környezetben folytatott kreatív ügyességi kihívásról vagy munkalovaglásról van szó, mint komoly sporttevékenységről, de pont ebben rejlik a varázsa.”</p>
-            <cite>Varga-Kovács Emese, a lovas napok főrendezője</cite>
-          </blockquote>
-          <Link href="/programok/huculosveny" className="btn btn-outline">Hogyan zajlik <Arrow /></Link>
-        </Reveal>
-      </div>
-    </section>
+    <ul className={`evc ${pastList ? "past" : ""}`} role="list">
+      {list.map((e) => (
+        <li key={e.id}>
+          <Link href={langPath(lang, `/esemenyek/${e.id}`)}>
+            <span className="evc-date"><b>{e.date.slice(8).replace(/^0/, "")}</b><span>{formatDate(e.date, lang, { month: "short", year: pastList ? "numeric" : undefined })}</span></span>
+            <span>
+              <h3 className="evc-title">{t(e.title, lang)}{e.registration && !pastList && <span className="evc-reg">{d.events.register}</span>}</h3>
+              <p className="evc-sum">{t(e.summary, lang)}</p>
+              {e.location && <p className="evc-meta">{e.location}</p>}
+            </span>
+            <Arrow />
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
-/* ---------------- LOVAK / FAJTÁK ---------------- */
-export function Breeds() {
-  const breeds = [
-    { name: "Hucul", origin: "Kárpátok", photo: "hucul-fej-gyerek", text: "Alacsony, zömök hegyi ló, nyugodt idegrendszerrel és biztos lábbal. Nálunk 1999 óta — ő a lovasiskola és az ösvény lova." },
-    { name: "Gidrán", origin: "Mezőhegyes", photo: "pej-lo-vezetve", text: "A sárga színéről ismert magyar félvér. A ménes tenyésztésének gerince, vérvonalak megőrzésével." },
-    { name: "Shagya arab", origin: "Bábolna", photo: "feher-lo-szabadon", text: "A magyar arab tenyésztés fajtája: nemes, kitartó, sokoldalú." },
-  ];
-  return (
-    <section id="lovak" className="section">
-      <div className="wrap">
-        <div className="sec-head">
-          <Reveal as="p" className="eyebrow">Milyen lovakkal találkozol</Reveal>
-          <Reveal as="h2" className="h1 mask" delay={60}>Három fajta, egy ménes</Reveal>
-        </div>
-        <ul className="breeds" role="list">
-          {breeds.map((b, i) => (
-            <Reveal as="li" key={b.name} delay={i * 90} className="breed">
-              <figure className="photo breed-ph parallax"><Photo id={b.photo} sizes="(max-width: 640px) 100vw, 33vw" /></figure>
-              <p className="caption">{b.origin}</p>
-              <h3 className="h3">{b.name}</h3>
-              <p>{b.text}</p>
-            </Reveal>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-/* ---------------- ESEMÉNYEK ---------------- */
-export function Events({ site, upcomingList, pastList }: { site: SiteContent; upcomingList: Event[]; pastList: Event[] }) {
-  const news = site.news.filter((n) => n.published).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2);
-  const nextEv = upcomingList[0];
-  const lead = nextEv ?? pastList[0];
-  const im = lead ? resolveImage(lead.image, site) : null;
+export function EventsHome({ site, lang, d }: P) {
+  const feat = featuredEvent(site.events);
+  const up = upcoming(site.events).filter((e) => e.id !== feat?.id).slice(0, 3);
+  const last = past(site.events)[0];
   return (
     <section id="esemenyek" className="section on-bone-2">
       <div className="wrap">
         <div className="sec-head">
-          <Reveal as="p" className="eyebrow">{nextEv ? "Következő esemény" : "Legutóbbi esemény"}</Reveal>
-          <Reveal as="h2" className="h1 mask" delay={60}>{nextEv ? "Ide várunk legközelebb" : "A Gyűrűsi Lovas Napok"}</Reveal>
+          <Reveal as="p" className="eyebrow">{d.events.eyebrow}</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>{feat ? (feat.featured ? d.events.featured : d.events.next) : d.events.title}</Reveal>
         </div>
-        {lead && (
-          <Reveal className="ev-lead">
-            <Link href={`/esemenyek/${lead.id}`} className="ev-lead-link">
-              <figure className="photo ev-lead-ph"><Img im={im} sizes="(max-width: 900px) 100vw, 60vw" /></figure>
-              <div className="ev-lead-body">
-                <p className="caption">{formatDate(lead.date)}{lead.endDate ? ` – ${formatDate(lead.endDate, { day: "numeric" })}` : ""}{lead.location ? ` · ${lead.location}` : ""}</p>
-                <h3 className="h2">{lead.title}</h3>
-                <p className="lead">{lead.summary}</p>
-                <span className="btn btn-primary">Részletek <Arrow /></span>
-              </div>
-            </Link>
-          </Reveal>
-        )}
-        {!nextEv && (
-          <Reveal as="p" className="note ev-next-note" delay={100}>A következő időpontot itt jelezzük, amint kitűztük. Addig kövess minket Facebookon, vagy írj nekünk.</Reveal>
-        )}
-        <div className="ev-rest">
-          <div>
-            <p className="eyebrow">Korábbi lovas napok</p>
-            <ul className="ev-list" role="list">
-              {pastList.filter((e) => e.id !== lead?.id).slice(0, 4).map((e: Event) => (
-                <li key={e.id}><Link href={`/esemenyek/${e.id}`}><span className="tabular ev-date">{e.date.slice(0, 4)}</span><span>{e.title}</span><Arrow /></Link></li>
-              ))}
-            </ul>
-          </div>
-          {news.length > 0 && (
-            <div>
-              <p className="eyebrow">Hírek</p>
-              <ul className="ev-list" role="list">
-                {news.map((n: News) => (
-                  <li key={n.id}><Link href={`/hirek/${n.id}`}><span className="tabular ev-date">{formatDate(n.date, { month: "short", day: "numeric" })}</span><span>{n.title}</span><Arrow /></Link></li>
-                ))}
-              </ul>
-            </div>
-          )}
+        {feat ? <Reveal><EventCard e={feat} site={site} lang={lang} d={d} tag={feat.featured ? d.events.featured : d.events.next} /></Reveal>
+          : <>
+            <Reveal as="p" className="lead ev-next-note">{d.events.none}</Reveal>
+            {last && <Reveal delay={80}><EventCard e={last} site={site} lang={lang} d={d} tag={d.events.pastEvent} /></Reveal>}
+          </>}
+        {up.length > 0 && <Reveal delay={100} className="ev-section"><p className="eyebrow" style={{ marginBottom: 12 }}>{d.events.upcoming}</p><EventList list={up} lang={lang} d={d} /></Reveal>}
+        <Reveal delay={120} className="ev-section"><Link href={langPath(lang, "/esemenyek")} className="btn btn-outline">{d.events.all} <Arrow /></Link></Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- CSEMPÉK: az öt aloldal ---------------- */
+export function Tiles({ site, lang, d }: P) {
+  return (
+    <section id="aloldalak" className="section">
+      <div className="wrap">
+        <div className="sec-head">
+          <Reveal as="p" className="eyebrow">{d.tiles.eyebrow}</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>{d.tiles.title}</Reveal>
+        </div>
+        <div className="tiles">
+          {PAGE_KEYS.map((k, i) => {
+            const p = site.pages[k]; const im = resolveImage(p.images[0], site);
+            return (
+              <Reveal as="div" key={k} delay={(i % 3) * 80} className="tile-wrap">
+                <Link href={langPath(lang, `/${k}`)} className="tile-card">
+                  <figure className="photo tile-ph"><Img im={im} sizes="(max-width: 560px) 100vw, (max-width: 960px) 50vw, 33vw" /></figure>
+                  <div className="tile-body"><h3 className="h3">{t(p.title, lang)}</h3><p>{t(p.lead, lang)}</p><span className="tile-more">{d.tiles.more} <Arrow /></span></div>
+                </Link>
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-/* ---------------- KAPCSOLAT ---------------- */
-export function ContactBlock({ site, form }: { site: SiteContent; form: React.ReactNode }) {
-  const c = site.contact;
+/* ---------------- KAPCSOLAT: a tulajdonos kártyája ELÖL, aztán a kapcsolattartó, jobbra az űrlap ---------------- */
+export function ContactBlock({ site, lang, d, form }: P & { form: React.ReactNode }) {
+  const c = site.contact, o = site.owner;
   return (
     <section id="kapcsolat" className="section contact">
       <div className="wrap contact-grid">
         <div>
-          <Reveal as="p" className="eyebrow">Kapcsolat</Reveal>
-          <Reveal as="h2" className="h1 mask" delay={60}>Gyere ki Gyűrűsre</Reveal>
-          <Reveal as="p" className="lead" delay={120}>{c.note}</Reveal>
-          <Reveal delay={180} className="contact-data">
-            <p><span className="eyebrow">Telefon</span><a href={`tel:${c.phone.replace(/\s/g, "")}`} className="contact-big">{c.phone}</a></p>
-            <p><span className="eyebrow">E-mail</span><a href={`mailto:${c.email}`} className="contact-big">{c.email}</a></p>
-            <p><span className="eyebrow">Cím</span><span>{c.address}{c.mapUrl && <> · <a href={c.mapUrl} className="link" target="_blank" rel="noopener">térkép</a></>}</span></p>
-            <p><span className="eyebrow">Kapcsolattartó</span><span>Varga-Kovács Emese</span></p>
+          <Reveal as="p" className="eyebrow">{d.contact.eyebrow}</Reveal>
+          <Reveal as="h2" className="h1 mask" delay={60}>{d.contact.title}</Reveal>
+          <Reveal as="p" className="lead" delay={120}>{t(c.note, lang)}</Reveal>
+          <Reveal delay={180} className="contact-cards">
+            <div className="contact-card owner-card" data-owner>
+              <p className="eyebrow">{d.contact.ownerFirst}</p>
+              <p className="cc-name">{o.name}</p>
+              <p className="cc-role">{t(o.role, lang)}</p>
+              <p className="cc-note">{t(o.note, lang)}</p>
+              {o.phone && <span className="cc-line"><span className="eyebrow">{d.contact.phone}</span> <a href={tel(o.phone)}>{o.phone}</a></span>}
+              {o.email && <span className="cc-line"><span className="eyebrow">{d.contact.email}</span> <a href={`mailto:${o.email}`}>{o.email}</a></span>}
+            </div>
+            <div className="contact-card">
+              <p className="eyebrow">{d.contact.generalTitle}</p>
+              <p className="cc-name">{c.person}</p>
+              <p className="cc-role">{d.contact.contactPerson}</p>
+              <span className="cc-line"><span className="eyebrow">{d.contact.phone}</span> <a href={tel(c.phone)}>{c.phone}</a></span>
+              <span className="cc-line"><span className="eyebrow">{d.contact.email}</span> <a href={`mailto:${c.email}`}>{c.email}</a></span>
+              <span className="cc-line"><span className="eyebrow">{d.contact.addressLabel}</span> {c.address}{c.mapUrl && <> · <a href={c.mapUrl} className="link" target="_blank" rel="noopener">{d.contact.map}</a></>}</span>
+            </div>
           </Reveal>
         </div>
         <Reveal delay={120} className="contact-form">{form}</Reveal>
