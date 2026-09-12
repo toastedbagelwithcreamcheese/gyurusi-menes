@@ -14,9 +14,10 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   EXPECT: TSC_OK
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=d018f66bb24b65f8f3c86936c97cc0c033c796f2f7b335753a186d3d2c5818a4; output-bytes=7
 
-- [ ] G3: ESLint hibamentes
+- [x] G3: ESLint hibamentes
   CHECK: npm run lint && echo LINT_OK
   EXPECT: LINT_OK
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=fef1998fdb610a910f5d80fa66c0bb36f27e7937385d20f502b3148773c9ae42; output-bytes=46
 
 - [x] G4: Kurált, optimalizált képkészlet alt szövegekkel, méretkorláton belül
   CHECK: node scripts/verify.mjs images
@@ -43,17 +44,20 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   EXPECT: PASS: no-gallery
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=e12eafb02e74c3671b363d5dfb27321a0f49c13a7e131eafc019901a7d3a1bac; output-bytes=17
 
-- [ ] G9: Futó oldal (fájl-driver): / /en /de 200 helyes lang-attribútummal; /hu → 308 /; Accept-Language: de a gyökéren → 302 /de, robot UA → 200 magyar; mind az 5 aloldal ×3 nyelv 200; /esemenyek és egy esemény 200; admin lapok 200; /api/contact és /api/register validál és tárol; a tulajdonos neve minden lapon a kapcsolattartó előtt áll; minden aloldalon saját kapcsolati blokk; egy H1; robots/sitemap
+- [x] G9: Futó oldal (fájl-driver): / /en /de 200 helyes lang-attribútummal; /hu → 308 /; Accept-Language: de a gyökéren → 302 /de, robot UA → 200 magyar; mind az 5 aloldal ×3 nyelv 200; /esemenyek és egy esemény 200; admin lapok 200; /api/contact és /api/register validál és tárol; a tulajdonos neve minden lapon a kapcsolattartó előtt áll; minden aloldalon saját kapcsolati blokk; egy H1; robots/sitemap
   CHECK: node scripts/with-server.mjs node scripts/verify.mjs http
   EXPECT: PASS: http
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=7a14731f1c6ef747ab50fcc74f37ab4cf023d6dadb12ba1612e2e66dc62efb70; output-bytes=292
 
-- [ ] G10: Admin végigpróbálva Playwrighttal (fájl-driver): esemény létrehozás kiemeltként + jelentkezés nyitva → a főoldalon kiemelt blokkban jelenik meg; nyilvános jelentkezés → megjelenik az /admin/jelentkezesek listában a létszámmal; PDF-beszámoló feltöltés → megjelenik az /egyesulet lapon; hero-kép csere adminból → a főoldal új képet ad; takarítás után a tartalom visszaáll
+- [x] G10: Admin végigpróbálva Playwrighttal (fájl-driver): esemény létrehozás kiemeltként + jelentkezés nyitva → a főoldalon kiemelt blokkban jelenik meg; nyilvános jelentkezés → megjelenik az /admin/jelentkezesek listában a létszámmal; PDF-beszámoló feltöltés → megjelenik az /egyesulet lapon; hero-kép csere adminból → a főoldal új képet ad; takarítás után a tartalom visszaáll
   CHECK: node scripts/with-server.mjs node scripts/admin-flow.mjs
   EXPECT: ADMIN_FLOW_OK
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=f3fbd62ff78e06be06180c5de925977bda8210e127c5394ba60934fb165362b1; output-bytes=547
 
-- [ ] G11: Lighthouse mobil Performance ≥ 85 és Accessibility ≥ 95 a főoldalon (production build)
+- [x] G11: Lighthouse mobil Performance ≥ 85 és Accessibility ≥ 95 a főoldalon (production build)
   CHECK: node scripts/with-server.mjs node scripts/verify.mjs lighthouse
   EXPECT: PASS: lighthouse
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=5b0ae3d9211857d7fa3bb4962f67c56188d0cd9b85581b9a602af9090b916fe3; output-bytes=289
 
 - [x] G12: Vizuális review desktop és mobil nézetben (Playwright-képek, scripts/shots.mjs): főoldal, egy aloldal, események, esemény-részletek jelentkezési űrlappal, admin; nincs vízszintes görgetés, a nyelvváltó a fejlécben mindkét nézetben elérhető, konzol hibamentes
   EVIDENCE: scripts/shots.mjs → scratchpad/shots (17 kép, 1440×900 és 390×844): d-/m-home, turak, egyesulet, esemenyek, esemeny, home-en, admin, admin-oldal, m-menu. scrollWidth = innerWidth minden lapon mindkét nézetben (1440/1440, 390/390); konzol-hiba: 0 / 0. Megnézve: főoldal (hero, tulajdonos-blokk, bemutatkozás + fajta-sáv, kiemelt/legutóbbi esemény, 5 csempe, kapcsolat tulajdonos-kártyával elöl), Túrák (képfej, szöveg, képsáv, saját kapcsolat, kapcsolódó), Egyesület (beszámoló-blokk üres állapota), Eseménynaptár, eseményoldal (tények + kapcsolat + kapcsolódó), admin áttekintés, mobil menü a Magyar/English/Deutsch pillekkel (az első képen a menü-stílus rácsúszott a nyelvváltóra — javítva, újra ellenőrizve). A jelentkezési űrlapot a G10/G13 admin-körút tölti ki és küldi el (data-registration blokk, [role=status] visszajelzés).
@@ -63,6 +67,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   EXPECT: ADMIN_FLOW_OK
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=0cf6c1639279d5a2414a5c95b9ada58586712a007b464db1738a1b6d760b4ea5; output-bytes=443
 
-- [ ] G14: Git commit + push, graphify frissítve, projektmemória frissítve a kör eredményével és a nyitott ügyféladatokkal (tulajdonos telefonszáma, DNS, Resend kulcs, admin jelszó)
+- [x] G14: Git commit + push, graphify frissítve, projektmemória frissítve a kör eredményével és a nyitott ügyféladatokkal (tulajdonos telefonszáma, DNS, Resend kulcs, admin jelszó)
   CHECK: git status --porcelain | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const l=s.split('\n').filter(x=>x.trim()&&!/GATES\.md$/.test(x));if(l.length){console.log('DIRTY',l.join(' | '));process.exit(1)}console.log('CLEAN_TREE')})"
   EXPECT: CLEAN_TREE
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=8cf979e8ed5c515aecd197784536d132b1aa9f4555c00da6fba4a83ae986d75f; output-bytes=11
