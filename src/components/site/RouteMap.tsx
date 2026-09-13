@@ -36,7 +36,7 @@ export function RouteMap({ d }: { d: Dictionary["route"] }) {
         <Reveal as="p" className="lead" delay={100}>{d.lead}</Reveal>
       </div>
       <Reveal className="route-map" delay={120}>
-        <svg viewBox="30 90 900 450" role="img" aria-label={d.title} preserveAspectRatio="xMidYMid meet">
+        <svg viewBox="20 90 940 450" role="img" aria-label={d.title} preserveAspectRatio="xMidYMid meet">
           <defs>
             <pattern id="rm-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="rgb(29 27 23 / 0.05)" strokeWidth="1" /></pattern>
             <filter id="rm-soft"><feGaussianBlur stdDeviation="14" /></filter>
@@ -50,7 +50,8 @@ export function RouteMap({ d }: { d: Dictionary["route"] }) {
           {ROUTES.map((r) => <path key={`${r.key}-s`} d={r.d} fill="none" stroke="rgb(247 244 238 / 0.9)" strokeWidth="1.5" strokeDasharray="10 12" strokeLinecap="round" className="route-line route-line-dash" style={{ strokeDasharray: `10 12`, opacity: 0 }} />)}
           {[["forest", 295, 138], ["ridge", 862, 178], ["long", 96, 462]].map(([k, x, y]) => {
             const r = ROUTES.find((q) => q.key === k)!; const i = ROUTES.indexOf(r);
-            return <g key={String(k)} className="route-label" style={{ transitionDelay: `${900 + i * 250}ms` }}><circle className="route-dot" cx={Number(x)} cy={Number(y)} r="7" fill={r.color} stroke="var(--color-bone)" strokeWidth="3" /><text className="route-txt" x={Number(x) + 14} y={Number(y) + 5} fontSize="15" fontWeight="600" fill="var(--color-ink)">{d.legend[i].name}</text></g>;
+            const left = k === "ridge"; /* a jobb szélen álló jelölő felirata balra kerül, hogy ne lógjon ki */
+            return <g key={String(k)} className="route-label" style={{ transitionDelay: `${900 + i * 250}ms` }}><circle className="route-dot" cx={Number(x)} cy={Number(y)} r="7" fill={r.color} stroke="var(--color-bone)" strokeWidth="3" /><text className="route-txt" x={Number(x) + (left ? -14 : 14)} y={Number(y) + 5} fontSize="15" fontWeight="600" fill="var(--color-ink)" textAnchor={left ? "end" : "start"}>{d.legend[i].name}</text></g>;
           })}
           <g className="route-start">
             <circle cx="430" cy="335" r="26" fill="var(--color-forest)" opacity="0.18" className="route-pulse" />
@@ -58,7 +59,7 @@ export function RouteMap({ d }: { d: Dictionary["route"] }) {
             <text className="route-txt" x="446" y="322" fontSize="15" fontWeight="600" fill="var(--color-forest)">{d.start}</text>
             <text className="route-txt-sm" x="446" y="342" fontSize="12" fill="var(--color-dust)">8932 Gyűrűs</text>
           </g>
-          <g className="route-txt-sm" fontSize="11" fill="var(--color-dust)" letterSpacing="2"><text x="46" y="524">N ↑</text><text x="914" y="524" textAnchor="end">ZALAI-DOMBSÁG</text></g>
+          <g className="route-txt-sm" fontSize="11" fill="var(--color-dust)" letterSpacing="2"><text x="40" y="524">N ↑</text><text x="944" y="524" textAnchor="end">ZALAI-DOMBSÁG</text></g>
         </svg>
       </Reveal>
       <div className="route-legend">

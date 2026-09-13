@@ -829,9 +829,9 @@ main.sub { padding-top: 0; }
 main.sub > .sub-head:first-child, main.sub > .legal:first-child { padding-top: calc(var(--header-h) + clamp(40px, 6vw, 72px)); }
 
 /* Túratérkép: mobilon a teljes térkép látszik, kifutó szélekkel, nagyobb feliratokkal */
-.route-map { aspect-ratio: 900 / 450; }
+.route-map { aspect-ratio: 940 / 450; }
 @media (max-width: 720px) {
-  .route-map { aspect-ratio: 900 / 450; margin-inline: calc(-1 * var(--pad)); border-radius: 0; }
+  .route-map { aspect-ratio: 940 / 450; margin-inline: calc(-1 * var(--pad)); border-radius: 0; }
   .route-map .route-txt { font-size: 26px; }
   .route-map .route-txt-sm { font-size: 20px; }
   .route-map .route-dot { r: 11px; stroke-width: 4px; }
