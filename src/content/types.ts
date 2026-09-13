@@ -31,7 +31,7 @@ export interface Dictionary {
   tiles: { eyebrow: string; title: string; more: string };
   contact: {
     eyebrow: string; title: string; ownerFirst: string; generalTitle: string; phone: string; email: string; addressLabel: string; map: string; contactPerson: string;
-    sub: { title: string; note: string; write: string; call: string };
+    sub: { title: string; note: string; write: string; call: string; formTitle: string; formLead: string; pageRef: string };
   };
   form: {
     name: string; email: string; phone: string; phoneOptional: string; message: string; messagePh: string; send: string; sending: string;
@@ -42,7 +42,10 @@ export interface Dictionary {
     send: string; sending: string; okTitle: string; okBody: string; err: string; closed: string;
   };
   reports: { eyebrow: string; title: string; lead: string; none: string; open: string; size: string };
-  footer: { blurb: string; contact: string; follow: string; admin: string; owner: string };
+  footer: { blurb: string; contact: string; follow: string; admin: string; owner: string; tagline: string; taglineAccent: string; cta: string; colPages: string; colInfo: string; privacy: string; imprint: string; rights: string; credit: string; madeIn: string; events: string };
+  zoom: { open: string; close: string; prev: string; next: string; of: string };
+  route: { eyebrow: string; title: string; lead: string; note: string; start: string; legend: { name: string; text: string }[] };
+  legal: { privacyTitle: string; imprintTitle: string; operator: string; person: string; address: string; email: string; phone: string; taxId: string; regNo: string; hosting: string; updated: string };
   notFound: { eyebrow: string; title: string; body: string; back: string };
   months: string;
 }

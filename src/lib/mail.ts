@@ -18,11 +18,11 @@ async function send(payload: { to: string[]; subject: string; text: string; repl
   return { sent: true };
 }
 
-export async function sendContactMail(input: { name: string; email: string; phone?: string; message: string }): Promise<Result> {
+export async function sendContactMail(input: { name: string; email: string; phone?: string; message: string; page?: string }): Promise<Result> {
   const to = process.env.CONTACT_TO;
   if (!to) return { sent: false, reason: "CONTACT_TO hiányzik" };
-  const text = `Név: ${input.name}\nE-mail: ${input.email}\nTelefon: ${input.phone || "-"}\n\n${input.message}`;
-  return send({ to: [to], reply_to: input.email, subject: `Új üzenet a weboldalról – ${input.name}`, text });
+  const text = `Név: ${input.name}\nE-mail: ${input.email}\nTelefon: ${input.phone || "-"}\nHonnan: ${input.page || "főoldal"}\n\n${input.message}`;
+  return send({ to: [to], reply_to: input.email, subject: `Új üzenet a weboldalról${input.page ? ` (${input.page})` : ""} – ${input.name}`, text });
 }
 
 export async function sendRegistrationMail(input: { eventTitle: string; when: string; name: string; phone: string; email?: string; count: number; note?: string }): Promise<Result> {

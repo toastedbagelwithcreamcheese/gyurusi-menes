@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, error: "Hibás kérés." }, { status: 400 }); }
 
   if (body.website) return NextResponse.json({ ok: true }); // honeypot – csendben elnyeljük
-  const name = (body.name ?? "").trim(), email = (body.email ?? "").trim(), phone = (body.phone ?? "").trim(), message = (body.message ?? "").trim();
+  const name = (body.name ?? "").trim(), email = (body.email ?? "").trim(), phone = (body.phone ?? "").trim(), message = (body.message ?? "").trim(), page = (body.page ?? "").trim().slice(0, 80);
   if (name.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || message.length < 10)
     return NextResponse.json({ ok: false, error: "Kérjük, add meg a neved, egy érvényes e-mail-címet és az üzeneted." }, { status: 400 });
 
@@ -22,10 +22,10 @@ export async function POST(req: Request) {
      akkor az e-mail viszi; ha egyik sem sikerül, ezt megmondjuk a látogatónak. */
   let stored = false;
   try {
-    await writeSite((site) => { site.messages.unshift({ id: uid(), name, email, phone: phone || undefined, message, receivedAt: new Date().toISOString(), read: false }); });
+    await writeSite((site) => { site.messages.unshift({ id: uid(), name, email, phone: phone || undefined, message, page: page || undefined, receivedAt: new Date().toISOString(), read: false }); });
     stored = true;
   } catch (e) { console.warn("[contact] nem tudtam fájlba menteni:", e instanceof Error ? e.message : e); }
-  const mail = await sendContactMail({ name, email, phone, message });
+  const mail = await sendContactMail({ name, email, phone, message, page });
   if (!mail.sent) console.warn("[contact] e-mail nem ment ki:", mail.reason);
   if (!stored && !mail.sent) {
     console.error("[contact] ELVESZETT ÜZENET:", { name, email, phone, message });

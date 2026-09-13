@@ -134,6 +134,17 @@ export async function deleteReport(fd: FormData) {
   refresh();
 }
 
+/* ---------- Jogi oldalak ---------- */
+export async function saveLegal(fd: FormData) {
+  await writeSite((site) => {
+    site.legal = {
+      imprint: { operator: s(fd, "imprint.operator"), person: s(fd, "imprint.person"), address: s(fd, "imprint.address"), email: s(fd, "imprint.email"), phone: s(fd, "imprint.phone"), taxId: s(fd, "imprint.taxId"), regNo: s(fd, "imprint.regNo"), hosting: s(fd, "imprint.hosting") },
+      privacy: lf(fd, "privacy"),
+    };
+  });
+  refresh();
+}
+
 /* ---------- Üzenetek ---------- */
 export async function markRead(fd: FormData) {
   const id = s(fd, "id");

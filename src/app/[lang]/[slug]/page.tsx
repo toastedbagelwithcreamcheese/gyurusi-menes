@@ -9,6 +9,7 @@ import { SubPage } from "@/components/site/SubPage";
 import { Paragraphs } from "@/components/site/Sections";
 import { Reveal } from "@/components/Reveal";
 import { fileUrl } from "@/lib/files";
+import { RouteMap } from "@/components/site/RouteMap";
 
 type P = { params: Promise<{ lang: string; slug: string }> };
 
@@ -33,6 +34,7 @@ export default async function ContentPage({ params }: P) {
   const related = PAGE_KEYS.filter((k) => k !== slug).slice(0, 3).map((k) => ({ href: langPath(lang, `/${k}`), title: t(site.pages[k].title, lang), image: site.pages[k].images[0] }));
 
   let after: React.ReactNode = null;
+  if (slug === "turak") after = <RouteMap d={d.route} />;
   if (slug === "egyesulet") {
     const reports = site.reports.filter((r) => r.published).sort((a, b) => b.date.localeCompare(a.date));
     const years = [...new Set(reports.map((r) => r.year))].sort((a, b) => b - a);

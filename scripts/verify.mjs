@@ -23,7 +23,7 @@ if (which === "images") {
   if (total > 8 * 1024 * 1024) fail(`összes ${(total/1024/1024).toFixed(1)} MB > 8 MB`);
   const manifest = await readJson("src/content/photos.json");
   for (const k of Object.keys(manifest)) if (!manifest[k].alt || manifest[k].alt.length < 12) fail(`hiányzó/rövid alt: ${k}`);
-  const site = await readJson("data/site.json");
+  const site = await readJson("data/seed.json");
   const ids = new Set([...Object.keys(manifest), ...site.uploads.map((u) => u.id)]);
   const used = [site.hero.image, site.owner.image, ...Object.values(site.pages).flatMap((p) => p.images), ...site.events.map((e) => e.image)].filter(Boolean);
   for (const id of used) if (!ids.has(id)) fail(`a tartalom nem létező képre hivatkozik: ${id}`);
@@ -32,7 +32,7 @@ if (which === "images") {
 }
 
 if (which === "content-no-fabrication") {
-  const site = await readJson("data/site.json");
+  const site = await readJson("data/seed.json");
   const verified = await readJson("docs/verified-facts.json");
   const text = JSON.stringify(site);
   for (const pattern of verified.forbiddenPatterns) {
@@ -48,7 +48,7 @@ if (which === "content-no-fabrication") {
 }
 
 if (which === "i18n") {
-  const site = await readJson("data/site.json");
+  const site = await readJson("data/seed.json");
   let n = 0; const missing = [];
   const walk = (v, p) => {
     if (v && typeof v === "object" && !Array.isArray(v)) {
@@ -76,7 +76,7 @@ if (which === "css-motion") {
   if (/transition:\s*all\b/.test(css)) fail("transition: all a CSS-ben");
   if (!css.includes("prefers-reduced-motion")) fail("nincs prefers-reduced-motion");
   /* Osztály-lefedettség: az új komponensek osztályai tényleg ott vannak (egy rossz blokk-csere levághatja a fájl végét). */
-  const required = [".hdr-pill", ".hero-line", ".sub-contact", ".grain", ".lang ", ".owner-grid", ".tiles", ".tile-card", ".ev-feat", ".evc", ".reg-grid", ".rep-year", ".sub-strip", ".contact-card", ".breed-strip", ".mnav", ".dock"];
+  const required = [".hdr-pill", ".hero-line", ".sub-contact", ".grain", ".lang ", ".owner-grid", ".tiles", ".tile-card", ".ev-feat", ".evc", ".reg-grid", ".rep-year", ".sub-strip", ".contact-card", ".breed-strip", ".mnav", ".dock", ".sub-hero", ".zoom", ".route-map", ".sub-form", ".ev-grid", ".ftr2", ".legal-dl"];
   for (const c of required) if (!css.includes(c)) fail(`hiányzó osztály a globals.css-ből: ${c}`);
   for (const gone of [".lb ", ".gal ", ".marquee"]) if (css.includes(gone)) fail(`ott maradt a kivett blokk: ${gone}`);
   console.log(`${required.length} kötelező osztály megvan, a galéria/marquee CSS ki`);
@@ -93,7 +93,7 @@ if (which === "no-gallery") {
     }
   };
   await scan(path.join(ROOT, "src"));
-  const site = await readJson("data/site.json");
+  const site = await readJson("data/seed.json");
   if ("gallery" in site || "news" in site || "programs" in site) bad.push("site.json: gallery/news/programs kulcs");
   if (bad.length) fail(bad.join("; "));
   console.log("PASS: no-gallery");
@@ -136,7 +136,13 @@ if (which === "http") {
     ownerFirst(html, `${l}/${key}`);
     if (key === "egyesulet" && !html.includes("data-reports")) fail(`${l}/egyesulet: nincs beszámoló-blokk`);
     if (key === "taborok" && !html.includes("gyurus.lovastabor@gmail.com")) fail(`${l}/taborok: nem a tábor saját e-mailje áll a kapcsolatnál`);
+    must(html, ['data-page-form', 'data-contact-form="' + key + '"', 'data-zoom="0"', 'data-footer', 'data-credit'], `${l}/${key}`);
+    if (key === "turak" && !html.includes("data-route-map")) fail(`${l}/turak: nincs útvonaltérkép`);
   }
+  /* Jogi oldalak, lábléc-hivatkozásokkal */
+  for (const p of ["/adatkezeles", "/impresszum", "/de/impresszum"]) { const r = await get(p); if (r.status !== 200) fail(`${p} → ${r.status}`); }
+  const homeHtml = await (await get("/")).text();
+  must(homeHtml, ['href="/adatkezeles"', 'href="/impresszum"', "+36 30 872 3777", "data-tiles", "data-featured-event"], "/ lábléc + csempék + kiemelt esemény");
   /* Események */
   for (const l of ["", "/en", "/de"]) { const r = await get(`${l}/esemenyek`); if (r.status !== 200) fail(`${l}/esemenyek → ${r.status}`); }
   const ev = await get("/esemenyek/lovasnapok-2026"); if (ev.status !== 200) fail(`/esemenyek/lovasnapok-2026 → ${ev.status}`);

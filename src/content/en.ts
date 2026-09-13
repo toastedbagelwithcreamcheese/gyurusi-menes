@@ -25,7 +25,7 @@ export const en: Dictionary = {
   tiles: { eyebrow: "What you'll find here", title: "Riding, trails, camps — and the Hucul Trail", more: "Read more" },
   contact: {
     eyebrow: "Contact", title: "Come out to Gyűrűs", ownerFirst: "Stud matters", generalTitle: "Riding, trails, camps, events", phone: "Phone", email: "E-mail", addressLabel: "Address", map: "map", contactPerson: "Contact",
-    sub: { title: "Have a question?", note: "Call or write — we arrange times by prior appointment.", write: "Write to us", call: "Call" },
+    sub: { title: "Have a question?", note: "Call or write — we arrange times by prior appointment.", write: "Write to us", call: "Call", formTitle: "Write to us", formLead: "A question, a date, how many of you — tell us and we call or write back.", pageRef: "Which page you are writing from" },
   },
   form: { name: "Name", email: "E-mail", phone: "Phone", phoneOptional: "(optional)", message: "Message", messagePh: "When would you come, how many of you, what are you interested in?", send: "Send message", sending: "Sending…", okTitle: "We received your message.", okBody: "We'll reply soon. If it's urgent, call us.", err: "Could not send.", website: "Website" },
   reg: {
@@ -34,7 +34,10 @@ export const en: Dictionary = {
     send: "Send registration", sending: "Sending…", okTitle: "We received your registration.", okBody: "We'll call you shortly to arrange the details.", err: "Could not send.", closed: "Registration for this event is no longer open.",
   },
   reports: { eyebrow: "Association documents", title: "Reports", lead: "The association's annual reports and public-benefit statements, by year.", none: "No reports uploaded yet.", open: "Open (PDF)", size: "size" },
-  footer: { blurb: "Hucul, Gidran and Shagya Arabian stud in the hills of Zala, Hungary.", contact: "Contact", follow: "Follow us", admin: "Admin", owner: "Owner" },
+  footer: { blurb: "Hucul, Gidran and Shagya Arabian stud in the hills of Zala, Hungary.", contact: "Contact", follow: "Follow us", admin: "Admin", owner: "Owner", tagline: "Horses, hills, ", taglineAccent: "quiet.", cta: "Write to us", colPages: "At the stud", colInfo: "Information", privacy: "Privacy notice", imprint: "Imprint", rights: "All rights reserved.", credit: "Website designed and built by", madeIn: "Made with passion in Zalaegerszeg", events: "Events" },
+  zoom: { open: "Enlarge image", close: "Close", prev: "Previous image", next: "Next image", of: "/" },
+  route: { eyebrow: "Trail routes", title: "Where the rides go", lead: "Three typical loops from the stud: a short forest walk, a ridge route with views, and the long ride to the next valley.", note: "Illustration — maps of the exact, ridden routes are being uploaded.", start: "Gyűrűs stud", legend: [{ name: "Forest loop", text: "for beginners, short, on shaded forest tracks" }, { name: "Ridge", text: "with views of the village, for experienced riders" }, { name: "Long ride", text: "to the next valley, all morning" }] },
+  legal: { privacyTitle: "Privacy notice", imprintTitle: "Imprint", operator: "Operator", person: "Representative", address: "Address", email: "E-mail", phone: "Phone", taxId: "Tax number", regNo: "Registration number", hosting: "Hosting", updated: "Last updated" },
   notFound: { eyebrow: "404", title: "This page doesn't exist.", body: "It may have moved, or the address was mistyped.", back: "Back to the home page" },
   months: "en-GB",
 };

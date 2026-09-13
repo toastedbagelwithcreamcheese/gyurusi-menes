@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getStore } from "@netlify/blobs";
-import seedJson from "../../data/site.json";
+import seedJson from "../../data/seed.json";
 import type { Lang } from "@/content/types";
 
 /**
@@ -31,7 +31,9 @@ export type Event = {
 export type Registration = { id: string; eventId: string; name: string; phone: string; email?: string; count: number; note?: string; receivedAt: string };
 export type Report = { id: string; title: string; year: number; date: string; file: string; size: number; published: boolean };
 export type Upload = { id: string; src: string; width: number; height: number; alt: string; blur?: string; color?: string; uploadedAt: string };
-export type Message = { id: string; name: string; email: string; phone?: string; message: string; receivedAt: string; read: boolean };
+export type Message = { id: string; name: string; email: string; phone?: string; message: string; page?: string; receivedAt: string; read: boolean };
+export type Imprint = { operator: string; person: string; address: string; email: string; phone: string; taxId: string; regNo: string; hosting: string };
+export type Legal = { imprint: Imprint; privacy: L };
 
 export type SiteContent = {
   hero: { image: string; title: L; subtitle: L };
@@ -46,6 +48,7 @@ export type SiteContent = {
   reports: Report[];
   uploads: Upload[];
   messages: Message[];
+  legal: Legal;
 };
 
 const FILE = path.join(process.cwd(), "data/site.json");

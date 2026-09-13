@@ -12,6 +12,7 @@ const ITEMS = [
   { href: "/admin/beszamolok", label: "Beszámolók" },
   { href: "/admin/kepek", label: "Képek" },
   { href: "/admin/uzenetek", label: "Üzenetek" },
+  { href: "/admin/jogi", label: "Impresszum, adatkezelés" },
 ];
 
 export function AdminNav({ unread, regs }: { unread: number; regs: number }) {

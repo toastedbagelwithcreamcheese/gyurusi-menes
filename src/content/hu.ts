@@ -25,7 +25,7 @@ export const hu: Dictionary = {
   tiles: { eyebrow: "Mit találsz nálunk", title: "Lovaglás, túra, tábor — és az ösvény", more: "Tovább" },
   contact: {
     eyebrow: "Kapcsolat", title: "Gyere ki Gyűrűsre", ownerFirst: "A ménes ügyeiben", generalTitle: "Lovaglás, túra, tábor, események", phone: "Telefon", email: "E-mail", addressLabel: "Cím", map: "térkép", contactPerson: "Kapcsolattartó",
-    sub: { title: "Kérdésed van?", note: "Hívj, vagy írj — előzetes egyeztetéssel adunk időpontot.", write: "Üzenetet írok", call: "Hívás" },
+    sub: { title: "Kérdésed van?", note: "Hívj, vagy írj — előzetes egyeztetéssel adunk időpontot.", write: "Üzenetet írok", call: "Hívás", formTitle: "Írj nekünk", formLead: "Kérdés, időpont, létszám — írd meg, és visszahívunk vagy válaszolunk.", pageRef: "Melyik oldalról írsz" },
   },
   form: { name: "Név", email: "E-mail", phone: "Telefon", phoneOptional: "(nem kötelező)", message: "Üzenet", messagePh: "Mikor jönnétek, hányan, mi érdekel?", send: "Üzenet küldése", sending: "Küldés…", okTitle: "Megkaptuk az üzeneted.", okBody: "Hamarosan válaszolunk. Ha sürgős, hívj minket telefonon.", err: "Nem sikerült elküldeni.", website: "Weboldal" },
   reg: {
@@ -34,7 +34,10 @@ export const hu: Dictionary = {
     send: "Jelentkezés elküldése", sending: "Küldés…", okTitle: "Megkaptuk a jelentkezésed.", okBody: "Hamarosan telefonon keresünk, és mindent egyeztetünk.", err: "Nem sikerült elküldeni.", closed: "Erre az eseményre már nem lehet jelentkezni.",
   },
   reports: { eyebrow: "Egyesületi dokumentumok", title: "Beszámolók", lead: "Az egyesület éves beszámolói és közhasznúsági jelentései, évek szerint.", none: "Még nincs feltöltött beszámoló.", open: "Megnyitás (PDF)", size: "méret" },
-  footer: { blurb: "Hucul, gidrán és shagya arab ménes a zalai dombok között.", contact: "Elérhetőség", follow: "Kövess minket", admin: "Admin", owner: "Tulajdonos" },
+  footer: { blurb: "Hucul, gidrán és shagya arab ménes a zalai dombok között.", contact: "Elérhetőség", follow: "Kövess minket", admin: "Admin", owner: "Tulajdonos", tagline: "Lovak, dombok, ", taglineAccent: "csend.", cta: "Írj nekünk", colPages: "Nálunk", colInfo: "Információk", privacy: "Adatkezelési tájékoztató", imprint: "Impresszum", rights: "Minden jog fenntartva.", credit: "Weboldalt tervezte és fejlesztette", madeIn: "Készült szenvedéllyel Zalaegerszegen", events: "Események" },
+  zoom: { open: "Kép nagyítása", close: "Bezárás", prev: "Előző kép", next: "Következő kép", of: "/" },
+  route: { eyebrow: "Túraútvonalak", title: "Merre visznek a túrák", lead: "Három jellemző kör a ménestől: rövid erdei séta, dombháti út kilátással, és a hosszú túra a szomszéd völgybe.", note: "Illusztráció — a pontos, bejárt útvonalak térképei feltöltés alatt.", start: "Gyűrűsi Ménes", legend: [{ name: "Erdei kör", text: "kezdőknek, rövid, árnyékos erdei utakon" }, { name: "Dombhát", text: "kilátással a falura, gyakorlott lovasoknak" }, { name: "Hosszú túra", text: "a szomszéd völgyig, egész délelőtt" }] },
+  legal: { privacyTitle: "Adatkezelési tájékoztató", imprintTitle: "Impresszum", operator: "Üzemeltető", person: "Képviselő", address: "Cím", email: "E-mail", phone: "Telefon", taxId: "Adószám", regNo: "Nyilvántartási szám", hosting: "Tárhely", updated: "Utoljára frissítve" },
   notFound: { eyebrow: "404", title: "Ez az oldal nincs meg.", body: "Lehet, hogy elköltözött, vagy elgépelted a címet.", back: "Vissza a főoldalra" },
   months: "hu-HU",
 };

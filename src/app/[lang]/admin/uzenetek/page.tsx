@@ -11,7 +11,7 @@ export default async function MessagesAdmin() {
         <div className="list">{msgs.map((m) => (
           <article key={m.id} className={`msg ${m.read ? "" : "unread"}`}>
             <header>
-              <div><strong>{m.name}</strong> · <a className="link" href={`mailto:${m.email}`}>{m.email}</a>{m.phone && <> · {m.phone}</>}</div>
+              <div><strong>{m.name}</strong> · <a className="link" href={`mailto:${m.email}`}>{m.email}</a>{m.phone && <> · {m.phone}</>}{m.page && <> · <span className="pill pill-off">{m.page}</span></>}</div>
               <div className="note">{formatDateTime(m.receivedAt)}</div>
             </header>
             <pre>{m.message}</pre>

@@ -141,6 +141,27 @@ export function EventList({ list, lang, d, pastList = false }: { list: Event[]; 
   );
 }
 
+export function EventGrid({ list, site, lang, d }: { list: Event[]; site: SiteContent; lang: Lang; d: Dictionary }) {
+  return (
+    <ul className="ev-grid" role="list">
+      {list.map((e) => { const im = resolveImage(e.image, site); return (
+        <li key={e.id}>
+          <Link href={langPath(lang, `/esemenyek/${e.id}`)} className="ev-card">
+            <figure className="photo ev-card-ph">{im && <Image src={im.src} alt={im.alt} fill sizes="(max-width: 640px) 100vw, 33vw" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", backgroundColor: im.color }} />}
+              <span className="ev-card-date"><b>{e.date.slice(8).replace(/^0/, "")}</b><span>{formatDate(e.date, lang, { month: "short" })}</span></span>
+            </figure>
+            <span className="ev-card-body">
+              <span className="caption">{formatRange(e, lang)}{e.location ? ` · ${e.location}` : ""}</span>
+              <h3 className="h3">{t(e.title, lang)}</h3>
+              <p>{t(e.summary, lang)}</p>
+              <span className="tile-more">{e.registration ? d.events.register : d.events.details} <Arrow /></span>
+            </span>
+          </Link>
+        </li>); })}
+    </ul>
+  );
+}
+
 export function EventsHome({ site, lang, d }: P) {
   const feat = featuredEvent(site.events);
   const up = upcoming(site.events).filter((e) => e.id !== feat?.id).slice(0, 3);
@@ -157,14 +178,14 @@ export function EventsHome({ site, lang, d }: P) {
             <Reveal as="p" className="lead ev-next-note">{d.events.none}</Reveal>
             {last && <Reveal delay={80}><EventCard e={last} site={site} lang={lang} d={d} tag={d.events.pastEvent} /></Reveal>}
           </>}
-        {up.length > 0 && <Reveal delay={100} className="ev-section"><p className="eyebrow" style={{ marginBottom: 12 }}>{d.events.upcoming}</p><EventList list={up} lang={lang} d={d} /></Reveal>}
+        {up.length > 0 && <Reveal delay={100} className="ev-section"><p className="eyebrow" style={{ marginBottom: 14 }}>{d.events.upcoming}</p><EventGrid list={up} site={site} lang={lang} d={d} /></Reveal>}
         <Reveal delay={120} className="ev-section"><Link href={langPath(lang, "/esemenyek")} className="btn btn-outline">{d.events.all} <Arrow /></Link></Reveal>
       </div>
     </section>
   );
 }
 
-/* ---------------- CSEMPÉK: az öt aloldal ---------------- */
+/* ---------------- CSEMPÉK: az öt aloldal, egyforma kártyákban ---------------- */
 export function Tiles({ site, lang, d }: P) {
   return (
     <section id="aloldalak" className="section">
@@ -173,14 +194,14 @@ export function Tiles({ site, lang, d }: P) {
           <Reveal as="p" className="eyebrow">{d.tiles.eyebrow}</Reveal>
           <Reveal as="h2" className="h1 mask" delay={60}>{d.tiles.title}</Reveal>
         </div>
-        <div className="tiles">
+        <div className="tiles" data-tiles>
           {PAGE_KEYS.map((k, i) => {
             const p = site.pages[k]; const im = resolveImage(p.images[0], site);
             return (
-              <Reveal as="div" key={k} delay={(i % 3) * 80} className="tile-wrap">
+              <Reveal as="div" key={k} delay={(i % 5) * 70} className="tile-wrap">
                 <Link href={langPath(lang, `/${k}`)} className="tile-card">
-                  <figure className="photo tile-ph"><Img im={im} sizes="(max-width: 560px) 100vw, (max-width: 960px) 50vw, 33vw" /></figure>
-                  <div className="tile-body"><h3 className="h3">{t(p.title, lang)}</h3><p>{t(p.lead, lang)}</p><span className="tile-more">{d.tiles.more} <Arrow /></span></div>
+                  <figure className="photo tile-ph">{im && <Image src={im.src} alt={im.alt} fill sizes="(max-width: 560px) 100vw, (max-width: 1100px) 33vw, 20vw" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", backgroundColor: im.color }} />}</figure>
+                  <div className="tile-body"><span className="tile-idx" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span><h3 className="h3">{t(p.title, lang)}</h3><p>{t(p.lead, lang)}</p><span className="tile-more">{d.tiles.more} <Arrow /></span></div>
                 </Link>
               </Reveal>
             );

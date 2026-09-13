@@ -32,3 +32,18 @@ Netlify (`netlify.toml`, `@netlify/plugin-nextjs`). **Fontos:** az admin fájlba
 
 ## Ami szándékosan nincs benne
 Árak, nyitvatartás, hektár- és lólétszám-adatok, díjak — a kutatás szerint nem igazoltak vagy ellentmondóak; egyeztetés után az adminban pótolhatók.
+
+## Helyi adatbázis és tesztelés
+
+Az oldal helyben **fájl-alapú adatbázissal** fut, adatbázis-szerver nélkül:
+
+- `data/seed.json` — a **mag**: ez van a gitben, ebből indul az éles oldal Netlify Blobs-tára is az első futáskor.
+- `data/site.json` — a **helyi adatbázis** (gitignore-olva): ezt írja az admin, ha helyben futtatod. Ha nincs, a mag jön.
+- `data/files/` — a helyben feltöltött képek és PDF-ek (gitignore-olva); élesben ugyanez a Netlify Blobs „files” tára.
+
+```bash
+npm run db:reset   # helyi adatbázis vissza a magra (data/site.json ← data/seed.json, data/files kiürítve)
+npm run dev        # http://localhost:3000 — admin: http://localhost:3000/admin (helyben jelszó nélkül)
+```
+
+Amit az adminban helyben felviszel, az csak a gépeden van. Ha valamit a magba akarsz tenni (hogy élesbe is menjen a következő deployjal), másold a `data/site.json` tartalmát a `data/seed.json`-ba, és commitold.
