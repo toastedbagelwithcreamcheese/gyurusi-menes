@@ -7,7 +7,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
 - [x] G1: A projekt hibátlanul buildel
   CHECK: npm run build
   EXPECT: Compiled successfully
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=34ed90c806e702eb10fd36199efc6cb8b1f9a551c4e3283b97fb09dbc9d5d1e5; output-bytes=2086
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=a39fe32d218e80730cb4fcc8fca98d68e2913c1e0f86a82ca1aec080c5847c79; output-bytes=2083
 
 - [x] G2: TypeScript hibamentes
   CHECK: npx tsc --noEmit && echo TSC_OK
@@ -37,7 +37,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
 - [x] G7: Reduced-motion kezelve, nincs `transition: all`; az új CSS-blokkok osztályai ténylegesen a stíluslapban vannak (blokk-csere nem vágta le a fájl végét)
   CHECK: node scripts/verify.mjs css-motion
   EXPECT: PASS: css-motion
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=9a13a5337a84683974db8fd64bb705638bb972cc82a92231791de451614256d2; output-bytes=74
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=182790ddd2fb72927d883b0b2f88ad68ff520f9f2aa354a532ca64e66e4fc239; output-bytes=74
 
 - [x] G8: Nincs galéria: sem /galeria útvonal, sem Lightbox-import az app alatt, sem id="galeria" a főoldalon
   CHECK: node scripts/verify.mjs no-gallery
@@ -52,7 +52,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
 - [x] G10: Admin végigpróbálva Playwrighttal (fájl-driver): esemény létrehozás kiemeltként + jelentkezés nyitva → a főoldalon kiemelt blokkban jelenik meg; nyilvános jelentkezés → megjelenik az /admin/jelentkezesek listában a létszámmal; PDF-beszámoló feltöltés → megjelenik az /egyesulet lapon; hero-kép csere adminból → a főoldal új képet ad; takarítás után a tartalom visszaáll
   CHECK: node scripts/with-server.mjs node scripts/admin-flow.mjs
   EXPECT: ADMIN_FLOW_OK
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=cfe58c22c90edd829aea7a26052dfe6bc8120a08f9c3e5d7e9792a1ee8adbde1; output-bytes=547
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=8f9c94c38ce7c80b2ff1c7f9ba92e800d9944d1510b053efedfea6030bbfa8ea; output-bytes=547
 
 - [x] G11: Lighthouse mobil Performance ≥ 85 és Accessibility ≥ 95 a főoldalon (production build)
   CHECK: node scripts/with-server.mjs node scripts/verify.mjs lighthouse
@@ -65,12 +65,12 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
 - [x] G13: Élesben (Netlify, Blobs-driver): deploy után /, /en, /de, /egyesulet 200; admin-flow ugyanezt a kört a Blobs ellen végigfutja (esemény létrehozás → látszik → törlés), bizonyítva, hogy a tartalom Netlify-on is megmarad
   CHECK: BASE_URL=https://gyurusi-menes-demo.netlify.app node scripts/admin-flow.mjs
   EXPECT: ADMIN_FLOW_OK
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=f09a4a5e5af28d66d7a3eed4da9f910dd872ff1ff573ae4d336bd547c0e8f747; output-bytes=388
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=36b8b1bfab6bb1830d7ce9f7701916ed201b9d1828ff46fd31af1b772876afa8; output-bytes=388
 
 - [x] G15: Forgatókönyves böngésző-QA (helyi DB): kapcsolati űrlap mezőre mutató hibái 2 nyelven és sikeres tárolás az oldal-hivatkozással; jelentkezés hibái és sikere; lezárt esemény üzenete; 6 közelgő esemény rácsban, egyetlen kiemelt; esemény nélküli főoldal és naptár magyarázó szöveggel; admin: nem-PDF részletes hibája, mentés „mentve” visszajelzése, rossz záró dátum hibája — mind a Flash-sávban
   CHECK: node scripts/with-server.mjs node scripts/qa-flow.mjs
   EXPECT: QA_FLOW_OK
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=5e5570cef8dc367ce5ae3468b83dfc10e5a71f47d2fadf1e24b75cc14787707c; output-bytes=1008
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=8d892a8bca6fc7279fec97827dfd48551999d1529165ff0cb7a1e9658c3149fe; output-bytes=1050
 
 - [x] G14: Git commit + push, graphify frissítve, projektmemória frissítve a kör eredményével és a nyitott ügyféladatokkal (tulajdonos telefonszáma, DNS, Resend kulcs, admin jelszó)
   CHECK: git status --porcelain | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const l=s.split('\n').filter(x=>x.trim()&&!/GATES\.md$/.test(x));if(l.length){console.log('DIRTY',l.join(' | '));process.exit(1)}console.log('CLEAN_TREE')})"

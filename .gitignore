@@ -63,3 +63,6 @@ graphify-out.bak*/
 
 # helyi adatbázis (a mag a data/seed.json; visszaállítás: npm run db:reset)
 /data/site.json
+
+# helyi gyorsítótár (Google-értékelések) – élesben Netlify Blobs „cache”
+/data/cache

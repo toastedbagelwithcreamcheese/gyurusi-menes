@@ -4,6 +4,7 @@ import { Reveal } from "@/components/Reveal";
 import { HeroIntro } from "./HeroIntro";
 import { HeroParallax } from "./HeroParallax";
 import { MapEmbed } from "./MapEmbed";
+import type { GoogleReviews } from "@/lib/google-reviews";
 import { Photo } from "@/components/Photo";
 import { resolveImage, type ImageMeta } from "@/lib/images";
 import type { Dictionary, Lang } from "@/content/types";
@@ -208,6 +209,43 @@ export function Tiles({ site, lang, d }: P) {
             );
           })}
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- GOOGLE-ÉRTÉKELÉSEK (csak ha van adat) ---------------- */
+const Stars = ({ n, label }: { n: number; label: string }) => (
+  <span className="stars" role="img" aria-label={label}>{[1, 2, 3, 4, 5].map((i) => <svg key={i} viewBox="0 0 20 20" className={i <= Math.round(n) ? "on" : ""} aria-hidden="true"><path d="M10 1.8l2.5 5.3 5.8.7-4.3 4 1.1 5.8L10 14.8l-5.1 2.8 1.1-5.8-4.3-4 5.8-.7z" /></svg>)}</span>
+);
+export function Reviews({ data, lang, d }: { data: GoogleReviews | null; lang: Lang; d: Dictionary }) {
+  if (!data || !data.rating) return null;
+  const fmt = new Intl.NumberFormat(lang === "hu" ? "hu-HU" : lang === "de" ? "de-DE" : "en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return (
+    <section id="velemenyek" className="section on-bone-2 reviews" data-reviews>
+      <div className="wrap">
+        <div className="rev-head">
+          <div>
+            <Reveal as="p" className="eyebrow">{d.reviews.eyebrow}</Reveal>
+            <Reveal as="h2" className="h1 mask" delay={60}>{d.reviews.title}</Reveal>
+          </div>
+          <Reveal className="rev-score" delay={100}>
+            <span className="rev-num">{fmt.format(data.rating)}</span>
+            <span><Stars n={data.rating} label={d.reviews.stars.replace("{n}", fmt.format(data.rating))} /><a href={data.url} target="_blank" rel="noopener" className="link">{d.reviews.count.replace("{n}", String(data.count))} ↗</a></span>
+          </Reveal>
+        </div>
+        {data.reviews.length > 0 && (
+          <ul className="rev-grid" role="list">
+            {data.reviews.slice(0, 5).map((r, i) => (
+              <Reveal as="li" key={r.time + r.author} delay={i * 60} className="rev-card">
+                <span className="rev-top"><span className="rev-avatar" aria-hidden="true">{r.author.slice(0, 1).toUpperCase()}</span><span className="rev-who">{r.authorUrl ? <a href={r.authorUrl} target="_blank" rel="noopener">{r.author}</a> : r.author}<small>{r.relative} · Google</small></span></span>
+                <Stars n={r.rating} label={d.reviews.stars.replace("{n}", String(r.rating))} />
+                <p className="rev-text">{r.text}</p>
+              </Reveal>
+            ))}
+          </ul>
+        )}
+        <Reveal as="p" className="rev-more" delay={120}><a href={data.url} target="_blank" rel="noopener" className="btn btn-outline">{d.reviews.more} <Arrow /></a></Reveal>
       </div>
     </section>
   );

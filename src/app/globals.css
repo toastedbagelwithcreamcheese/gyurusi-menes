@@ -862,3 +862,22 @@ main.sub > .sub-head:first-child, main.sub > .legal:first-child { padding-top: c
 .map-note { margin: 6px 0 0; font-size: 0.8rem; color: var(--color-dust); }
 .map-route { position: absolute; right: 12px; bottom: 12px; padding: 8px 14px; border-radius: 999px; background: rgb(247 244 238 / 0.95); border: 1px solid var(--color-line); color: var(--color-ink); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
 @media (max-width: 640px) { .map { aspect-ratio: 4 / 3; } }
+
+/* ---- Google-értékelések ---- */
+.rev-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 20px 40px; margin-bottom: clamp(24px, 4vw, 40px); }
+.rev-score { display: flex; align-items: center; gap: 16px; }
+.rev-score > span:last-child { display: grid; gap: 4px; }
+.rev-num { font-family: var(--font-display); font-size: clamp(3rem, 6vw, 4.6rem); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.stars { display: inline-flex; gap: 2px; }
+.stars svg { width: 18px; height: 18px; fill: rgb(29 27 23 / 0.16); }
+.stars svg.on { fill: #e2a93b; }
+.rev-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.rev-card { display: grid; gap: 10px; align-content: start; padding: 20px 22px; background: var(--color-bone); border: 1px solid var(--color-line); border-radius: var(--radius-lg); }
+.rev-top { display: flex; align-items: center; gap: 12px; }
+.rev-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--color-forest); color: var(--color-bone); display: grid; place-items: center; font-weight: 600; flex: 0 0 auto; }
+.rev-who { display: grid; line-height: 1.25; }
+.rev-who a { color: inherit; font-weight: 600; text-decoration: none; }
+.rev-who a:hover { color: var(--color-sky); }
+.rev-who small { color: var(--color-dust); font-size: 0.78rem; }
+.rev-text { margin: 0; color: var(--color-ink-soft); font-size: 0.97rem; display: -webkit-box; -webkit-line-clamp: 6; line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.rev-more { margin: clamp(20px, 3vw, 32px) 0 0; }
