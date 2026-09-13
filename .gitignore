@@ -60,3 +60,6 @@ graphify-out.bak*/
 
 # a sharp Linux-binárisainak oldalsó telepítése (scripts/sharp-linux.mjs)
 /.sharp-linux
+
+# helyi adatbázis (a mag a data/seed.json; visszaállítás: npm run db:reset)
+/data/site.json

@@ -779,9 +779,9 @@ textarea.input { min-height: 8rem; resize: vertical; }
 .ftr2-legal a svg { width: 15px; height: 15px; }
 .ftr2-legal a:hover { color: var(--color-straw); }
 .ftr2-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding-top: 22px; }
-.ftr2-bottom .note { color: rgb(243 239 230 / 0.6); }
+.ftr2-bottom .note { color: rgb(243 239 230 / 0.72); }
 .ftr2-made { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-moss); }
-.ftr2-credit { margin: 14px 0 0; text-align: center; font-size: 0.74rem; color: rgb(243 239 230 / 0.5); }
-.ftr2-credit a { color: rgb(243 239 230 / 0.7); }
+.ftr2-credit { margin: 14px 0 0; text-align: center; font-size: 0.78rem; color: rgb(243 239 230 / 0.74); }
+.ftr2-credit a { color: var(--color-paper-on-dark); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(243 239 230 / 0.5); }
 @media (max-width: 860px) { .ftr2-grid { grid-template-columns: 1fr 1fr; } .ftr2-brand { grid-column: 1 / -1; } }
 @media (max-width: 520px) { .ftr2-grid { grid-template-columns: 1fr; } }
