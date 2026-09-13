@@ -54,10 +54,10 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   EXPECT: ADMIN_FLOW_OK
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=548fb0991b4393de4222ba798c958771fb7ee4aae8f1209dfbe37e42d7d8059f; output-bytes=547
 
-- [ ] G11: Lighthouse mobil Performance ≥ 85 és Accessibility ≥ 95 a főoldalon (production build)
+- [x] G11: Lighthouse mobil Performance ≥ 85 és Accessibility ≥ 95 a főoldalon (production build)
   CHECK: node scripts/with-server.mjs node scripts/verify.mjs lighthouse
   EXPECT: PASS: lighthouse
-  EVIDENCE: pending
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=500b81555d4e8722fad9e9ea21a3de5d29e1f266055afc49b0317890e639edd3; output-bytes=289
 
 - [x] G12: Vizuális review desktop és mobil nézetben (Playwright-képek, scripts/shots.mjs): főoldal, egy aloldal, események, esemény-részletek jelentkezési űrlappal, admin; nincs vízszintes görgetés, a nyelvváltó a fejlécben mindkét nézetben elérhető, konzol hibamentes
   EVIDENCE: scripts/shots.mjs → scratchpad/shots (17 kép, 1440×900 és 390×844): d-/m-home, turak, egyesulet, esemenyek, esemeny, home-en, admin, admin-oldal, m-menu. scrollWidth = innerWidth minden lapon mindkét nézetben (1440/1440, 390/390); konzol-hiba: 0 / 0. Megnézve: főoldal (hero, tulajdonos-blokk, bemutatkozás + fajta-sáv, kiemelt/legutóbbi esemény, 5 csempe, kapcsolat tulajdonos-kártyával elöl), Túrák (képfej, szöveg, képsáv, saját kapcsolat, kapcsolódó), Egyesület (beszámoló-blokk üres állapota), Eseménynaptár, eseményoldal (tények + kapcsolat + kapcsolódó), admin áttekintés, mobil menü a Magyar/English/Deutsch pillekkel (az első képen a menü-stílus rácsúszott a nyelvváltóra — javítva, újra ellenőrizve). A jelentkezési űrlapot a G10/G13 admin-körút tölti ki és küldi el (data-registration blokk, [role=status] visszajelzés).
@@ -67,7 +67,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   EXPECT: ADMIN_FLOW_OK
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=5fecfebe3f9482d4e18b4a03972455fb4b7ee4b55300e5a004e43a0786ee4bd7; output-bytes=388
 
-- [ ] G14: Git commit + push, graphify frissítve, projektmemória frissítve a kör eredményével és a nyitott ügyféladatokkal (tulajdonos telefonszáma, DNS, Resend kulcs, admin jelszó)
+- [x] G14: Git commit + push, graphify frissítve, projektmemória frissítve a kör eredményével és a nyitott ügyféladatokkal (tulajdonos telefonszáma, DNS, Resend kulcs, admin jelszó)
   CHECK: git status --porcelain | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const l=s.split('\n').filter(x=>x.trim()&&!/GATES\.md$/.test(x));if(l.length){console.log('DIRTY',l.join(' | '));process.exit(1)}console.log('CLEAN_TREE')})"
   EXPECT: CLEAN_TREE
-  EVIDENCE: pending
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=8cf979e8ed5c515aecd197784536d132b1aa9f4555c00da6fba4a83ae986d75f; output-bytes=11
