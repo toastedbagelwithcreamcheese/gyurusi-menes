@@ -12,9 +12,9 @@
     "semantic_hash": ""
   },
   "next.config.ts": {
-    "mtime": 1789226313.2075043,
-    "seen": 1789287318.717066,
-    "ast_hash": "d1ceda61da47ca860507b67f229825a5",
+    "mtime": 1789288638.844567,
+    "seen": 1789289016.57157,
+    "ast_hash": "46397315efcc5267ca43c7af0975528b",
     "semantic_hash": ""
   },
   "package.json": {
@@ -102,9 +102,9 @@
     "semantic_hash": ""
   },
   "src/components/site/Header.tsx": {
-    "mtime": 1789224869.1834211,
-    "seen": 1789226067.3485692,
-    "ast_hash": "7741e9296142014f723361f570b48e5c",
+    "mtime": 1789288463.6788666,
+    "seen": 1789289016.571594,
+    "ast_hash": "9c111846be384d72f20f685b6c716bc2",
     "semantic_hash": ""
   },
   "src/components/site/HeroIntro.tsx": {
@@ -132,9 +132,9 @@
     "semantic_hash": "9415645fba2720ce47a5997adde76b24"
   },
   "src/components/site/SubPage.tsx": {
-    "mtime": 1789286586.4207351,
-    "seen": 1789287318.717089,
-    "ast_hash": "b9ce874b1f034bff548fd1bcbbc95c18",
+    "mtime": 1789288859.0707536,
+    "seen": 1789289016.571598,
+    "ast_hash": "b7ee5d3a98a215bcba1c63283db66e2e",
     "semantic_hash": ""
   },
   "src/content/photos.json": {
@@ -162,9 +162,9 @@
     "semantic_hash": ""
   },
   "src/proxy.ts": {
-    "mtime": 1789224806.0410426,
-    "seen": 1789226067.348577,
-    "ast_hash": "7b6b32fba6f3718692dec26b09ddf787",
+    "mtime": 1789288463.66115,
+    "seen": 1789289016.571604,
+    "ast_hash": "6471bbad53a7cd038dd3b0303fdbf244",
     "semantic_hash": ""
   },
   "tsconfig.json": {
@@ -312,9 +312,9 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/layout.tsx": {
-    "mtime": 1789225589.633054,
-    "seen": 1789226067.348563,
-    "ast_hash": "bcfcfc344afa01fab758b07105370d60",
+    "mtime": 1789288859.069972,
+    "seen": 1789289016.571587,
+    "ast_hash": "065421fe4319ce30b7b9ad48565c139c",
     "semantic_hash": ""
   },
   "src/app/[lang]/not-found.tsx": {
@@ -324,8 +324,8 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/page.tsx": {
-    "mtime": 1789225160.5723438,
-    "seen": 1789226067.348564,
+    "mtime": 1789288859.0703692,
+    "seen": 1789289016.571588,
     "ast_hash": "ec893e730bc73544d6175938351a4f5b",
     "semantic_hash": ""
   },
@@ -699,6 +699,12 @@
     "mtime": 1789286502.218828,
     "seen": 1789287318.717089,
     "ast_hash": "62d8dff4a5d7f8e442e32cfc42650c0f",
+    "semantic_hash": ""
+  },
+  "src/components/ScrollTop.tsx": {
+    "mtime": 1789288859.0442293,
+    "seen": 1789289016.5715919,
+    "ast_hash": "30e30711b54b11216381304fdca474ab",
     "semantic_hash": ""
   }
 }

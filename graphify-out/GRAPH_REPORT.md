@@ -1,16 +1,16 @@
 # Graph Report - gyurusi-menes  (2026-09-13)
 
 ## Corpus Check
-- 84 files · ~262,221 words
+- 85 files · ~262,446 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 446 nodes · 1034 edges · 31 communities (22 shown, 9 thin omitted)
+- 448 nodes · 1037 edges · 32 communities (23 shown, 9 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7231545f`
+- Built from commit: `c939b334`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -28,7 +28,7 @@
 - opengraph-image.tsx
 - Gyűrűsi Ménes — weboldal + admin (demó)
 - verify.mjs
-- langPath
+- types.ts
 - eslint.config.mjs
 - next.config.ts
 - postcss.config.mjs
@@ -42,6 +42,7 @@
 - sharp-linux.mjs
 - with-server.mjs
 - db-reset.mjs
+- langPath
 
 ## God Nodes (most connected - your core abstractions)
 1. `readSite()` - 49 edges
@@ -56,28 +57,28 @@
 10. `Gyűrűsi Ménes — online kutatási jelentés` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `RootLayout()` --calls--> `isLang()`  [EXTRACTED]
+  src/app/[lang]/layout.tsx → src/content/types.ts
 - `generateMetadata()` --calls--> `resolveImage()`  [EXTRACTED]
   src/app/[lang]/[slug]/page.tsx → src/lib/images.ts
+- `generateMetadata()` --calls--> `isPageKey()`  [EXTRACTED]
+  src/app/[lang]/[slug]/page.tsx → src/lib/store.ts
 - `generateMetadata()` --calls--> `readSite()`  [EXTRACTED]
   src/app/[lang]/[slug]/page.tsx → src/lib/store.ts
 - `generateMetadata()` --calls--> `t()`  [EXTRACTED]
   src/app/[lang]/[slug]/page.tsx → src/lib/store.ts
-- `ContentPage()` --calls--> `fileUrl()`  [EXTRACTED]
-  src/app/[lang]/[slug]/page.tsx → src/lib/files.ts
-- `ContentPage()` --calls--> `resolveImage()`  [EXTRACTED]
-  src/app/[lang]/[slug]/page.tsx → src/lib/images.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (31 total, 9 thin omitted)
+## Communities (32 total, 9 thin omitted)
 
 ### Community 0 - "Sections.tsx"
-Cohesion: 0.10
-Nodes (37): EventsAdmin(), RegistrationsAdmin(), AdminHome(), EventPage(), generateMetadata(), P, EventsPage(), Home() (+29 more)
+Cohesion: 0.09
+Nodes (38): EventsAdmin(), RegistrationsAdmin(), AdminHome(), EventPage(), generateMetadata(), P, ContentPage(), fmtSize() (+30 more)
 
 ### Community 1 - "store.ts"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (36): AdminNav(), ITEMS, EventEdit(), ImagePicker(), Thumb(), LegalAdmin(), ImagesAdmin(), AdminLayout() (+28 more)
 
 ### Community 2 - "compilerOptions"
@@ -86,7 +87,7 @@ Nodes (28): dom, dom.iterable, esnext, **/*.mts, .next/dev/types/**/*.ts, next-e
 
 ### Community 3 - "actions.ts"
 Cohesion: 0.16
-Nodes (35): GET(), b(), deleteEvent(), deleteMessage(), deleteRegistration(), deleteReport(), deleteUpload(), lf() (+27 more)
+Nodes (34): GET(), b(), deleteEvent(), deleteMessage(), deleteRegistration(), deleteReport(), deleteUpload(), lf() (+26 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.04
@@ -98,7 +99,7 @@ Nodes (31): 0. Összefoglaló, egy bekezdésben, 10.1 huculosveny.gyurusimenes.h
 
 ### Community 6 - "SubPage.tsx"
 Cohesion: 0.12
-Nodes (13): ContactDock(), ContactForm(), Header(), Fact, Related, tel(), Ctx, Labels (+5 more)
+Nodes (15): ContactDock(), ContactForm(), Footer(), I, tel(), Fact, Related, tel() (+7 more)
 
 ### Community 7 - "prep-images.mjs"
 Cohesion: 0.32
@@ -120,9 +121,9 @@ Nodes (3): alt, contentType, size
 Cohesion: 0.25
 Nodes (7): Ami szándékosan nincs benne, Ellenőrzés, Gyűrűsi Ménes — weboldal + admin (demó), Helyi adatbázis és tesztelés, Indítás, Mi hol van, Élesítés
 
-### Community 13 - "langPath"
-Cohesion: 0.07
-Nodes (57): generateMetadata(), P, PrivacyPage(), generateMetadata(), P, generateMetadata(), ImprintPage(), P (+49 more)
+### Community 13 - "types.ts"
+Cohesion: 0.09
+Nodes (29): fraunces, instrument, Params, RootLayout(), Photo(), PhotoKey, PHOTOS, ScrollTop() (+21 more)
 
 ### Community 17 - "admin-flow.mjs"
 Cohesion: 0.43
@@ -134,7 +135,7 @@ Nodes (3): exe, pages, report
 
 ### Community 27 - "register/route.ts"
 Cohesion: 0.27
-Nodes (10): last, POST(), last, POST(), CONFIRM, Result, send(), sendContactMail() (+2 more)
+Nodes (11): last, POST(), last, POST(), CONFIRM, Result, send(), sendContactMail() (+3 more)
 
 ### Community 28 - "sharp-linux.mjs"
 Cohesion: 0.33
@@ -143,6 +144,10 @@ Nodes (4): PKGS, ROOT, sharpPkg, SIDE
 ### Community 29 - "with-server.mjs"
 Cohesion: 0.40
 Nodes (4): [cmd, ...args], ROOT, run, srv
+
+### Community 31 - "langPath"
+Cohesion: 0.16
+Nodes (26): generateMetadata(), P, PrivacyPage(), EventsPage(), generateMetadata(), P, generateMetadata(), ImprintPage() (+18 more)
 
 ## Knowledge Gaps
 - **165 isolated node(s):** `eslintConfig`, `nextConfig`, `name`, `version`, `private` (+160 more)
@@ -154,15 +159,15 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `readSite()` connect `store.ts` to `actions.ts`, `Sections.tsx`, `register/route.ts`, `langPath`?**
   _High betweenness centrality (0.039) - this node is a cross-community bridge._
-- **Why does `isLang()` connect `langPath` to `Sections.tsx`, `register/route.ts`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
-- **Why does `t()` connect `Sections.tsx` to `store.ts`, `register/route.ts`, `langPath`, `SubPage.tsx`?**
+- **Why does `isLang()` connect `langPath` to `Sections.tsx`, `register/route.ts`, `types.ts`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `writeSite()` connect `actions.ts` to `store.ts`, `register/route.ts`?**
   _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **What connects `eslintConfig`, `nextConfig`, `name` to the rest of the system?**
   _165 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Sections.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.10204081632653061 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09490196078431372 - nodes in this community are weakly interconnected._
 - **Should `store.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.08244897959183674 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08653061224489796 - nodes in this community are weakly interconnected._
 - **Should `compilerOptions` be split into smaller, more focused modules?**
   _Cohesion score 0.06896551724137931 - nodes in this community are weakly interconnected._

@@ -12,7 +12,7 @@
   "10": "opengraph-image.tsx",
   "11": "Gyűrűsi Ménes — weboldal + admin (demó)",
   "12": "verify.mjs",
-  "13": "langPath",
+  "13": "types.ts",
   "14": "eslint.config.mjs",
   "15": "next.config.ts",
   "16": "postcss.config.mjs",
@@ -29,5 +29,6 @@
   "27": "register/route.ts",
   "28": "sharp-linux.mjs",
   "29": "with-server.mjs",
-  "30": "db-reset.mjs"
+  "30": "db-reset.mjs",
+  "31": "langPath"
 }
