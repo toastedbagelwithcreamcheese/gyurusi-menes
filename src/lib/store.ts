@@ -60,15 +60,26 @@ export function blobsAvailable(): boolean {
 const store = () => getStore({ name: "site", consistency: "strong" });
 
 async function readLocal(): Promise<SiteContent> {
-  try { return JSON.parse(await fs.readFile(FILE, "utf8")) as SiteContent; }
+  try { return withDefaults(JSON.parse(await fs.readFile(FILE, "utf8")) as Partial<SiteContent>); }
   catch { return structuredClone(seedJson as unknown as SiteContent); }
+}
+
+/** Régebbi tárolt tartalom kiegészítése a mag új kulcsaival (pl. `legal`), hogy egy új mező soha ne döntsön el egy lapot. */
+function withDefaults(data: Partial<SiteContent>): SiteContent {
+  const seed = seedJson as unknown as SiteContent;
+  const out = { ...structuredClone(seed), ...data } as SiteContent;
+  for (const k of ["events", "registrations", "reports", "uploads", "messages"] as const) if (!Array.isArray(out[k])) out[k] = [];
+  if (!out.legal?.imprint || !out.legal?.privacy) out.legal = structuredClone(seed.legal);
+  if (!out.owner) out.owner = structuredClone(seed.owner);
+  for (const k of PAGE_KEYS) if (!out.pages?.[k]) out.pages = { ...structuredClone(seed.pages), ...(out.pages ?? {}) };
+  return out;
 }
 
 export async function readSite(): Promise<SiteContent> {
   if (blobsAvailable()) {
     try {
-      const data = (await store().get(KEY, { type: "json" })) as SiteContent | null;
-      if (data) return data;
+      const data = (await store().get(KEY, { type: "json" })) as Partial<SiteContent> | null;
+      if (data) return withDefaults(data);
       const seed = structuredClone(seedJson as unknown as SiteContent);
       try { await store().setJSON(KEY, seed); } catch { /* build-lépésben nincs írás — nem baj */ }
       return seed;
