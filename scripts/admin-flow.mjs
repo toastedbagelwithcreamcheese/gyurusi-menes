@@ -31,7 +31,7 @@ const fetchText = async (p) => { const r = await ctx.request.get(BASE + p); if (
 async function purge() {
   await go("/admin/esemenyek");
   for (const id of await page.locator('[data-event-row]:has-text("Teszt esemény (gate")').evaluateAll((els) => els.map((e) => e.getAttribute("data-event-row")))) {
-    await go(`/admin/esemenyek/${id}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek$/), page.click('button:has-text("Esemény törlése")')]); console.log("purge: esemény", id);
+    await go(`/admin/esemenyek/${id}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek(\?|$)/), page.click('button:has-text("Esemény törlése")')]); console.log("purge: esemény", id);
   }
   await go("/admin/beszamolok");
   while (await page.locator('[data-report-row]:has-text("Gate beszámoló")').count()) { const r = page.locator('[data-report-row]:has-text("Gate beszámoló")').first(); const id = await r.getAttribute("data-report-row"); await r.locator('button:has-text("Töröl")').click(); await page.waitForSelector(`[data-report-row="${id}"]`, { state: "detached", timeout: 15000 }); console.log("purge: beszámoló", id); }
@@ -49,7 +49,7 @@ try {
   await page.fill("#summary\\.hu", "Automatikus teszt — a kapu végén törlődik."); await page.fill("#summary\\.en", "Automated test."); await page.fill("#summary\\.de", "Automatischer Test.");
   await page.check('input[name="published"]'); await page.check('input[name="featured"]'); await page.check('input[name="registration"]');
   await page.check('input[name="image"][value="osveny-ugras-gyuru"]');
-  await Promise.all([page.waitForURL(/\/admin\/esemenyek$/), page.click('button:has-text("Mentés")')]);
+  await Promise.all([page.waitForURL(/\/admin\/esemenyek(\?|$)/), page.click('button:has-text("Mentés")')]);
   const row = page.locator(`[data-event-row]:has-text("${TITLE}")`); if (!(await row.count())) fail("az esemény nem jelent meg az admin listában");
   const evId = await row.getAttribute("data-event-row");
   if (!(await row.locator(".pill-feat").count())) fail("nem kiemelt");
@@ -115,7 +115,7 @@ try {
   if (gone.status() !== 404 && !(gone.status() === 200 && /hit/i.test(cs))) fail(`a törölt kép még elérhető a /files alól: ${gone.status()} (cache-status: ${cs || "-"})`);
   if (gone.status() === 200) console.log("   (a /files még CDN-cache-ből adja a törölt képet — a tárból törölve; cache-status:", cs, ")");
   await go("/admin/beszamolok"); const rr = page.locator(`[data-report-row]:has-text("${REPORT}")`); await rr.locator('button:has-text("Töröl")').click(); await page.waitForTimeout(800);
-  await go(`/admin/esemenyek/${evId}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek$/), page.click('button:has-text("Esemény törlése")')]);
+  await go(`/admin/esemenyek/${evId}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek(\?|$)/), page.click('button:has-text("Esemény törlése")')]);
   if ((await fetchText("/")).includes(TITLE)) fail("takarítás után is látszik az esemény");
   if ((await fetchText("/egyesulet")).includes(REPORT)) fail("takarítás után is látszik a beszámoló");
   if ((await fetchText("/admin/jelentkezesek")).includes("Gate Teszt")) fail("takarítás után is látszik a jelentkezés");

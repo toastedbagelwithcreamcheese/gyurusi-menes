@@ -42,7 +42,7 @@ export default async function Home({ params }: { params: Params }) {
         <Intro site={site} lang={lang} d={d} />
         <EventsHome site={site} lang={lang} d={d} />
         <Tiles site={site} lang={lang} d={d} />
-        <ContactBlock site={site} lang={lang} d={d} form={<ContactForm d={d.form} />} />
+        <ContactBlock site={site} lang={lang} d={d} form={<ContactForm d={d.form} lang={lang} />} />
       </main>
       <Footer site={site} lang={lang} d={d} />
       <ContactDock phone={site.owner.phone || site.contact.phone} labels={{ message: d.contact.sub.write, call: d.contact.sub.call }} />

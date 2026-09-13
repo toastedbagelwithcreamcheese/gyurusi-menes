@@ -36,10 +36,12 @@ export interface Dictionary {
   form: {
     name: string; email: string; phone: string; phoneOptional: string; message: string; messagePh: string; send: string; sending: string;
     okTitle: string; okBody: string; err: string; website: string;
+    errName: string; errEmail: string; errMessage: string; errRate: string; errServer: string;
   };
   reg: {
     title: string; lead: string; name: string; phone: string; email: string; emailOptional: string; count: string; countHint: string; note: string; notePh: string;
     send: string; sending: string; okTitle: string; okBody: string; err: string; closed: string;
+    errName: string; errPhone: string; errCount: string; errEmail: string; errRate: string;
   };
   reports: { eyebrow: string; title: string; lead: string; none: string; open: string; size: string };
   footer: { blurb: string; contact: string; follow: string; admin: string; owner: string; tagline: string; taglineAccent: string; cta: string; colPages: string; colInfo: string; privacy: string; imprint: string; rights: string; credit: string; madeIn: string; events: string };

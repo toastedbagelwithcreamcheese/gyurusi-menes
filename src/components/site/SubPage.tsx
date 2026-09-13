@@ -102,7 +102,7 @@ export function SubPage({ site, lang, d, rest, eyebrow, title, meta, image, stri
                 <a href={`mailto:${c.email}`} className="link">{c.email}</a>
               </Reveal>
             </div>
-            <Reveal delay={120} className="sub-form-card"><ContactForm d={d.form} page={pageKey} pageLabel={`${title} (/${pageKey})`} /></Reveal>
+            <Reveal delay={120} className="sub-form-card"><ContactForm d={d.form} page={pageKey} pageLabel={`${title} (/${pageKey})`} lang={lang} /></Reveal>
           </div>
         </section>
 

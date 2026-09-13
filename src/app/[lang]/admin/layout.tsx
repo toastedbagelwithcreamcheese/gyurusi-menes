@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { readSite, upcoming } from "@/lib/store";
 import { AdminNav } from "./AdminNav";
+import { Flash } from "./Flash";
 import "./admin.css";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
@@ -14,7 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="adm">
       <AdminNav unread={unread} regs={regs} />
-      <main className="adm-main">{children}</main>
+      <main className="adm-main"><Flash />{children}</main>
     </div>
   );
 }

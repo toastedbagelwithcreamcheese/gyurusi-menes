@@ -15,13 +15,15 @@ export async function POST(req: Request) {
   const lang: Lang = isLang(body.lang) ? body.lang : "hu";
   const d = getDict(lang).reg;
   if (body.website) return NextResponse.json({ ok: true });
-  if (now - (last.get(ip) ?? 0) < 10_000) return NextResponse.json({ ok: false, error: d.err }, { status: 429 });
+  if (now - (last.get(ip) ?? 0) < 10_000) return NextResponse.json({ ok: false, error: d.errRate }, { status: 429 });
 
   const name = (body.name ?? "").trim(), phone = (body.phone ?? "").trim(), email = (body.email ?? "").trim(), note = (body.note ?? "").trim();
   const count = Number.parseInt(body.count ?? "", 10);
   const emailOk = !email || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
-  if (name.length < 2 || phone.replace(/\D/g, "").length < 6 || !Number.isInteger(count) || count < 1 || count > 99 || !emailOk)
-    return NextResponse.json({ ok: false, error: d.err }, { status: 400 });
+  if (name.length < 2) return NextResponse.json({ ok: false, error: d.errName, field: "name" }, { status: 400 });
+  if (phone.replace(/\D/g, "").length < 6) return NextResponse.json({ ok: false, error: d.errPhone, field: "phone" }, { status: 400 });
+  if (!Number.isInteger(count) || count < 1 || count > 99) return NextResponse.json({ ok: false, error: d.errCount, field: "count" }, { status: 400 });
+  if (!emailOk) return NextResponse.json({ ok: false, error: d.errEmail, field: "email" }, { status: 400 });
 
   const site = await readSite();
   const ev = site.events.find((e) => e.id === body.eventId && e.published);

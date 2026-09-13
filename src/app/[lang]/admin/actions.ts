@@ -7,6 +7,9 @@ import { putFile, deleteFile, fileUrl } from "@/lib/files";
 
 /** Minden nyelvi lap újraépül; az admin lapok is. */
 function refresh() { revalidatePath("/", "layout"); revalidatePath("/[lang]", "layout"); }
+/** Vissza az admin lapra egy visszajelzéssel (a Flash mutatja). Élesben a dobott hiba szövege nem látszana — ezért nem dobunk. */
+function back(path: string, msg: { ok?: string; hiba?: string }): never { redirect(`${path}?${new URLSearchParams(msg as Record<string, string>)}`); }
+const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const b = (fd: FormData, k: string) => fd.get(k) === "on";
 const lf = (fd: FormData, k: string): L => ({ hu: s(fd, `${k}.hu`), en: s(fd, `${k}.en`), de: s(fd, `${k}.de`) });
@@ -20,18 +23,25 @@ export async function saveEvent(fd: FormData) {
     published: b(fd, "published"), featured: b(fd, "featured"), registration: b(fd, "registration"),
   };
   const body = lf(fd, "body"); if (body.hu || body.en || body.de) ev.body = body;
-  if (!ev.title.hu || !ev.date) throw new Error("Cím (magyar) és dátum kötelező.");
-  await writeSite((site) => {
-    if (ev.featured) site.events.forEach((e) => { e.featured = false; });
-    const i = site.events.findIndex((e) => e.id === id);
-    if (i >= 0) site.events[i] = ev; else site.events.unshift(ev);
-  });
-  refresh(); redirect("/admin/esemenyek");
+  const formPath = s(fd, "id") ? `/admin/esemenyek/${id}` : "/admin/esemenyek/uj";
+  if (!ev.title.hu) back(formPath, { hiba: "A magyar cím kötelező." });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ev.date)) back(formPath, { hiba: "Adj meg egy dátumot (év-hónap-nap)." });
+  if (ev.endDate && ev.endDate < ev.date) back(formPath, { hiba: "A záró nap nem lehet korábbi a kezdőnapnál." });
+  if (!ev.summary.hu) back(formPath, { hiba: "A magyar rövid leírás kötelező — ez jelenik meg a listában." });
+  try {
+    await writeSite((site) => {
+      if (ev.featured) site.events.forEach((e) => { e.featured = false; });
+      const i = site.events.findIndex((e) => e.id === id);
+      if (i >= 0) site.events[i] = ev; else site.events.unshift(ev);
+    });
+  } catch (e) { back(formPath, { hiba: `A mentés nem sikerült: ${errMsg(e)}` }); }
+  refresh(); back("/admin/esemenyek", { ok: `„${ev.title.hu}” mentve.` });
 }
 export async function deleteEvent(fd: FormData) {
   const id = s(fd, "id");
-  await writeSite((site) => { site.events = site.events.filter((e) => e.id !== id); site.registrations = site.registrations.filter((r) => r.eventId !== id); });
-  refresh(); redirect("/admin/esemenyek");
+  try { await writeSite((site) => { site.events = site.events.filter((e) => e.id !== id); site.registrations = site.registrations.filter((r) => r.eventId !== id); }); }
+  catch (e) { back(`/admin/esemenyek/${id}`, { hiba: `A törlés nem sikerült: ${errMsg(e)}` }); }
+  refresh(); back("/admin/esemenyek", { ok: "Esemény törölve, a jelentkezéseivel együtt." });
 }
 export async function toggleEvent(fd: FormData) {
   const id = s(fd, "id");
@@ -54,19 +64,28 @@ export async function deleteRegistration(fd: FormData) {
 /* ---------- Aloldalak ---------- */
 export async function savePage(fd: FormData) {
   const key = s(fd, "key");
-  if (!isPageKey(key)) throw new Error("Ismeretlen aloldal.");
-  await writeSite((site) => {
-    const p = site.pages[key];
-    p.title = lf(fd, "title"); p.lead = lf(fd, "lead"); p.body = lf(fd, "body");
-    p.images = [s(fd, "image1"), s(fd, "image2"), s(fd, "image3")].filter(Boolean);
-    p.contact = { person: s(fd, "contact.person"), phone: s(fd, "contact.phone"), email: s(fd, "contact.email"), note: lf(fd, "contact.note") };
-  });
-  refresh(); redirect("/admin/oldalak");
+  if (!isPageKey(key)) back("/admin/oldalak", { hiba: "Ismeretlen aloldal." });
+  const title = lf(fd, "title"), lead = lf(fd, "lead");
+  if (!title.hu) back(`/admin/oldalak/${key}`, { hiba: "A magyar cím kötelező." });
+  if (!lead.hu) back(`/admin/oldalak/${key}`, { hiba: "A magyar bevezető kötelező — ez látszik a csempén." });
+  if (!s(fd, "image1")) back(`/admin/oldalak/${key}`, { hiba: "Válassz egy fejlécképet (1. kép)." });
+  try {
+    await writeSite((site) => {
+      const p = site.pages[key];
+      p.title = title; p.lead = lead; p.body = lf(fd, "body");
+      p.images = [s(fd, "image1"), s(fd, "image2"), s(fd, "image3")].filter(Boolean);
+      p.contact = { person: s(fd, "contact.person"), phone: s(fd, "contact.phone"), email: s(fd, "contact.email"), note: lf(fd, "contact.note") };
+    });
+  } catch (e) { back(`/admin/oldalak/${key}`, { hiba: `A mentés nem sikerült: ${errMsg(e)}` }); }
+  refresh(); back("/admin/oldalak", { ok: `„${title.hu}” mentve.` });
 }
 
 /* ---------- Szövegek, tulajdonos, kapcsolat, hero ---------- */
 export async function saveContent(fd: FormData) {
-  await writeSite((site) => {
+  if (!s(fd, "hero.title.hu")) back("/admin/tartalom", { hiba: "A magyar főcím kötelező." });
+  if (!s(fd, "owner.name")) back("/admin/tartalom", { hiba: "A tulajdonos neve kötelező." });
+  if (!s(fd, "contact.phone") || !s(fd, "contact.email")) back("/admin/tartalom", { hiba: "A kapcsolati telefonszám és e-mail kötelező." });
+  try { await writeSite((site) => {
     site.hero = { image: s(fd, "hero.image") || site.hero.image, title: lf(fd, "hero.title"), subtitle: lf(fd, "hero.subtitle") };
     site.owner = { name: s(fd, "owner.name"), role: lf(fd, "owner.role"), phone: s(fd, "owner.phone"), email: s(fd, "owner.email"), note: lf(fd, "owner.note"), image: s(fd, "owner.image") || undefined };
     site.intro = { eyebrow: lf(fd, "intro.eyebrow"), title: lf(fd, "intro.title"), lead: lf(fd, "intro.lead"), body: lf(fd, "intro.body") };
@@ -74,21 +93,23 @@ export async function saveContent(fd: FormData) {
       person: s(fd, "contact.person"), phone: s(fd, "contact.phone"), email: s(fd, "contact.email"), address: s(fd, "contact.address"),
       facebook: s(fd, "contact.facebook") || undefined, instagram: s(fd, "contact.instagram") || undefined, mapUrl: s(fd, "contact.mapUrl") || undefined, note: lf(fd, "contact.note"),
     };
-  });
-  refresh();
+  }); } catch (e) { back("/admin/tartalom", { hiba: `A mentés nem sikerült: ${errMsg(e)}` }); }
+  refresh(); back("/admin/tartalom", { ok: "Főoldal és kapcsolat mentve." });
 }
 export async function setHeroImage(fd: FormData) {
   const image = s(fd, "image");
-  await writeSite((site) => { site.hero.image = image; });
-  refresh();
+  try { await writeSite((site) => { site.hero.image = image; }); } catch (e) { back("/admin/kepek", { hiba: `Nem sikerült beállítani: ${errMsg(e)}` }); }
+  refresh(); back("/admin/kepek", { ok: "Nyitókép beállítva." });
 }
 
 /* ---------- Képek (feltöltés → webp → fájltár) ---------- */
 export async function uploadImage(fd: FormData) {
   const file = fd.get("file"); const alt = s(fd, "alt");
-  if (!(file instanceof File) || file.size === 0) throw new Error("Nincs fájl.");
-  if (file.size > 25 * 1024 * 1024) throw new Error("A fájl túl nagy (max 25 MB).");
+  if (!(file instanceof File) || file.size === 0) back("/admin/kepek", { hiba: "Nem választottál fájlt." });
+  if (!file.type.startsWith("image/")) back("/admin/kepek", { hiba: `Ez nem képfájl (${file.type || file.name}). JPG, PNG vagy WebP tölthető fel.` });
+  if (file.size > 25 * 1024 * 1024) back("/admin/kepek", { hiba: `A fájl túl nagy (${(file.size / 1024 / 1024).toFixed(1)} MB) — legfeljebb 25 MB lehet.` });
   const id = "u-" + uid(); const key = `${id}.webp`;
+  try {
   /* A sharp csak itt, feltöltéskor töltődik be — az admin lapjai ne függjenek a natív modultól. */
   const sharp = (await import("sharp")).default;
   const src = sharp(Buffer.from(await file.arrayBuffer())).rotate().resize({ width: 2000, height: 2000, fit: "inside", withoutEnlargement: true });
@@ -101,26 +122,30 @@ export async function uploadImage(fd: FormData) {
     site.uploads.unshift({ id, src: fileUrl(key), width: meta.width ?? 0, height: meta.height ?? 0, alt: alt || file.name,
       blur: `data:image/webp;base64,${tiny.toString("base64")}`, color: `rgb(${dominant.r},${dominant.g},${dominant.b})`, uploadedAt: new Date().toISOString() });
   });
-  refresh();
+  } catch (e) { back("/admin/kepek", { hiba: `A feltöltés nem sikerült: ${errMsg(e)}` }); }
+  refresh(); back("/admin/kepek", { ok: `Kép feltöltve (${file.name}).` });
 }
 export async function deleteUpload(fd: FormData) {
   const id = s(fd, "id");
-  await writeSite(async (site) => { site.uploads = site.uploads.filter((u) => u.id !== id); });
-  await deleteFile(`${id}.webp`);
-  refresh();
+  try { await writeSite(async (site) => { site.uploads = site.uploads.filter((u) => u.id !== id); }); await deleteFile(`${id}.webp`); }
+  catch (e) { back("/admin/kepek", { hiba: `A törlés nem sikerült: ${errMsg(e)}` }); }
+  refresh(); back("/admin/kepek", { ok: "Kép törölve." });
 }
 
 /* ---------- Egyesületi beszámolók (PDF) ---------- */
 export async function uploadReport(fd: FormData) {
   const file = fd.get("file"); const title = s(fd, "title"); const date = s(fd, "date") || new Date().toISOString().slice(0, 10);
-  if (!(file instanceof File) || file.size === 0) throw new Error("Nincs fájl.");
-  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) throw new Error("Csak PDF tölthető fel.");
-  if (file.size > 10 * 1024 * 1024) throw new Error("A fájl túl nagy (max 10 MB).");
-  if (!title) throw new Error("Cím kötelező.");
+  const P = "/admin/beszamolok";
+  if (!(file instanceof File) || file.size === 0) back(P, { hiba: "Nem választottál fájlt." });
+  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) back(P, { hiba: `Csak PDF tölthető fel — ez ${file.type || "más típusú"} fájl (${file.name}).` });
+  if (file.size > 10 * 1024 * 1024) back(P, { hiba: `A PDF túl nagy (${(file.size / 1024 / 1024).toFixed(1)} MB) — legfeljebb 10 MB lehet.` });
+  if (!title) back(P, { hiba: "Adj címet a beszámolónak (pl. „Éves beszámoló 2025”)." });
   const id = "r-" + uid(); const key = `${id}.pdf`;
-  await putFile(key, Buffer.from(await file.arrayBuffer()));
-  await writeSite((site) => { site.reports.unshift({ id, title, year: Number(date.slice(0, 4)), date, file: key, size: file.size, published: b(fd, "published") }); });
-  refresh();
+  try {
+    await putFile(key, Buffer.from(await file.arrayBuffer()));
+    await writeSite((site) => { site.reports.unshift({ id, title, year: Number(date.slice(0, 4)), date, file: key, size: file.size, published: b(fd, "published") }); });
+  } catch (e) { back(P, { hiba: `A feltöltés nem sikerült: ${errMsg(e)}` }); }
+  refresh(); back(P, { ok: `„${title}” feltöltve.` });
 }
 export async function toggleReport(fd: FormData) {
   const id = s(fd, "id");
@@ -129,20 +154,21 @@ export async function toggleReport(fd: FormData) {
 }
 export async function deleteReport(fd: FormData) {
   const id = s(fd, "id"); let key = "";
-  await writeSite((site) => { key = site.reports.find((r) => r.id === id)?.file ?? ""; site.reports = site.reports.filter((r) => r.id !== id); });
-  if (key) await deleteFile(key);
-  refresh();
+  try { await writeSite((site) => { key = site.reports.find((r) => r.id === id)?.file ?? ""; site.reports = site.reports.filter((r) => r.id !== id); }); if (key) await deleteFile(key); }
+  catch (e) { back("/admin/beszamolok", { hiba: `A törlés nem sikerült: ${errMsg(e)}` }); }
+  refresh(); back("/admin/beszamolok", { ok: "Beszámoló törölve." });
 }
 
 /* ---------- Jogi oldalak ---------- */
 export async function saveLegal(fd: FormData) {
-  await writeSite((site) => {
+  if (!s(fd, "privacy.hu")) back("/admin/jogi", { hiba: "A magyar adatkezelési szöveg nem lehet üres." });
+  try { await writeSite((site) => {
     site.legal = {
       imprint: { operator: s(fd, "imprint.operator"), person: s(fd, "imprint.person"), address: s(fd, "imprint.address"), email: s(fd, "imprint.email"), phone: s(fd, "imprint.phone"), taxId: s(fd, "imprint.taxId"), regNo: s(fd, "imprint.regNo"), hosting: s(fd, "imprint.hosting") },
       privacy: lf(fd, "privacy"),
     };
-  });
-  refresh();
+  }); } catch (e) { back("/admin/jogi", { hiba: `A mentés nem sikerült: ${errMsg(e)}` }); }
+  refresh(); back("/admin/jogi", { ok: "Impresszum és adatkezelés mentve." });
 }
 
 /* ---------- Üzenetek ---------- */

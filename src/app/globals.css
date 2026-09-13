@@ -827,3 +827,22 @@ main.sub { padding-top: 0; }
 
 /* Képfej nélküli lapok (eseménynaptár, jogi oldalak): a cím a fixált fejléc alatt kezdődjön */
 main.sub > .sub-head:first-child, main.sub > .legal:first-child { padding-top: calc(var(--header-h) + clamp(40px, 6vw, 72px)); }
+
+/* Túratérkép: mobilon a teljes térkép látszik, kifutó szélekkel, nagyobb feliratokkal */
+.route-map { aspect-ratio: 900 / 450; }
+@media (max-width: 720px) {
+  .route-map { aspect-ratio: 900 / 450; margin-inline: calc(-1 * var(--pad)); border-radius: 0; }
+  .route-map .route-txt { font-size: 26px; }
+  .route-map .route-txt-sm { font-size: 20px; }
+  .route-map .route-dot { r: 11px; stroke-width: 4px; }
+  .route-map .route-line { stroke-width: 7px; }
+}
+
+/* Nyitott mobil menü: a fejléc-pill kap tömör hátteret a fotó fölött, az X sötét gomb */
+.hdr.open .hdr-bar { background: rgb(247 244 238 / 0.94); border: 1px solid var(--color-line); box-shadow: 0 8px 30px -18px rgb(29 27 23 / 0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.hdr.open .burger { background: var(--color-ink); color: var(--color-bone); }
+.hdr.open .brand { color: var(--color-ink); }
+
+/* Űrlap-hibák: szöveg + a hibás mező kerete */
+.form-err { margin: 0; padding: 10px 14px; border-radius: 8px; background: #fbeeee; color: #8a2424; border: 1px solid #ecc5c5; font-size: 0.95rem; }
+.input[aria-invalid="true"] { border-color: #b23b3b; box-shadow: 0 0 0 3px rgb(178 59 59 / 0.15); }

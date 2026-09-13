@@ -99,3 +99,9 @@
 .pill-feat { background: var(--color-forest); color: #fff; }
 .row .thumb.pdf { display: grid; place-items: center; font-weight: 700; font-size: 0.8rem; color: #a12d2d; background: #fbeeee; }
 @media (max-width: 640px) { .lfield-row { grid-template-columns: 1fr; } .lfield-lang { padding-top: 0; } .reg-table { display: block; overflow-x: auto; } }
+
+/* Visszajelző sáv (?ok= / ?hiba=) */
+.flash { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-weight: 500; }
+.flash-ok { background: #e3efe4; color: #1f4a2c; border: 1px solid #b9d5bf; }
+.flash-err { background: #fbeeee; color: #8a2424; border: 1px solid #ecc5c5; }
+.flash button { border: 0; background: transparent; font-size: 1.3rem; line-height: 1; cursor: pointer; color: inherit; padding: 2px 6px; }
