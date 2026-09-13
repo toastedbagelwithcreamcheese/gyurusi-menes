@@ -14,10 +14,10 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   EXPECT: TSC_OK
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=d018f66bb24b65f8f3c86936c97cc0c033c796f2f7b335753a186d3d2c5818a4; output-bytes=7
 
-- [ ] G3: ESLint hibamentes
+- [x] G3: ESLint hibamentes
   CHECK: npm run lint && echo LINT_OK
   EXPECT: LINT_OK
-  EVIDENCE: pending
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=fef1998fdb610a910f5d80fa66c0bb36f27e7937385d20f502b3148773c9ae42; output-bytes=46
 
 - [x] G4: Kurált, optimalizált képkészlet alt szövegekkel, méretkorláton belül
   CHECK: node scripts/verify.mjs images
