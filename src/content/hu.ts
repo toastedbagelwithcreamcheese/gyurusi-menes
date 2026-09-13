@@ -26,6 +26,7 @@ export const hu: Dictionary = {
   contact: {
     eyebrow: "Kapcsolat", title: "Gyere ki Gyűrűsre", ownerFirst: "A ménes ügyeiben", generalTitle: "Lovaglás, túra, tábor, események", phone: "Telefon", email: "E-mail", addressLabel: "Cím", map: "térkép", contactPerson: "Kapcsolattartó",
     sub: { title: "Kérdésed van?", note: "Hívj, vagy írj — előzetes egyeztetéssel adunk időpontot.", write: "Üzenetet írok", call: "Hívás", formTitle: "Írj nekünk", formLead: "Kérdés, időpont, létszám — írd meg, és visszahívunk vagy válaszolunk.", pageRef: "Melyik oldalról írsz" },
+    mapBox: { title: "Így találsz ide", load: "Térkép betöltése", note: "A gombbal a Google Térkép töltődik be — ekkor a Google saját sütiket és adatokat kezelhet.", route: "Útvonalterv", loaded: "Google Térkép" },
   },
   form: { name: "Név", email: "E-mail", phone: "Telefon", phoneOptional: "(nem kötelező)", message: "Üzenet", messagePh: "Mikor jönnétek, hányan, mi érdekel?", send: "Üzenet küldése", sending: "Küldés…", okTitle: "Megkaptuk az üzeneted.", okBody: "Hamarosan válaszolunk. Ha sürgős, hívj minket telefonon.", err: "Nem sikerült elküldeni.", website: "Weboldal", errName: "Add meg a neved (legalább 2 betű).", errEmail: "Ez az e-mail-cím nem tűnik érvényesnek — ellenőrizd a @ és a pont helyét.", errMessage: "Írj pár szót az üzenetbe (legalább 10 karakter).", errRate: "Túl gyorsan küldtél két üzenetet egymás után. Várj néhány másodpercet, és próbáld újra.", errServer: "Most nem tudtuk fogadni az üzenetet. Kérjük, hívj minket telefonon, vagy írj közvetlenül e-mailt." },
   reg: {

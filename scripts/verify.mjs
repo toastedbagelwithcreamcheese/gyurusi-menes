@@ -76,7 +76,7 @@ if (which === "css-motion") {
   if (/transition:\s*all\b/.test(css)) fail("transition: all a CSS-ben");
   if (!css.includes("prefers-reduced-motion")) fail("nincs prefers-reduced-motion");
   /* Osztály-lefedettség: az új komponensek osztályai tényleg ott vannak (egy rossz blokk-csere levághatja a fájl végét). */
-  const required = [".hdr-pill", ".hero-line", ".sub-contact", ".grain", ".lang ", ".owner-grid", ".tiles", ".tile-card", ".ev-feat", ".evc", ".reg-grid", ".rep-year", ".sub-strip", ".contact-card", ".breed-strip", ".mnav", ".dock", ".sub-hero", ".zoom", ".route-map", ".sub-form", ".ev-grid", ".ftr2", ".legal-dl"];
+  const required = [".map-ph", ".hdr-pill", ".hero-line", ".sub-contact", ".grain", ".lang ", ".owner-grid", ".tiles", ".tile-card", ".ev-feat", ".evc", ".reg-grid", ".rep-year", ".sub-strip", ".contact-card", ".breed-strip", ".mnav", ".dock", ".sub-hero", ".zoom", ".route-map", ".sub-form", ".ev-grid", ".ftr2", ".legal-dl"];
   for (const c of required) if (!css.includes(c)) fail(`hiányzó osztály a globals.css-ből: ${c}`);
   for (const gone of [".lb ", ".gal ", ".marquee"]) if (css.includes(gone)) fail(`ott maradt a kivett blokk: ${gone}`);
   console.log(`${required.length} kötelező osztály megvan, a galéria/marquee CSS ki`);
@@ -142,7 +142,8 @@ if (which === "http") {
   /* Jogi oldalak, lábléc-hivatkozásokkal */
   for (const p of ["/adatkezeles", "/impresszum", "/de/impresszum"]) { const r = await get(p); if (r.status !== 200) fail(`${p} → ${r.status}`); }
   const homeHtml = await (await get("/")).text();
-  must(homeHtml, ['href="/adatkezeles"', 'href="/impresszum"', "+36 30 872 3777", "data-tiles", "data-featured-event"], "/ lábléc + csempék + kiemelt esemény");
+  must(homeHtml, ['href="/adatkezeles"', 'href="/impresszum"', "+36 30 872 3777", "data-tiles", "data-featured-event", 'data-map="idle"'], "/ lábléc + csempék + kiemelt esemény + térkép");
+  if (homeHtml.includes("maps.google.com/maps?q")) fail("a Google-térkép iframe automatikusan betöltődik (kattintás nélkül)");
   /* Események */
   for (const l of ["", "/en", "/de"]) { const r = await get(`${l}/esemenyek`); if (r.status !== 200) fail(`${l}/esemenyek → ${r.status}`); }
   const ev = await get("/esemenyek/lovasnapok-2026"); if (ev.status !== 200) fail(`/esemenyek/lovasnapok-2026 → ${ev.status}`);

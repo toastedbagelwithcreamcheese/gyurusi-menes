@@ -26,6 +26,7 @@ export const en: Dictionary = {
   contact: {
     eyebrow: "Contact", title: "Come out to Gyűrűs", ownerFirst: "Stud matters", generalTitle: "Riding, trails, camps, events", phone: "Phone", email: "E-mail", addressLabel: "Address", map: "map", contactPerson: "Contact",
     sub: { title: "Have a question?", note: "Call or write — we arrange times by prior appointment.", write: "Write to us", call: "Call", formTitle: "Write to us", formLead: "A question, a date, how many of you — tell us and we call or write back.", pageRef: "Which page you are writing from" },
+    mapBox: { title: "How to find us", load: "Load map", note: "The button loads Google Maps — Google may then set its own cookies and process data.", route: "Directions", loaded: "Google Maps" },
   },
   form: { name: "Name", email: "E-mail", phone: "Phone", phoneOptional: "(optional)", message: "Message", messagePh: "When would you come, how many of you, what are you interested in?", send: "Send message", sending: "Sending…", okTitle: "We received your message.", okBody: "We'll reply soon. If it's urgent, call us.", err: "Could not send.", website: "Website", errName: "Please enter your name (at least 2 letters).", errEmail: "This e-mail address does not look valid — check the @ and the dot.", errMessage: "Please write a few words in the message (at least 10 characters).", errRate: "Two messages were sent too quickly. Wait a few seconds and try again.", errServer: "We could not receive your message right now. Please call us or send an e-mail directly." },
   reg: {

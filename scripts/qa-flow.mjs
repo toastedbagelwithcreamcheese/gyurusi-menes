@@ -45,6 +45,12 @@ try {
   await go("/en/turak"); await page.click(`${f} button`); t = await alertText(); if (!/name/i.test(t)) fail("angol oldalon nem angol a hiba: " + t);
   console.log("A2) angol hibaüzenet OK:", t.slice(0, 50));
 
+  /* A3) térkép: alapból nincs iframe, a gombra betöltődik */
+  await go("/"); if (await page.locator("iframe.map-frame").count()) fail("a térkép iframe kattintás nélkül betöltődött");
+  await page.locator('[data-map="idle"] button').click(); await page.waitForSelector("iframe.map-frame", { timeout: 10000 });
+  const msrc = await page.locator("iframe.map-frame").getAttribute("src"); if (!/maps\.google\.com\/maps\?q=.*output=embed/.test(msrc ?? "")) fail("a térkép iframe src hibás: " + msrc);
+  console.log("A3) térkép kattintásra betöltődik OK");
+
   /* B) jelentkezés a példa-túrára */
   await go("/esemenyek/oszi-lovastura-2026-09-19");
   const r = '[data-testid="registration-form"]';

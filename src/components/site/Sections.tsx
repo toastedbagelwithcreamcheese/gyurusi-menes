@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
 import { HeroIntro } from "./HeroIntro";
 import { HeroParallax } from "./HeroParallax";
+import { MapEmbed } from "./MapEmbed";
 import { Photo } from "@/components/Photo";
 import { resolveImage, type ImageMeta } from "@/lib/images";
 import type { Dictionary, Lang } from "@/content/types";
@@ -243,6 +244,9 @@ export function ContactBlock({ site, lang, d, form }: P & { form: React.ReactNod
         </div>
         <Reveal delay={120} className="contact-form">{form}</Reveal>
       </div>
+      <Reveal delay={80} className="wrap contact-map">
+        <MapEmbed query={`Gyűrűsi Ménes, ${c.address}`} address={c.address} mapUrl={c.mapUrl} lang={lang} labels={d.contact.mapBox} />
+      </Reveal>
     </section>
   );
 }

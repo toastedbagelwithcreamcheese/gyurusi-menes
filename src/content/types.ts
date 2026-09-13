@@ -32,6 +32,7 @@ export interface Dictionary {
   contact: {
     eyebrow: string; title: string; ownerFirst: string; generalTitle: string; phone: string; email: string; addressLabel: string; map: string; contactPerson: string;
     sub: { title: string; note: string; write: string; call: string; formTitle: string; formLead: string; pageRef: string };
+    mapBox: { title: string; load: string; note: string; route: string; loaded: string };
   };
   form: {
     name: string; email: string; phone: string; phoneOptional: string; message: string; messagePh: string; send: string; sending: string;
