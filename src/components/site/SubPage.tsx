@@ -44,7 +44,8 @@ export function SubPage({ site, lang, d, rest, eyebrow, title, meta, image, stri
   contact?: PageContact | null; facts?: Fact[]; related?: Related[]; relatedTitle?: string; back: { href: string; label: string }; after?: React.ReactNode; children: React.ReactNode;
 }) {
   const c = contact ?? { person: site.contact.person, phone: site.contact.phone, email: site.contact.email, note: site.contact.note };
-  const zoomItems = [image, ...strip].filter((x): x is ImageMeta => !!x);
+  /* A képfej nem nagyítható (a megbízó kérése) — csak a képsáv képei. */
+  const zoomItems = strip;
   const pageKey = rest.replace(/^\//, "").split("/")[0] || "home";
   return (
     <Shell site={site} lang={lang} d={d} rest={rest} phone={c.phone}>
@@ -54,7 +55,6 @@ export function SubPage({ site, lang, d, rest, eyebrow, title, meta, image, stri
             <div className="sub-hero-media parallax">
               <Pic im={image} sizes="100vw" priority />
               <div className="sub-hero-shade" aria-hidden="true" />
-              <ZoomButton index={0} label={d.zoom.open} className="sub-hero-zoom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></ZoomButton>
             </div>
           )}
           <div className="wrap sub-hero-in">
@@ -65,14 +65,7 @@ export function SubPage({ site, lang, d, rest, eyebrow, title, meta, image, stri
         </section>
 
         <div className="wrap sub-grid">
-          <div className="sub-body">
-            {children}
-            {strip.length > 0 && (
-              <Reveal className="sub-strip" delay={60}>
-                {strip.map((im, i) => <ZoomButton key={i} index={i + 1} label={d.zoom.open} className="photo"><Pic im={im} sizes="(max-width: 640px) 50vw, 25vw" /></ZoomButton>)}
-              </Reveal>
-            )}
-          </div>
+          <div className="sub-body">{children}</div>
           <aside className="sub-aside">
             {facts.length > 0 && <Reveal className="sub-facts">{facts.map((f) => <div key={f.k} className="sub-fact"><span className="eyebrow">{f.k}</span><span>{f.v}</span></div>)}</Reveal>}
             <Reveal className="sub-contact" delay={80} data-page-contact>
@@ -85,6 +78,14 @@ export function SubPage({ site, lang, d, rest, eyebrow, title, meta, image, stri
             </Reveal>
           </aside>
         </div>
+
+        {strip.length > 0 && (
+          <div className="wrap">
+            <Reveal className={`sub-strip sub-strip-${Math.min(strip.length, 3)}`} delay={60}>
+              {strip.map((im, i) => <ZoomButton key={i} index={i} label={d.zoom.open} className="photo"><Pic im={im} sizes={strip.length === 1 ? "100vw" : "(max-width: 640px) 100vw, 50vw"} /></ZoomButton>)}
+            </Reveal>
+          </div>
+        )}
 
         {after && <div className="wrap">{after}</div>}
 

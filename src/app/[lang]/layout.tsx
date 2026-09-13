@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 import { isLang, LANGS } from "@/content/types";
 import { DICTS, getDict } from "@/lib/i18n";
+import { ScrollTop } from "@/components/ScrollTop";
 import "../globals.css";
 
 /* Betűk build-időben letöltve, saját domainről (nincs futásidejű Google-kapcsolat).
@@ -46,7 +47,7 @@ export default async function RootLayout({ children, params }: { children: React
       <head>
         <noscript><style>{`.rise,.unveil{opacity:1!important;transform:none!important;clip-path:none!important} .hdr .brand-line,.hdr .hdr-nav a,.hdr .hdr-phone,.hdr .lang{opacity:1!important;transform:none!important} .hero-media img{transform:none!important}`}</style></noscript>
       </head>
-      <body><div className="grain" aria-hidden="true" />{children}</body>
+      <body><ScrollTop /><div className="grain" aria-hidden="true" />{children}</body>
     </html>
   );
 }

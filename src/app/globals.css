@@ -656,9 +656,6 @@ textarea.input { min-height: 8rem; resize: vertical; }
 .sub-hero-in .caption { margin-top: 12px; color: rgb(243 239 230 / 0.82); }
 .sub-hero-plain .sub-hero-in { padding-top: 0; }
 .sub-hero-plain .eyebrow, .sub-hero-plain .sub-back, .sub-hero-plain .caption { color: inherit; opacity: 0.8; }
-.sub-hero-zoom { position: absolute; right: clamp(16px, 3vw, 32px); top: calc(var(--header-h) + 20px); width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgb(243 239 230 / 0.4); background: rgb(20 18 15 / 0.35); color: var(--color-paper-on-dark); display: grid; place-items: center; backdrop-filter: blur(8px); cursor: pointer; transition: background-color 200ms var(--ease-out), transform 200ms var(--ease-out); }
-.sub-hero-zoom svg { width: 18px; height: 18px; }
-.sub-hero-zoom:hover { background: rgb(20 18 15 / 0.6); transform: scale(1.06); }
 .sub .sub-grid { padding-top: clamp(40px, 6vw, 72px); }
 
 /* ---- nagyítás (lightbox) ---- */
@@ -785,3 +782,45 @@ textarea.input { min-height: 8rem; resize: vertical; }
 .ftr2-credit a { color: var(--color-paper-on-dark); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(243 239 230 / 0.5); }
 @media (max-width: 860px) { .ftr2-grid { grid-template-columns: 1fr 1fr; } .ftr2-brand { grid-column: 1 / -1; } }
 @media (max-width: 520px) { .ftr2-grid { grid-template-columns: 1fr; } }
+
+/* ==========================================================================
+   4. KÖR — audit-javítások: fejléc-pill a tartalmához méretezve, telefon ikonra
+   vált 1240 alatt, képfej a fejléc alá, teljes szélességű képsáv, mobil nyelvváltó.
+   ========================================================================== */
+.hdr.compact .hdr-bar { max-width: min(1240px, 100%); width: fit-content; gap: 14px; padding-inline: 8px; }
+.hdr:not(.compact) .hdr-bar { gap: 16px; }
+.hdr-nav { gap: 0; }
+.hdr-nav a { padding: 8px 12px; font-size: 0.9rem; }
+.hdr-phone { padding: 9px 14px 9px 12px; gap: 8px; }
+.hdr-phone-ic { width: 16px; height: 16px; flex: 0 0 auto; }
+.hdr-phone-num { white-space: nowrap; }
+@media (max-width: 1240px) { .hdr-phone { padding: 0; width: 44px; height: 44px; justify-content: center; } .hdr-phone-num { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+@media (max-width: 900px) { .hdr-phone { display: none; } }
+
+/* Képfej: a fejléc alá fut, nincs krém sáv fölötte */
+main.sub { padding-top: 0; }
+.sub-hero-plain { padding-top: calc(var(--header-h) + 48px); }
+
+/* Képsáv a teljes szélességen (a szöveg + oldalsáv rács alatt) */
+.sub-strip { display: grid; gap: 14px; margin: clamp(36px, 5vw, 56px) 0 0; }
+.sub-strip-1 { grid-template-columns: 1fr; }
+.sub-strip-1 .zoom-btn { aspect-ratio: 21 / 9; }
+.sub-strip-2 { grid-template-columns: 1fr 1fr; }
+.sub-strip-2 .zoom-btn { aspect-ratio: 3 / 2; }
+.sub-strip-3 { grid-template-columns: repeat(3, 1fr); }
+.sub-strip-3 .zoom-btn { aspect-ratio: 4 / 3; }
+.sub-strip .zoom-btn { overflow: hidden; border-radius: var(--radius-md); }
+.sub-strip .zoom-btn img { transition: transform 700ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .sub-strip .zoom-btn:hover img { transform: scale(1.03); } }
+.sub-strip .zoom-btn:active img { transform: scale(0.99); }
+@media (max-width: 640px) { .sub-strip-2, .sub-strip-3 { grid-template-columns: 1fr; } .sub-strip-3 .zoom-btn, .sub-strip-2 .zoom-btn { aspect-ratio: 3 / 2; } }
+
+/* Mobil menü nyelvváltó: három kód, középre igazítva, 44 px-es célfelület */
+.mnav-lang { display: inline-flex; gap: 8px; margin-bottom: 20px; }
+.mnav .mnav-lang a { display: inline-flex; align-items: center; justify-content: center; grid-template-columns: none; min-width: 52px; min-height: 44px; padding: 0 14px; line-height: 1; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink); border: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); border-radius: 999px; opacity: 1; transform: none; }
+.mnav .mnav-lang a[aria-current="page"] { background: var(--color-forest); color: var(--color-paper-on-dark); border-color: var(--color-forest); }
+
+/* Hover csak egérrel; lenyomásra visszajelzés */
+@media (hover: none) { .tile-card:hover, .ev-card:hover { transform: none; box-shadow: none; } .tile-card:hover .tile-ph img { transform: none; } }
+.tile-card:active, .ev-card:active, .rel-card:active { transform: scale(0.985); }
+.ftr2-cta:active .ftr2-cta-ic { transform: scale(0.94); }
