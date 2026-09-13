@@ -824,3 +824,6 @@ main.sub { padding-top: 0; }
 @media (hover: none) { .tile-card:hover, .ev-card:hover { transform: none; box-shadow: none; } .tile-card:hover .tile-ph img { transform: none; } }
 .tile-card:active, .ev-card:active, .rel-card:active { transform: scale(0.985); }
 .ftr2-cta:active .ftr2-cta-ic { transform: scale(0.94); }
+
+/* Képfej nélküli lapok (eseménynaptár, jogi oldalak): a cím a fixált fejléc alatt kezdődjön */
+main.sub > .sub-head:first-child, main.sub > .legal:first-child { padding-top: calc(var(--header-h) + clamp(40px, 6vw, 72px)); }
