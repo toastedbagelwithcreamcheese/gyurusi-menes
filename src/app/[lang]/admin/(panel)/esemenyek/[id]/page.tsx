@@ -4,6 +4,7 @@ import { readSite } from "@/lib/store";
 import { pickerImages } from "@/lib/images";
 import { ImagePicker } from "../../ImagePicker";
 import { LField } from "../../LField";
+import { ConfirmButton } from "../../ConfirmButton";
 import { saveEvent, deleteEvent } from "../../actions";
 
 export default async function EventEdit({ params }: { params: Promise<{ id: string }> }) {
@@ -13,7 +14,7 @@ export default async function EventEdit({ params }: { params: Promise<{ id: stri
   if (id !== "uj" && !ev) notFound();
   return (
     <>
-      <div className="adm-head"><div><h1>{ev ? "Esemény szerkesztése" : "Új esemény"}</h1><p>Cím, dátum, rövid leírás és egy kép. A magyar szöveg kötelező; az angol és német is kitöltendő, hogy a külföldi látogató is értse.</p></div></div>
+      <div className="adm-head"><div><h1>{ev ? "Esemény szerkesztése" : "Új esemény"}</h1><p>Cím, dátum, rövid leírás és egy kép. A magyar szöveg kötelező; az angolt és a németet a mezők alatti „Fordítások” részben adhatod meg, hogy a külföldi látogató is értse.</p></div></div>
       <form action={saveEvent} className="card form">
         <input type="hidden" name="id" value={ev?.id ?? ""} />
         <LField name="title" label="Cím" value={ev?.title} required />
@@ -31,7 +32,12 @@ export default async function EventEdit({ params }: { params: Promise<{ id: stri
         <label className="check"><input type="checkbox" name="registration" defaultChecked={ev?.registration ?? false} />Jelentkezés nyitva (igényfelmérés: név, telefon, létszám — csak itt, az adminban látszik)</label>
         <div className="actions"><button className="btn btn-primary">Mentés</button><Link href="/admin/esemenyek" className="btn btn-ghost">Mégse</Link></div>
       </form>
-      {ev && <form action={deleteEvent} className="actions" style={{ marginTop: 16 }}><input type="hidden" name="id" value={ev.id} /><button className="btn btn-danger btn-sm">Esemény törlése (a jelentkezésekkel együtt)</button></form>}
+      {ev && (
+        <form action={deleteEvent} className="actions" style={{ marginTop: 16 }} data-delete="event">
+          <input type="hidden" name="id" value={ev.id} />
+          <ConfirmButton question="Biztosan törlöd az eseményt és minden jelentkezését?">Esemény törlése (a jelentkezésekkel együtt)</ConfirmButton>
+        </form>
+      )}
     </>
   );
 }

@@ -30,6 +30,14 @@ export type Event = {
   id: string; title: L; date: string; endDate?: string; time?: string; location?: string;
   summary: L; body?: L; image?: string; published: boolean; featured: boolean; registration: boolean;
 };
+/**
+ * Túraútvonal a Túrák lapon (az ügyfél útvonal-képeket és útvonalon készült képeket ígért): név, rövid leírás,
+ * egy térképkép és legfeljebb 4 fotó — mind képazonosító (kurált fotó vagy feltöltés). Sorrend és közzététel az adminból.
+ * A mag üres: útvonalat nem találunk ki; amíg nincs közzétett útvonal, a Túrák lap az illusztrációt mutatja.
+ */
+export type TrailRoute = { id: string; name: L; summary: L; mapImage?: string; photos: string[]; published: boolean; order: number };
+export const ROUTE_PHOTOS_MAX = 4;
+export const sortRoutes = (routes: TrailRoute[]) => [...routes].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 export type Registration = { id: string; eventId: string; name: string; phone: string; email?: string; count: number; note?: string; receivedAt: string };
 export type Report = { id: string; title: string; year: number; date: string; file: string; size: number; published: boolean };
 export type Upload = { id: string; src: string; width: number; height: number; alt: string; blur?: string; color?: string; uploadedAt: string };
@@ -46,6 +54,7 @@ export type SiteContent = {
   intro: { eyebrow: L; title: L; lead: L; body: L };
   pages: Record<PageKey, Page>;
   events: Event[];
+  routes: TrailRoute[];
   /* A jelentkezések és az üzenetek NEM itt élnek, hanem rekordonként külön kulcson (src/lib/records.ts). */
   reports: Report[];
   uploads: Upload[];
@@ -117,7 +126,7 @@ async function readLocal(strict = false): Promise<SiteContent> {
 function withDefaults(data: Partial<SiteContent>): SiteContent {
   const seed = seedJson as unknown as SiteContent;
   const out = { ...structuredClone(seed), ...data } as SiteContent;
-  for (const k of ["events", "reports", "uploads"] as const) if (!Array.isArray(out[k])) out[k] = [];
+  for (const k of ["events", "routes", "reports", "uploads"] as const) if (!Array.isArray(out[k])) out[k] = [];
   if (!out.legal?.imprint || !out.legal?.privacy) out.legal = structuredClone(seed.legal);
   if (!out.owner) out.owner = structuredClone(seed.owner);
   for (const k of PAGE_KEYS) if (!out.pages?.[k]) out.pages = { ...structuredClone(seed.pages), ...(out.pages ?? {}) };

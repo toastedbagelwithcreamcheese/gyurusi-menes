@@ -2,6 +2,7 @@ import { readSite } from "@/lib/store";
 import { allImages } from "@/lib/images";
 import { Thumb } from "../ImagePicker";
 import { ImageUpload } from "../ImageUpload";
+import { ConfirmButton } from "../ConfirmButton";
 import { deleteUpload, setHeroImage } from "../actions";
 
 export default async function ImagesAdmin() {
@@ -9,7 +10,7 @@ export default async function ImagesAdmin() {
   const images = allImages(site);
   return (
     <>
-      <div className="adm-head"><div><h1>Képek</h1><p>Feltöltés és a nyitókép kiválasztása. A képeket automatikusan webre méretezzük; az aloldalak és események képeit a saját szerkesztőjükben választod ki (ott is lehet újat feltölteni).</p></div></div>
+      <div className="adm-head"><div><h1>Képek</h1><p>Feltöltés és a nyitókép kiválasztása. A képeket automatikusan webre méretezzük; az aloldalak, események és túraútvonalak képeit a saját szerkesztőjükben választod ki (ott is lehet újat feltölteni).</p></div></div>
       {/* Böngészős kicsinyítés + route handler (nem szerver-akció): a nagy fotó is felmegy, folyamatjelzővel. */}
       <div className="card form">
         <h2>Új kép feltöltése</h2>
@@ -24,7 +25,7 @@ export default async function ImagesAdmin() {
             {isHero && <span className="tag hero">Nyitókép</span>}
             <div className="tile-ops">
               {!isHero && <form action={setHeroImage}><input type="hidden" name="image" value={im.id} /><button>Nyitókép</button></form>}
-              {isUpload && <form action={deleteUpload}><input type="hidden" name="id" value={im.id} /><button style={{ color: "#a12d2d" }}>Töröl</button></form>}
+              {isUpload && <form action={deleteUpload}><input type="hidden" name="id" value={im.id} /><ConfirmButton className="tile-del" compact>Töröl</ConfirmButton></form>}
             </div>
           </div>); })}</div>
       </div>

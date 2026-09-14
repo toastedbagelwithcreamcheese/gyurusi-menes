@@ -76,14 +76,16 @@ if (which === "css-motion") {
   if (/transition:\s*all\b/.test(css)) fail("transition: all a CSS-ben");
   if (!css.includes("prefers-reduced-motion")) fail("nincs prefers-reduced-motion");
   /* Osztály-lefedettség: az új komponensek osztályai tényleg ott vannak (egy rossz blokk-csere levághatja a fájl végét). */
-  const required = [".map-ph", ".hdr-pill", ".hero-line", ".sub-contact", ".grain", ".lang ", ".owner-grid", ".tiles", ".tile-card", ".ev-feat", ".evc", ".reg-grid", ".rep-year", ".sub-strip", ".contact-card", ".breed-strip", ".mnav", ".dock", ".sub-hero", ".zoom", ".route-map", ".sub-form", ".ev-grid", ".ftr2", ".legal-dl"];
+  const required = [".map-ph", ".hdr-pill", ".hero-line", ".sub-contact", ".grain", ".lang ", ".owner-grid", ".tiles", ".tile-card", ".ev-feat", ".evc", ".reg-grid", ".rep-year", ".sub-strip", ".contact-card", ".breed-strip", ".mnav", ".dock", ".sub-hero", ".zoom", ".route-map", ".sub-form", ".ev-grid", ".ftr2", ".legal-dl", ".trails", ".trail-card", ".trail-photos"];
   for (const c of required) if (!css.includes(c)) fail(`hiányzó osztály a globals.css-ből: ${c}`);
   for (const gone of [".lb ", ".gal ", ".marquee"]) if (css.includes(gone)) fail(`ott maradt a kivett blokk: ${gone}`);
   console.log(`${required.length} kötelező osztály megvan, a galéria/marquee CSS ki`);
   /* Az admin stíluslapja ugyanígy: a feltöltők (P2) és a Flash-sáv osztályai a fájl végén állnak — egy csonkítás itt is látszódjon. */
   const adminCss = await fs.readFile(path.join(ROOT, "src/app/[lang]/admin/admin.css"), "utf8");
   if (/transition:\s*all\b/.test(adminCss)) fail("transition: all az admin.css-ben");
-  const adminRequired = [".adm-nav", ".picker", ".lfield", ".reg-table", ".flash-err", ".upl-progress", ".upl-note", ".picker-upload"];
+  const adminRequired = [".adm-nav", ".picker", ".lfield", ".reg-table", ".flash-err", ".upl-progress", ".upl-note", ".picker-upload",
+    /* P3: belépés, figyelmeztetés, kétlépcsős törlés, fordítások, fülek, állapotpanel, útvonal-fotók — a fájl végén */
+    ".login-wrap", ".adm-warn", ".confirm-yes", ".lfield-tr", ".tr-missing", ".adm-tabs", ".status-panel", ".photo-order"];
   for (const c of adminRequired) if (!adminCss.includes(c)) fail(`hiányzó osztály az admin.css-ből: ${c}`);
   console.log(`admin.css: ${adminRequired.length} kötelező osztály megvan`);
   console.log("PASS: css-motion");
@@ -160,11 +162,12 @@ if (which === "http") {
   const nofile = await get("/files/nincs-ilyen.webp"); if (nofile.status !== 404) fail(`/files/nincs → ${nofile.status}`);
   for (const p of ["/robots.txt", "/sitemap.xml"]) { const r = await get(p); if (r.status !== 200) fail(`${p} → ${r.status}`); }
   const sm = await (await get("/sitemap.xml")).text(); must(sm, ["/en/turak", "/de/esemenyek", "/egyesulet"], "sitemap");
-  /* Admin (a demón jelszó nélkül; ADMIN_USER+ADMIN_PASSWORD esetén 401 → 200) */
-  const guarded = !!(process.env.ADMIN_USER && process.env.ADMIN_PASSWORD);
-  const auth = guarded ? { headers: { Authorization: "Basic " + Buffer.from(`${process.env.ADMIN_USER}:${process.env.ADMIN_PASSWORD}`).toString("base64") } } : {};
-  const adm0 = await get("/admin"); if (adm0.status !== (guarded ? 401 : 200)) fail(`/admin → ${adm0.status}`);
-  for (const p of ["/admin", "/admin/tartalom", "/admin/oldalak", "/admin/oldalak/turak", "/admin/esemenyek", "/admin/esemenyek/uj", "/admin/jelentkezesek", "/admin/beszamolok", "/admin/kepek", "/admin/uzenetek"]) {
+  /* Admin (a demón jelszó nélkül; ADMIN_PASSWORD mellett a lapok a belépő oldalra visznek, Basic Auth fejléccel 200) */
+  const guarded = !!process.env.ADMIN_PASSWORD;
+  const auth = guarded ? { headers: { Authorization: "Basic " + Buffer.from(`${process.env.ADMIN_USER ?? "admin"}:${process.env.ADMIN_PASSWORD}`).toString("base64") } } : {};
+  const adm0 = await get("/admin");
+  if (guarded ? !(adm0.status === 307 && (adm0.headers.get("location") ?? "").includes("/admin/belepes")) : adm0.status !== 200) fail(`/admin → ${adm0.status} ${adm0.headers.get("location") ?? ""}`);
+  for (const p of ["/admin", "/admin/tartalom", "/admin/oldalak", "/admin/oldalak/turak", "/admin/utvonalak", "/admin/utvonalak/uj", "/admin/esemenyek", "/admin/esemenyek/uj", "/admin/jelentkezesek", "/admin/beszamolok", "/admin/kepek", "/admin/uzenetek"]) {
     const r = await get(p, auth); if (r.status !== 200) fail(`${p} → ${r.status}`);
   }
   /* API: kapcsolat + jelentkezés validálás */

@@ -1,6 +1,7 @@
 import { readSite, formatRange, formatDateTime, isPast, t, type Registration } from "@/lib/store";
 import { listRegistrations } from "@/lib/records";
 import { maybeRunMaintenance } from "@/lib/maintenance";
+import { ConfirmButton } from "../ConfirmButton";
 import { deleteRegistration } from "../actions";
 
 const persons = (regs: Registration[]) => regs.reduce((a, r) => a + r.count, 0);
@@ -17,7 +18,7 @@ function RegTable({ regs }: { regs: Registration[] }) {
           <td className="n">{r.count}</td>
           <td>{r.note ?? <span className="note">—</span>}</td>
           <td className="note">{formatDateTime(r.receivedAt)}</td>
-          <td><form action={deleteRegistration}><input type="hidden" name="id" value={r.id} /><button className="btn btn-danger">Töröl</button></form></td>
+          <td><form action={deleteRegistration}><input type="hidden" name="id" value={r.id} /><ConfirmButton className="btn btn-danger" compact>Töröl</ConfirmButton></form></td>
         </tr>))}</tbody>
     </table>
   );

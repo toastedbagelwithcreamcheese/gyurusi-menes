@@ -5,16 +5,16 @@ Modern, fotóvezérelt bemutatkozó oldal a Gyűrűsi Ménesnek (hucul, gidrán,
 ## Indítás
 ```bash
 npm install
-cp .env.example .env.local   # ADMIN_USER / ADMIN_PASSWORD kötelező
+cp .env.example .env.local   # élesben az ADMIN_PASSWORD kötelező
 npm run dev                  # http://localhost:3000
 ```
-Admin: `/admin`. Jelszó csak akkor kell, ha az `ADMIN_USER` + `ADMIN_PASSWORD` be van állítva — a demón nincs.
+Admin: `/admin`. Ha az `ADMIN_PASSWORD` be van állítva, a `/admin/belepes` lapon kell belépni (az `ADMIN_USER` nem kötelező; ha megadod, felhasználónév is kell). Nélküle az admin nyitott (demó), és minden admin-lap tetején figyelmeztető sáv áll. Részletek: „Admin: belépés és használat” lent.
 
 ## Mi hol van
 - `data/seed.json` (mag) + helyben `data/site.json` — a szerkeszthető tartalomdokumentum (nyitókép, tulajdonos, bemutatkozás, aloldalak, események, beszámolók, feltöltések, jogi szövegek). Az admin ezt írja; a jelentkezések és az üzenetek külön élnek (lásd „Adatszerkezet, karbantartás, mentés”).
 - `src/content/photos.json` + `public/images/photos/` — a kurált, optimalizált fotók. Forrás: `scripts/images.config.mjs`, generálás: `node scripts/prep-images.mjs`.
 - `src/app/page.tsx` — főoldal; `src/components/site/Sections.tsx` — szekciók.
-- `src/app/admin/` — admin (eseménye, hírek, programok, képek, szövegek/kapcsolat, üzenetek); `actions.ts` a server actionök.
+- `src/app/[lang]/admin/` — admin: `belepes/` a belépő oldal, `(panel)/` a menüs lapok (főoldal és kapcsolat, aloldalak, túraútvonalak, események, jelentkezések, beszámolók, képek, üzenetek, jogi), `(panel)/actions.ts` a szerver-akciók, `auth-actions.ts` a belépés és kilépés.
 - `src/app/api/contact/route.ts` — kapcsolati űrlap: menti az üzenetet és Resend-del e-mailt küld (`RESEND_API_KEY`, `CONTACT_TO`).
 - `docs/RESEARCH.md` — forrásolt kutatás; `docs/PHOTOS.md` — fotóelemzés; `DESIGN.md` — design rendszer; `docs/verified-facts.json` — tiltott/kötelező tartalom-minták a `scripts/verify.mjs`-hez.
 
@@ -58,7 +58,7 @@ Két driver, egy felület (`src/lib/store.ts`, `src/lib/records.ts`): helyben f�
   - a 24 óránál régebben kezdett, félbemaradt PDF-feltöltések darabjai is törlődnek (`src/lib/chunks.ts`).
 - **Mikor fut:** naponta a `netlify/functions/daily-maintenance.mts` ütemezett függvényből (`@daily` = 00:00 UTC); alkalmanként az admin *Jelentkezések* és *Üzenetek* lapjának betöltésekor (óránként legfeljebb egyszer); kézzel a `POST /api/admin/maintenance` hívással.
 - **Mentés letöltése:** az admin kezdőlapján a „Mentés letöltése” gomb (`GET /api/admin/backup`) egy JSON-fájlt ad, ugyanazzal a szerkezettel, mint a napi mentés: `site` (a tartalomdokumentum), `registrations`, `messages`.
-- **Az admin-API védelme:** minden `/api/admin/*` útvonal a `src/lib/admin-auth.ts` `requireAdmin()`-ját hívja (a proxy matchere az `/api`-t nem látja); az `/admin` lapokat a proxy ugyanezzel a függvénnyel védi.
+- **Az admin-API védelme:** minden `/api/admin/*` útvonal a `src/lib/admin-auth.ts` `requireAdmin()`-ját hívja (a proxy matchere az `/api`-t nem látja): belépési süti vagy Basic Auth nélkül 401 JSON. Az `/admin` lapokat a proxy ugyanezzel az ellenőrzéssel védi (a belépő oldalra irányít), az admin szerver-akciók pedig maguk is (`guard()`).
 - **Sebességkorlát** (`src/lib/ratelimit.ts`): kapcsolati űrlap 15 s, jelentkezés 10 s IP-nként; a kulcs `sha256(só + IP)` első 24 hex jele, nyers IP nem tárolódik. A só a `RATELIMIT_SALT` környezeti változó, ha nincs, egy egyszer sorsolt, a „ratelimit” tárban őrzött érték. Általános forma: `hit(kulcs, ablakMs, max)`.
 - **Tesztek:** a `DATA_DIR` környezeti változó a helyi adatkönyvtárat máshová teszi (a kapuk elszigetelt könyvtárban futnak). `node scripts/checks/p1-data.mjs` (G16: egyidejű írás mindkét driveren, migráció) és `node scripts/checks/p1-maintenance.mjs` (G17: karbantartás, mentés, ütemezett függvény, tartós sebességkorlát) — előtte `npm run build`. A Blobs-részt a `@netlify/blobs` helyi szimulátora futtatja (`scripts/checks/_p1-harness.mjs`).
 
@@ -91,3 +91,16 @@ npm run dev        # http://localhost:3000 — admin: http://localhost:3000/admi
 ```
 
 Amit az adminban helyben felviszel, az csak a gépeden van. Ha valamit a magba akarsz tenni (hogy élesbe is menjen a következő deployjal), másold a `data/site.json` tartalmát a `data/seed.json`-ba, és commitold.
+
+## Admin: belépés és használat
+
+- **Belépés** (`src/lib/admin-auth.ts` — a védelem egyetlen helye): ha az `ADMIN_PASSWORD` be van állítva, az `/admin` lapok a `/admin/belepes` oldalra visznek (`?next=` a kért lappal), az `/api/admin/*` 401 JSON-t ad. Belépés után `gm_admin` süti: HMAC-SHA256-tal aláírt (Web Crypto, így a proxyban is ellenőrizhető), 30 napos, HttpOnly, Secure, SameSite=Lax. Az aláíró kulcs a jelszóból (+ `ADMIN_USER`, + az opcionális `ADMIN_SESSION_SECRET`) származik, ezért jelszócsere után minden korábbi belépés érvénytelen. A süti állapotmentes: a „Kilépés” a böngészőből törli, de egy korábban lemásolt süti a lejáratáig érvényes maradna — ilyenkor a jelszó (vagy az `ADMIN_SESSION_SECRET`) cseréje segít. A Basic Auth fejléc (szkriptekhez) továbbra is elfogadott.
+- **Rossz jelszó:** magyar hibaüzenet a hátralévő próbák számával; 5 sikertelen próba 15 percen belül → 15 perc tiltás IP-nként (a P1 tartós korlátjával: `hit`, `peek`, `resetHits`). A tiltás alatt a helyes jelszó sem enged be; az üzenet megmondja, hány perc múlva lehet újra.
+- **Proxy és szerver-akciók:** a proxy matchere az admin címeit kiterjesztéstől és nyelvi előtagtól függetlenül lefedi (korábban a `.png`/`.txt`/`.xml`-végű admin-címek kimaradtak, és egy admin szerver-akció így a proxy megkerülésével is elérhető volt). Ezen felül minden admin szerver-akció első sora `await guard()`.
+- **Jelszó nélkül** (demó) az admin nyitott, és minden admin-lap tetején figyelmeztető sáv áll. A nyilvános láblécben nincs admin-link.
+- **Kétlépcsős törlés** (`(panel)/ConfirmButton.tsx`): az első kattintás „Biztosan törlöd? Igen, törlöm / Mégse”, 6 s után visszaáll; natív `confirm()` nincs. Esemény, jelentkezés, üzenet, kép, beszámoló, útvonal.
+- **Fordítások:** az `LField`-ben a magyar mező elöl, az angol és a német a lenyitható „Fordítások (angol, német)” részben; a címke mutatja a hiányt („Hiányzik: EN, DE” / „Kész”). Az esemény- és az útvonal-listán jelvény, ha egy közzétett elem angol vagy német szövege hiányzik (`src/lib/translations.ts`).
+- **Főoldal és kapcsolat:** négy külön mentett rész (Nyitókép · Tulajdonos · Bemutatkozás · Kapcsolat), felül ugró-fülekkel; a `saveHero`, `saveOwner`, `saveIntro`, `saveContact` akció csak a saját részét írja.
+- **Túraútvonalak:** a tartalomdokumentum `routes` tömbje — `{ id, name, summary, mapImage?, photos (legfeljebb 4), published, order }` —, a magban üres (útvonalat nem találunk ki). Admin: `/admin/utvonalak` (sorrend, közzététel) és `/admin/utvonalak/[id]` (képválasztó, több képes fotóválasztó, a P2 feltöltője). A Túrák lapon a közzétett útvonalak kártyaként jelennek meg, nagyítható képekkel; ha nincs ilyen, az illusztrált térkép marad, a jelmagyarázatban csak a körök neveivel.
+- **Állapotpanel** az admin kezdőlapján: e-mail (`RESEND_API_KEY`, `CONTACT_TO` — alapértelmezés: `info@gyurusimenes.hu` —, `CONTACT_FROM`), Google (`GOOGLE_PLACES_KEY`, `GOOGLE_PLACE_ID`), admin (`ADMIN_PASSWORD`, `ADMIN_USER`). Kulcsot és jelszót nem mutat, csak azt, hogy be van-e állítva. A „Próba e-mail küldése” a `src/lib/mail.ts` küldőjével megy a valódi címzettnek.
+- **Tesztek:** `node scripts/checks/p3-auth.mjs` (G19; maga indítja a szervereket) és `node scripts/with-server.mjs node scripts/checks/p3-admin-ux.mjs` (G20; a próba e-mail sikerét helyi Resend-mockkal méri, a `RESEND_API_URL` változón át) — előtte `npm run build`.

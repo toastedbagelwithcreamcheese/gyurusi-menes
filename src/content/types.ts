@@ -46,9 +46,12 @@ export interface Dictionary {
   };
   reviews: { eyebrow: string; title: string; count: string; more: string; on: string; stars: string };
   reports: { eyebrow: string; title: string; lead: string; none: string; open: string; size: string };
-  footer: { blurb: string; contact: string; follow: string; admin: string; owner: string; tagline: string; taglineAccent: string; cta: string; colPages: string; colInfo: string; privacy: string; imprint: string; rights: string; credit: string; madeIn: string; events: string };
+  footer: { blurb: string; contact: string; follow: string; owner: string; tagline: string; taglineAccent: string; cta: string; colPages: string; colInfo: string; privacy: string; imprint: string; rights: string; credit: string; madeIn: string; events: string };
   zoom: { open: string; close: string; prev: string; next: string; of: string };
-  route: { eyebrow: string; title: string; lead: string; note: string; start: string; legend: { name: string; text: string }[] };
+  /** Az illusztrált túratérkép — amíg nincs közzétett útvonal. A jelmagyarázat csak neveket ad (időtartam, nehézség nem igazolt). */
+  route: { eyebrow: string; title: string; lead: string; note: string; start: string; legend: { name: string }[] };
+  /** A Túrák lap útvonal-kártyái (az adminban felvett, közzétett útvonalak); `number`: „{n}. útvonal”. */
+  trails: { eyebrow: string; title: string; lead: string; number: string; map: string; photos: string };
   legal: { privacyTitle: string; imprintTitle: string; operator: string; person: string; address: string; email: string; phone: string; taxId: string; regNo: string; hosting: string; updated: string };
   notFound: { eyebrow: string; title: string; body: string; back: string };
   months: string;

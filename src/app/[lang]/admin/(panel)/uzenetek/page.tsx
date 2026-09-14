@@ -1,6 +1,7 @@
 import { formatDateTime } from "@/lib/store";
 import { listMessages } from "@/lib/records";
 import { maybeRunMaintenance } from "@/lib/maintenance";
+import { ConfirmButton } from "../ConfirmButton";
 import { markRead, deleteMessage } from "../actions";
 
 export default async function MessagesAdmin() {
@@ -21,7 +22,7 @@ export default async function MessagesAdmin() {
             <div className="actions">
               <a className="btn btn-outline btn-sm" href={`mailto:${m.email}?subject=Re: érdeklődés – Gyűrűsi Ménes`}>Válasz e-mailben</a>
               <form action={markRead}><input type="hidden" name="id" value={m.id} /><input type="hidden" name="read" value={m.read ? "0" : "1"} /><button className="btn btn-ghost btn-sm">{m.read ? "Olvasatlannak jelöl" : "Olvasottnak jelöl"}</button></form>
-              <form action={deleteMessage}><input type="hidden" name="id" value={m.id} /><button className="btn btn-danger btn-sm">Töröl</button></form>
+              <form action={deleteMessage}><input type="hidden" name="id" value={m.id} /><ConfirmButton>Töröl</ConfirmButton></form>
             </div>
           </article>))}</div>
       )}

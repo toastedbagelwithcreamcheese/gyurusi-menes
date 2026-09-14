@@ -62,11 +62,12 @@ export function RouteMap({ d }: { d: Dictionary["route"] }) {
           <g className="route-txt-sm" fontSize="11" fill="var(--color-dust)" letterSpacing="2"><text x="40" y="524">N ↑</text><text x="944" y="524" textAnchor="end">ZALAI-DOMBSÁG</text></g>
         </svg>
       </Reveal>
-      <div className="route-legend">
+      {/* Csak a körök nevei: időtartam, hossz, nehézség nem igazolt adat — amíg az ügyfél meg nem adja, nem írunk ilyet. */}
+      <div className="route-legend" data-route-legend>
         {d.legend.map((l, i) => (
           <Reveal key={l.name} delay={160 + i * 80} className="route-item">
             <span className="route-swatch" style={{ background: ROUTES[i].color }} aria-hidden="true" />
-            <span><b>{l.name}</b><span>{l.text}</span></span>
+            <span><b>{l.name}</b></span>
           </Reveal>
         ))}
       </div>

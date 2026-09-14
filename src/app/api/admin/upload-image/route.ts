@@ -15,7 +15,7 @@ const FORMATS = new Set(["webp", "jpeg", "png"]);
  * Válasz: JSON — hibánál magyar, konkrét mondat (a méretet MB-ban mondja).
  */
 export async function POST(req: Request) {
-  const denied = guardAdminWrite(req);
+  const denied = await guardAdminWrite(req);
   if (denied) return denied;
   const q = new URL(req.url).searchParams;
   const name = (q.get("name") ?? "").slice(0, 200);

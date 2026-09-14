@@ -881,3 +881,19 @@ main.sub > .sub-head:first-child, main.sub > .legal:first-child { padding-top: c
 .rev-who small { color: var(--color-dust); font-size: 0.78rem; }
 .rev-text { margin: 0; color: var(--color-ink-soft); font-size: 0.97rem; display: -webkit-box; -webkit-line-clamp: 6; line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
 .rev-more { margin: clamp(20px, 3vw, 32px) 0 0; }
+
+/* 5. kör, P3: túraútvonal-kártyák a Túrák lapon (az adminból; amíg nincs közzétett útvonal, az illusztrált térkép marad) */
+.trails { margin-top: clamp(48px, 7vw, 88px); }
+.trail-list { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: clamp(32px, 5vw, 56px); }
+.trail-card { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: clamp(20px, 3vw, 40px); align-items: start; }
+.trail-card-text { grid-template-columns: minmax(0, 1fr); max-width: 64ch; }
+.trail-map { aspect-ratio: 4 / 3; max-width: 100%; overflow: hidden; border-radius: var(--radius-lg); background: var(--color-bone-2); box-shadow: 0 30px 60px -40px rgb(29 27 23 / 0.5); }
+.trail-body { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.trail-body .h2 { margin: 0; }
+.trail-summary p { margin: 0 0 10px; color: var(--color-ink-soft); }
+.trail-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 8px; }
+.trail-photo { aspect-ratio: 4 / 3; max-width: 100%; overflow: hidden; border-radius: var(--radius-md); background: var(--color-bone-2); }
+.trail-photo img { transition: transform 400ms var(--ease-out); }
+.trail-photo:hover img { transform: scale(1.03); }
+@media (max-width: 900px) { .trail-card { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .trail-photo img { transition: none; } .trail-photo:hover img { transform: none; } }

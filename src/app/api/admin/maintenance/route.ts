@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 /** Kézi karbantartás (és a kapuk tesztjei): lejárt jelentkezések és üzenetek törlése, napi mentés, régi mentések ritkítása. */
 export async function POST(req: Request) {
-  const denied = requireAdmin(req);
+  const denied = await requireAdmin(req);
   if (denied) return denied;
   try {
     const report = await runMaintenance();

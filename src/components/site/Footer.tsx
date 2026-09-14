@@ -68,7 +68,7 @@ export function Footer({ site, lang, d }: { site: SiteContent; lang: Lang; d: Di
               <li><Link href={langPath(lang, "/#kapcsolat")}>{I.mail}{d.nav.kapcsolat}</Link></li>
               <li><Link href={langPath(lang, "/adatkezeles")}>{I.shield}{d.footer.privacy}</Link></li>
               <li><Link href={langPath(lang, "/impresszum")}>{I.info}{d.footer.imprint}</Link></li>
-              <li><Link href="/admin">{I.shield}{d.footer.admin}</Link></li>
+              {/* Az admin-link szándékosan nincs itt: a jelentkezők adatai csak a belépő oldalon át érhetők el (/admin). */}
             </ul>
           </nav>
         </div>

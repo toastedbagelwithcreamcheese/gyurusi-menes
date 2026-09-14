@@ -126,9 +126,10 @@ try {
     maintOk: (await fetch(`${srv.base}/api/admin/maintenance`, { method: "POST", headers: basic(USER, PASS) })).status,
     adminOk: (await fetch(`${srv.base}/admin`, { headers: basic(USER, PASS), redirect: "manual" })).status,
   };
-  assert(codes.backupNone === 401 && codes.maintNone === 401 && codes.backupWrong === 401 && codes.maintWrong === 401 && codes.adminNone === 401, `jelszó mellett hitelesítés nélkül/rossz jelszóval nem 401: ${JSON.stringify(codes)}`);
+  /* P3 óta az /admin lap hitelesítés nélkül a belépő oldalra visz (307), az API marad 401; Basic Auth fejléccel mindkettő 200. */
+  assert(codes.backupNone === 401 && codes.maintNone === 401 && codes.backupWrong === 401 && codes.maintWrong === 401 && codes.adminNone === 307, `jelszó mellett hitelesítés nélkül/rossz jelszóval nem 401 (az /admin nem 307): ${JSON.stringify(codes)}`);
   assert(codes.backupOk === 200 && codes.maintOk === 200 && codes.adminOk === 200, `jó jelszóval nem 200: ${JSON.stringify(codes)}`);
-  log(`  A4: ADMIN_USER+ADMIN_PASSWORD mellett /api/admin/backup és /maintenance: nélküle 401, rossz jelszóval 401, jóval 200 (a proxy /admin-ja ugyanígy) ${JSON.stringify(codes)}`);
+  log(`  A4: ADMIN_USER+ADMIN_PASSWORD mellett /api/admin/backup és /maintenance: nélküle 401, rossz jelszóval 401, jóval 200 (a proxy /admin-ja nélküle a belépő oldalra visz, jóval 200) ${JSON.stringify(codes)}`);
   await srv.stop();
 
   /* ---------------- B) ütemezett Netlify-függvény, Next nélkül, Blobs ellen ---------------- */

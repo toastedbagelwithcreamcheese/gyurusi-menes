@@ -81,6 +81,33 @@ export async function hit(key: string, windowMs: number, max = 1): Promise<HitRe
   }
 }
 
+/**
+ * Mint a `hit`, de NEM számol új találatot — a belépés-korlát így előre megnézheti, le van-e tiltva a cím, és hány
+ * sikertelen próba van az ablakban (`count`). Ha a tár nem elérhető, átenged.
+ */
+export async function peek(key: string, windowMs: number, max = 1): Promise<HitResult & { count: number }> {
+  if (!KEY_RE.test(key)) throw new Error(`Érvénytelen korlát-kulcs: ${key}`);
+  const now = Date.now();
+  const read = (prev: Entry | null | undefined) => {
+    const hits = (Array.isArray(prev?.hits) ? prev.hits : []).filter((t) => typeof t === "number" && now - t < windowMs);
+    const blocked = hits.length >= max;
+    return { ok: !blocked, retryAfterMs: blocked ? Math.max(0, windowMs - (now - Math.min(...hits))) : 0, count: hits.length };
+  };
+  if (!blobsAvailable()) return read(processGlobal("ratelimit.mem", () => new Map<string, Entry>()).get(key));
+  try { return read((await store().get(key, { type: "json" })) as Entry | null); }
+  catch (err) {
+    console.warn("[ratelimit] a tár nem elérhető, a kérés átengedve:", err instanceof Error ? err.message : err);
+    return { ok: true, retryAfterMs: 0, count: 0 };
+  }
+}
+
+/** Egy kulcs találatainak törlése (pl. sikeres belépés után a sikertelen próbák számlálója). */
+export async function resetHits(key: string): Promise<void> {
+  if (!KEY_RE.test(key)) throw new Error(`Érvénytelen korlát-kulcs: ${key}`);
+  if (!blobsAvailable()) { processGlobal("ratelimit.mem", () => new Map<string, Entry>()).delete(key); return; }
+  try { await store().delete(key); } catch (err) { console.warn("[ratelimit] a számláló nem törölhető:", err instanceof Error ? err.message : err); }
+}
+
 /** Az űrlapok formája: `max` beküldés IP-nként `windowMs` alatt, hatókörönként (contact, register…) külön. */
 export async function limitByIp(req: Request, scope: string, windowMs: number, max = 1): Promise<HitResult> {
   try { return await hit(await ipKey(req, scope), windowMs, max); }

@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * tárhiba esetén megmaradnak, és a karbantartás 24 óra után viszi el őket.
  */
 export async function POST(req: Request) {
-  const denied = guardAdminWrite(req);
+  const denied = await guardAdminWrite(req);
   if (denied) return denied;
   if (!(req.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) return jsonError(415, "Hibás kérés (JSON kell). Töltsd újra a lapot, és próbáld újra.");
   const raw = await readBody(req, 16 * 1024);

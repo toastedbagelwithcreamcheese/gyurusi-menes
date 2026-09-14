@@ -1,22 +1,13 @@
 import type { Metadata } from "next";
-import { readSite, upcoming } from "@/lib/store";
-import { listMessages, listRegistrations } from "@/lib/records";
-import { AdminNav } from "./AdminNav";
-import { Flash } from "./Flash";
 import "./admin.css";
 
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [site, messages, registrations] = await Promise.all([readSite(), listMessages(), listRegistrations()]);
-  const unread = messages.filter((m) => !m.read).length;
-  const openIds = new Set(upcoming(site.events).map((e) => e.id));
-  const regs = registrations.filter((r) => openIds.has(r.eventId)).length;
-  return (
-    <div className="adm">
-      <AdminNav unread={unread} regs={regs} />
-      <main className="adm-main"><Flash />{children}</main>
-    </div>
-  );
+/**
+ * Az admin közös kerete: stíluslap és noindex. A menü, a jelszó-figyelmeztetés és a visszajelző sáv a (panel)
+ * csoport layoutjában él — a belépő oldal (belepes/) szándékosan kívül esik rajta, nem kapja meg az admin menüt.
+ */
+export default function AdminRoot({ children }: { children: React.ReactNode }) {
+  return children;
 }

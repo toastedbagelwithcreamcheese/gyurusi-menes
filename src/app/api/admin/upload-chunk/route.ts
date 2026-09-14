@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
  * A darab a tárba kerül (chunks/<uploadId>/<index>); az összefűzés: /api/admin/upload-complete.
  */
 export async function POST(req: Request) {
-  const denied = guardAdminWrite(req);
+  const denied = await guardAdminWrite(req);
   if (denied) return denied;
   const q = new URL(req.url).searchParams;
   const uploadId = q.get("uploadId") ?? "";

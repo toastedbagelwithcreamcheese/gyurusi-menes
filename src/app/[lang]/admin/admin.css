@@ -118,3 +118,65 @@
 .picker-upload { margin-top: 10px; border: 1px dashed var(--color-line); border-radius: 10px; padding: 10px 14px; }
 .picker-upload > summary { cursor: pointer; font-weight: 600; color: var(--color-forest); padding: 4px 0; }
 .picker-upload[open] > summary { margin-bottom: 12px; }
+
+/* 5. kör, P3: belépő oldal, kilépés, jelszó-figyelmeztetés */
+.login-wrap { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px 16px; background: var(--color-bone); }
+.login { width: min(420px, calc(100vw - 32px)); display: grid; gap: 14px; }
+.login h1 { font-family: var(--font-display); font-weight: 500; font-size: 1.8rem; margin: 0; letter-spacing: -0.01em; }
+.login-brand { font-family: var(--font-display); font-size: 1.1rem; margin: 0; color: var(--color-forest); }
+.login-brand small { display: block; font-family: var(--font-sans); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-dust); margin-top: 2px; }
+.login .hint { font-size: 0.88rem; color: var(--color-dust); margin: 0; }
+.login .flash { margin-bottom: 0; }
+.login-back { color: var(--color-dust); font-size: 0.9rem; }
+.adm-nav .adm-logout { margin: 0; }
+.adm-nav .adm-logout button { width: 100%; text-align: left; background: transparent; border: 0; color: inherit; font: inherit; font-weight: 500; padding: 11px 12px; border-radius: 8px; cursor: pointer; transition: background-color 150ms ease; }
+.adm-nav .adm-logout button:hover { background: rgb(255 255 255 / 0.08); }
+.adm-warn { background: #fff6dc; color: #5c4400; border: 1px solid #ecd9a0; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; line-height: 1.5; }
+.adm-warn code, .status-row code { font-size: 0.85em; background: rgb(29 27 23 / 0.06); padding: 1px 6px; border-radius: 5px; }
+
+/* 5. kör, P3: kétlépcsős törlés (ConfirmButton) */
+.confirm { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.confirm-q { font-weight: 600; color: #8a2424; font-size: 0.88rem; }
+.confirm-yes { background: #a12d2d; color: #fff; border-color: #a12d2d; }
+.confirm-yes:hover { background: #8a2424; border-color: #8a2424; }
+.confirm-compact { gap: 4px; }
+.confirm-compact .confirm-q { font-size: 0.75rem; }
+.tile:has([data-confirm="armed"]) .tile-ops { opacity: 1; flex-wrap: wrap; background: rgb(0 0 0 / 0.62); }
+.tile .tile-ops .confirm-q { color: #fff; flex-basis: 100%; }
+.tile .tile-ops button.confirm-yes { background: #a12d2d; color: #fff; }
+
+/* 5. kör, P3: fordítások lenyitója, hiány-jelvények */
+.lfield-tr { border-top: 1px dashed var(--color-line); padding-top: 6px; }
+.lfield-tr > summary { cursor: pointer; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 600; font-size: 0.88rem; color: var(--color-forest); padding: 6px 0; }
+.lfield-tr[open] > summary { margin-bottom: 8px; }
+.lfield-tr .lfield-row + .lfield-row { margin-top: 10px; }
+.lfield-tr > .hint { margin-top: 8px; }
+.tr-status { font-size: 0.72rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; letter-spacing: 0.02em; }
+.tr-missing, .pill-tr, .pill-warn { background: #fff1d6; color: #7a5200; }
+.tr-done { background: #e3efe4; color: #235430; }
+.tr-empty { background: var(--color-bone-2); color: var(--color-dust); }
+
+/* 5. kör, P3: „Főoldal és kapcsolat” — ugró-fülek, szekciónkénti mentés */
+.adm-tabs { position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 0; margin: -8px 0 12px; background: var(--color-bone); }
+.adm-tabs a { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--color-line); background: #fff; color: var(--color-ink); text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: border-color 150ms ease; }
+.adm-tabs a:hover { border-color: var(--color-forest); }
+.adm-section { scroll-margin-top: 72px; }
+.section-status { font-weight: 600; font-size: 0.88rem; }
+.section-status-ok { color: #235430; }
+.section-status-err { color: #8a2424; }
+
+/* 5. kör, P3: állapotpanel, útvonalak, több képes választó */
+.status-panel { display: grid; gap: 16px; margin-top: 16px; }
+.status-panel h2 { margin-bottom: 0; }
+.status-group { display: grid; gap: 10px; border-top: 1px solid var(--color-line); padding-top: 14px; }
+.status-group h3 { margin: 0; font-size: 1.02rem; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.status-row { display: grid; grid-template-columns: minmax(170px, auto) auto 1fr; gap: 6px 12px; align-items: baseline; }
+.status-row p { margin: 0; color: var(--color-ink-soft); font-size: 0.9rem; }
+@media (max-width: 640px) { .status-row { grid-template-columns: 1fr auto; } .status-row p { grid-column: 1 / -1; } }
+.photo-picker .picker label:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+.photo-order { position: absolute; top: 6px; left: 6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--color-sky); color: #fff; font-size: 0.75rem; font-weight: 700; display: grid; place-items: center; }
+[data-route-row] .ops { flex-wrap: wrap; justify-content: flex-end; }
+/* A Képek lap „Nyitókép” címkéje „tag hero” osztályú — a nyilvános .hero szabály (min-height: 100svh, flex) ne húzza képmagasra. */
+.tile .tag.hero { min-height: 0; display: inline-block; overflow: visible; align-items: normal; }
+/* Keskeny kijelzőn a sorok gombjai új sorba törnek (a kiemelt esemény „Kiemelés le” gombjával 390 px-en kilógott). */
+@media (max-width: 860px) { .row .ops { flex-wrap: wrap; } }

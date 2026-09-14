@@ -2,6 +2,7 @@ import { readSite, formatDate } from "@/lib/store";
 import { fileUrl } from "@/lib/files";
 import { toggleReport, deleteReport } from "../actions";
 import { ReportUpload } from "../ReportUpload";
+import { ConfirmButton } from "../ConfirmButton";
 
 const fmtSize = (b: number) => (b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
@@ -24,7 +25,7 @@ export default async function ReportsAdmin() {
                 <span className={`pill ${r.published ? "pill-on" : "pill-off"}`}>{r.published ? "Közzétéve" : "Rejtett"}</span>
                 <a href={fileUrl(r.file)} target="_blank" rel="noopener" className="btn btn-outline btn-sm">Megnyit ↗</a>
                 <form action={toggleReport}><input type="hidden" name="id" value={r.id} /><button className="btn btn-ghost btn-sm">{r.published ? "Elrejt" : "Közzétesz"}</button></form>
-                <form action={deleteReport}><input type="hidden" name="id" value={r.id} /><button className="btn btn-danger btn-sm">Töröl</button></form>
+                <form action={deleteReport}><input type="hidden" name="id" value={r.id} /><ConfirmButton>Töröl</ConfirmButton></form>
               </div>
             </div>))}</div>
         )}

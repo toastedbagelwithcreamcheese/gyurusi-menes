@@ -15,8 +15,8 @@ export const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e
  * Admin-jogosultság + azonos eredet. A szerver-akciókat a Next maga védi idegen oldalról érkező POST ellen, a route
  * handlereket nem: ha a böngésző Origin-t küld, annak a saját címünknek kell lennie.
  */
-export function guardAdminWrite(req: Request): Response | null {
-  const denied = requireAdmin(req);
+export async function guardAdminWrite(req: Request): Promise<Response | null> {
+  const denied = await requireAdmin(req);
   if (denied) return denied;
   const origin = req.headers.get("origin");
   if (!origin) return null;

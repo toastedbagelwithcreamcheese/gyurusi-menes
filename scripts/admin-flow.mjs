@@ -5,7 +5,8 @@
  *  3. PDF-beszámoló feltöltése → az /egyesulet lapon, a fájl letölthető
  *  4. nyitókép csere adminból → a főoldal az új képet adja
  *  5. takarítás: jelentkezés, esemény, beszámoló törlése, nyitókép vissza
- * Élesben (ADMIN_USER + ADMIN_PASSWORD) Basic Auth-tal lép be. A végén ADMIN_FLOW_OK.
+ * Jelszavas adminnál (ADMIN_PASSWORD, és ha van, ADMIN_USER) a belépő oldalon lép be — a süti a ctx.request hívásokra is érvényes.
+ * A törlések kétlépcsősek: az első gomb csak kérdez, az „Igen, törlöm” töröl. A végén ADMIN_FLOW_OK.
  */
 import { chromium } from "playwright-core";
 import fs from "node:fs/promises";
@@ -17,33 +18,57 @@ const TITLE = `Teszt esemény (gate ${Date.now().toString(36)})`;
 const REPORT = `Gate beszámoló ${Date.now().toString(36)}`;
 const fail = (m) => { console.error("FAIL:", m); process.exit(1); };
 const exe = process.env.PW_CHROME ?? path.join(os.homedir(), "Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing");
-const creds = process.env.ADMIN_USER && process.env.ADMIN_PASSWORD ? { username: process.env.ADMIN_USER, password: process.env.ADMIN_PASSWORD } : undefined;
-
 const browser = await chromium.launch({ executablePath: exe, headless: true });
-const ctx = await browser.newContext({ httpCredentials: creds, viewport: { width: 1280, height: 900 }, locale: "hu-HU" });
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "hu-HU" });
 const page = await ctx.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 const go = async (p) => { const r = await page.goto(BASE + p, { waitUntil: "networkidle" }); if (!r || r.status() >= 400) fail(`${p} → ${r?.status()}`); };
 const fetchText = async (p) => { const r = await ctx.request.get(BASE + p); if (!r.ok()) fail(`${p} → ${r.status()}`); return r.text(); };
+/** A fordítások (EN/DE) lenyitója alapból zárt — kitöltés előtt kinyitjuk. */
+const openTranslations = () => page.locator("details[data-translations]").evaluateAll((ds) => ds.forEach((d) => { d.open = true; }));
+
+/** Kétlépcsős törlés (ConfirmButton): az első gomb csak kérdez; az „Igen, törlöm” az élesítés után 0,3 s-ig szándékosan nem reagál. */
+async function confirmDelete(scope) {
+  await scope.locator("[data-confirm-start]").click();
+  const yes = scope.locator("[data-confirm-yes]");
+  await yes.waitFor({ timeout: 5000 });
+  await page.waitForTimeout(450);
+  await yes.click();
+}
+
+/** Jelszavas adminnál belépés a belépő oldalon (a böngésző Basic Auth-ot csak 401-es kihívásra küldene, a proxy viszont átirányít). */
+async function login() {
+  if (!process.env.ADMIN_PASSWORD) return;
+  await go("/admin");
+  if (!new URL(page.url()).pathname.startsWith("/admin/belepes")) return;
+  if (await page.locator("#user").count()) await page.fill("#user", process.env.ADMIN_USER ?? "");
+  await page.fill("#password", process.env.ADMIN_PASSWORD);
+  await page.click("[data-login-submit]");
+  await page.waitForFunction(() => location.pathname !== "/admin/belepes" || !!document.querySelector("[data-login-error]"), null, { timeout: 20000 });
+  if (new URL(page.url()).pathname.startsWith("/admin/belepes")) fail(`a belépés nem sikerült: ${await page.locator("[data-login-error]").innerText()}`);
+  console.log("belépés OK (süti)");
+}
 
 /** Egy korábbi, félbeszakadt futás maradékai (teszt-esemény, -beszámoló, -jelentkezés) — mindig előbb kitakarítjuk. */
 async function purge() {
   await go("/admin/esemenyek");
   for (const id of await page.locator('[data-event-row]:has-text("Teszt esemény (gate")').evaluateAll((els) => els.map((e) => e.getAttribute("data-event-row")))) {
-    await go(`/admin/esemenyek/${id}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek(\?|$)/), page.click('button:has-text("Esemény törlése")')]); console.log("purge: esemény", id);
+    await go(`/admin/esemenyek/${id}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek(\?|$)/), confirmDelete(page.locator('[data-delete="event"]'))]); console.log("purge: esemény", id);
   }
   await go("/admin/beszamolok");
-  while (await page.locator('[data-report-row]:has-text("Gate beszámoló")').count()) { const r = page.locator('[data-report-row]:has-text("Gate beszámoló")').first(); const id = await r.getAttribute("data-report-row"); await r.locator('button:has-text("Töröl")').click(); await page.waitForSelector(`[data-report-row="${id}"]`, { state: "detached", timeout: 15000 }); console.log("purge: beszámoló", id); }
+  while (await page.locator('[data-report-row]:has-text("Gate beszámoló")').count()) { const r = page.locator('[data-report-row]:has-text("Gate beszámoló")').first(); const id = await r.getAttribute("data-report-row"); await confirmDelete(r); await page.waitForSelector(`[data-report-row="${id}"]`, { state: "detached", timeout: 15000 }); console.log("purge: beszámoló", id); }
   await go("/admin/kepek");
-  while (await page.locator('[data-image-tile^="u-"]').count()) { const t = page.locator('[data-image-tile^="u-"]').first(); const id = await t.getAttribute("data-image-tile"); await t.hover(); if (await t.locator('button:has-text("Töröl")').count() === 0) break; await t.locator('button:has-text("Töröl")').click(); await page.waitForSelector(`[data-image-tile="${id}"]`, { state: "detached", timeout: 15000 }); console.log("purge: feltöltés", id); }
+  while (await page.locator('[data-image-tile^="u-"]').count()) { const t = page.locator('[data-image-tile^="u-"]').first(); const id = await t.getAttribute("data-image-tile"); await t.hover(); if (await t.locator("[data-confirm-start]").count() === 0) break; await confirmDelete(t); await page.waitForSelector(`[data-image-tile="${id}"]`, { state: "detached", timeout: 15000 }); console.log("purge: feltöltés", id); }
 }
 
 try {
+  await login();
   await purge();
   /* 1. esemény */
   const inThirty = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
   await go("/admin/esemenyek/uj");
+  await openTranslations();
   await page.fill("#title\\.hu", TITLE); await page.fill("#title\\.en", TITLE + " EN"); await page.fill("#title\\.de", TITLE + " DE");
   await page.fill("#date", inThirty); await page.fill("#location", "Gyűrűsi Ménes, Gyűrűs");
   await page.fill("#summary\\.hu", "Automatikus teszt — a kapu végén törlődik."); await page.fill("#summary\\.en", "Automated test."); await page.fill("#summary\\.de", "Automatischer Test.");
@@ -108,15 +133,15 @@ try {
 
   /* 5. takarítás */
   await go("/admin/kepek"); await page.hover(`[data-image-tile="${before}"]`); await page.click(`[data-image-tile="${before}"] button:has-text("Nyitókép")`); await page.waitForSelector(`[data-image-tile="${before}"] .tag.hero`);
-  await page.hover(`[data-image-tile="${upId}"]`); await page.click(`[data-image-tile="${upId}"] button:has-text("Töröl")`); await page.waitForSelector(`[data-image-tile="${upId}"]`, { state: "detached", timeout: 15000 });
+  await page.hover(`[data-image-tile="${upId}"]`); await confirmDelete(page.locator(`[data-image-tile="${upId}"]`)); await page.waitForSelector(`[data-image-tile="${upId}"]`, { state: "detached", timeout: 15000 });
   /* A tár igazsága: az admin már nem listázza (fent, detached). A /files válasz 404 — vagy 200, de KIZÁRÓLAG CDN-cache-találatból
      (a Netlify durable cache a lekérdezési paramétert is figyelmen kívül hagyja; a netlify-cdn-cache-control egy órán belül elengedi). */
   const gone = await ctx.request.get(`${BASE}/files/${upId}.webp`);
   const cs = gone.headers()["cache-status"] ?? "";
   if (gone.status() !== 404 && !(gone.status() === 200 && /hit/i.test(cs))) fail(`a törölt kép még elérhető a /files alól: ${gone.status()} (cache-status: ${cs || "-"})`);
   if (gone.status() === 200) console.log("   (a /files még CDN-cache-ből adja a törölt képet — a tárból törölve; cache-status:", cs, ")");
-  await go("/admin/beszamolok"); const rr = page.locator(`[data-report-row]:has-text("${REPORT}")`); await rr.locator('button:has-text("Töröl")').click(); await page.waitForTimeout(800);
-  await go(`/admin/esemenyek/${evId}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek(\?|$)/), page.click('button:has-text("Esemény törlése")')]);
+  await go("/admin/beszamolok"); const rr = page.locator(`[data-report-row]:has-text("${REPORT}")`); await confirmDelete(rr); await page.waitForSelector(`[data-report-row]:has-text("${REPORT}")`, { state: "detached", timeout: 15000 });
+  await go(`/admin/esemenyek/${evId}`); await Promise.all([page.waitForURL(/\/admin\/esemenyek(\?|$)/), confirmDelete(page.locator('[data-delete="event"]'))]);
   if ((await fetchText("/")).includes(TITLE)) fail("takarítás után is látszik az esemény");
   if ((await fetchText("/egyesulet")).includes(REPORT)) fail("takarítás után is látszik a beszámoló");
   if ((await fetchText("/admin/jelentkezesek")).includes("Gate Teszt")) fail("takarítás után is látszik a jelentkezés");
