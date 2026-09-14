@@ -10,6 +10,13 @@ const LEGACY: Array<[string, string]> = [
 
 const nextConfig: NextConfig = {
   images: { qualities: [55, 62, 70, 78], formats: ["image/avif", "image/webp"] },
+  /* Böngésző-gyorsítótár (P7, Ellenőrzés): a Next az ISR-lapokra `s-maxage=3600, stale-while-revalidate=<expireTime − 3600>`-at küld.
+     A böngésző az s-maxage-et figyelmen kívül hagyja, a stale-while-revalidate-et NEM: egy korábban látott nyilvános lapot és az RSC-
+     előtöltéseket a saját gyorsítótárából, elavultan adta (admin-mentés után is), a háttérben újrakért kérések pedig a Chromiumban
+     függőben maradtak (6 beragadt kapcsolat → a kliens-oldali navigáció és a tesztek networkidle-je megállt). expireTime = revalidate
+     → nincs stale-while-revalidate a válaszban. Netlify-on a plugin a böngészőnek amúgy is `public, max-age=0, must-revalidate`-et
+     ad, a CDN-nek pedig csak akkor 1 éves SWR-t, ha a Next küld ilyet — ott ezért marad az alapérték (NETLIFY=true a buildben). */
+  expireTime: process.env.NETLIFY === "true" ? undefined : 3600,
   /* Szándékosan NINCS experimental.isrFlushToDisk: false (P7): az a képoptimalizáló lemez-gyorsítótárát is kikapcsolja — minden kép
      minden kérésre újrakódolódna (helyben ~50 ms képenként). A tesztszerverek induláskor érvénytelenítik a nyilvános lapokat
      (scripts/with-server.mjs, a kapuk saját szerverindítói), így egy korábbi futás lemezre írt lapja nem zavar. */

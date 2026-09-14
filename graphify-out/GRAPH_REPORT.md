@@ -1,22 +1,22 @@
 # Graph Report - gyurusi-menes  (2026-09-14)
 
 ## Corpus Check
-- 155 files · ~344,938 words
+- 162 files · ~358,076 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1162 nodes · 2841 edges · 64 communities (51 shown, 13 thin omitted)
+- 1258 nodes · 2997 edges · 62 communities (51 shown, 11 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 5 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `01bf729a`
+- Built from commit: `4436976f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- blobsAvailable
-- Sections.tsx
+- upload-complete/route.ts
+- p7-speed.mjs
 - compilerOptions
 - store.ts
 - devDependencies
@@ -43,12 +43,12 @@
 - p6-geo.mjs
 - admin-auth.ts
 - sharp-linux.mjs
-- with-server.mjs
-- db-reset.mjs
-- readSite
+- final-live.mjs
+- warm-images.mjs
+- [lang]/layout.tsx
 - records.ts
-- p1-maintenance.mjs
-- HeroIntro.tsx
+- privacy.ts
+- Sections.tsx
 - google-reviews.ts
 - qa-flow.mjs
 - seo.ts
@@ -58,7 +58,7 @@
 - admin/layout.tsx
 - r9-google-policy.md
 - p4-privacy.mjs
-- p3-auth.mjs
+- with-server.mjs
 - p6-seo.mjs
 - p6-lib.mjs
 - make-icons.mjs
@@ -68,17 +68,14 @@
 - p6-lighthouse.mjs
 - Egyesítés — P5 (feat/p5-integraciok) és P6 (feat/p6-seo-geo) a main-be: bizonyítékok (2026-09-14)
 - og-font.py
-- p3-admin-ux.mjs
-- p2-uploads.mjs
-- p1-data.mjs
-- [lang]/layout.tsx
+- p1-maintenance.mjs
+- Folytatás az Ellenőrzés fázisban (2026-09-14 délután)
+- readSite
 - db-demo.mjs
 - P4 — Nyilvános javítások és adatkezelés (G25, G26, a G23 képleírás-pontja) — bizonyítékok
-- robots.ts
-- startNext
 
 ## God Nodes (most connected - your core abstractions)
-1. `readSite()` - 65 edges
+1. `readSite()` - 64 edges
 2. `t()` - 45 edges
 3. `isLang()` - 40 edges
 4. `langPath()` - 39 edges
@@ -94,45 +91,45 @@
   netlify/functions/daily-maintenance.mts → src/lib/maintenance.ts
 - `LegalAdmin()` --calls--> `readSite()`  [EXTRACTED]
   src/app/[lang]/admin/(panel)/jogi/page.tsx → src/lib/store.ts
-- `generateStaticParams()` --calls--> `readSite()`  [EXTRACTED]
-  src/app/[lang]/esemenyek/[id]/page.tsx → src/lib/store.ts
 - `RootLayout()` --calls--> `isLang()`  [EXTRACTED]
   src/app/[lang]/layout.tsx → src/content/types.ts
+- `Img()` --calls--> `placeholderStyle()`  [EXTRACTED]
+  src/components/site/Sections.tsx → src/lib/placeholder.ts
 - `until()` --calls--> `sleep()`  [EXTRACTED]
   scripts/checks/p3-admin-ux.mjs → scripts/checks/_p1-harness.mjs
 
 ## Import Cycles
 - None detected.
 
-## Communities (64 total, 13 thin omitted)
+## Communities (62 total, 11 thin omitted)
 
-### Community 0 - "blobsAvailable"
-Cohesion: 0.07
-Nodes (78): dynamic, POST(), dynamic, POST(), dynamic, FORMATS, POST(), TYPES (+70 more)
+### Community 0 - "upload-complete/route.ts"
+Cohesion: 0.06
+Nodes (81): dynamic, POST(), dynamic, POST(), dynamic, POST(), dynamic, FORMATS (+73 more)
 
-### Community 1 - "Sections.tsx"
+### Community 1 - "p7-speed.mjs"
 Cohesion: 0.11
-Nodes (25): EventPage(), generateStaticParams(), P, Params, HeroParallax(), Labels, MapEmbed(), ContactBlock() (+17 more)
+Nodes (11): BASE, DB, get(), LANGS, LIMITS, problems, ROOT, secs (+3 more)
 
 ### Community 2 - "compilerOptions"
 Cohesion: 0.07
 Nodes (28): dom, dom.iterable, esnext, **/*.mts, .next/dev/types/**/*.ts, next-env.d.ts, .next/types/**/*.ts, node_modules (+20 more)
 
 ### Community 3 - "store.ts"
-Cohesion: 0.07
-Nodes (81): b(), back(), deleteEvent(), deleteMessage(), deleteRegistration(), deleteReport(), deleteRoute(), deleteUpload() (+73 more)
+Cohesion: 0.06
+Nodes (86): b(), back(), deleteEvent(), deleteMessage(), deleteRegistration(), deleteReport(), deleteRoute(), deleteUpload() (+78 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.04
-Nodes (45): eslint, eslint-config-next, gsap, @netlify/blobs, @netlify/plugin-nextjs, next, dependencies, gsap (+37 more)
+Nodes (45): eslint, eslint-config-next, @netlify/blobs, @netlify/plugin-nextjs, next, dependencies, gsap, @netlify/blobs (+37 more)
 
 ### Community 5 - "Gyűrűsi Ménes — online kutatási jelentés"
 Cohesion: 0.06
 Nodes (32): 0. Összefoglaló, egy bekezdésben, 10.1 huculosveny.gyurusimenes.hu [ÉLŐ, letöltve 2026-08-30], 10.2 gyurusimenes.hu [ARCHÍV 2024-07-18; ma 403], 10.3 gidrangyurus.hu (régi, 2018–2022) [ARCHÍV], 10. A jelenlegi weboldal(ak) menüszerkezete és szövegei — SZÓ SZERINT, 11. Képek témái a régi/mostani oldalakon, 12. Nem igazolt / nem található (összefoglaló lista), 13. Ellentmondások (+24 more)
 
 ### Community 6 - "SubPage.tsx"
-Cohesion: 0.10
-Nodes (22): ImagesAdmin(), Photo(), photoAlt(), PhotoKey, PhotoMeta, PHOTOS, ContactDock(), Paragraphs() (+14 more)
+Cohesion: 0.16
+Nodes (19): Photo(), photoAlt(), PhotoKey, PhotoMeta, PHOTOS, ContactDock(), Fact, Pic() (+11 more)
 
 ### Community 7 - "prep-images.mjs"
 Cohesion: 0.32
@@ -151,12 +148,12 @@ Cohesion: 0.09
 Nodes (38): api(), assert(), BASE, build(), CheckFail, CHROME, cleanEnv(), dbReset() (+30 more)
 
 ### Community 11 - "Gyűrűsi Ménes — weboldal + admin (demó)"
-Cohesion: 0.15
-Nodes (12): Adatszerkezet, karbantartás, mentés, Admin: belépés és használat, Ami szándékosan nincs benne, Ellenőrzés, Feltöltések (képek, PDF-beszámolók), Gyűrűsi Ménes — weboldal + admin (demó), Helyi adatbázis és tesztelés, Indítás (+4 more)
+Cohesion: 0.13
+Nodes (14): Adatszerkezet, karbantartás, mentés, Admin: belépés és használat, Ami szándékosan nincs benne, Ellenőrzés, Feltöltések (képek, PDF-beszámolók), Gyűrűsi Ménes — weboldal + admin (demó), Helyi adatbázis és tesztelés, Indítás (+6 more)
 
 ### Community 13 - "types.ts"
-Cohesion: 0.10
-Nodes (29): generateMetadata(), revalidate, sitemap(), ContactForm(), State, Footer(), I, tel() (+21 more)
+Cohesion: 0.11
+Nodes (27): dynamic, sitemap(), ContactForm(), State, Footer(), I, tel(), Header() (+19 more)
 
 ### Community 17 - "admin-flow.mjs"
 Cohesion: 0.33
@@ -171,52 +168,56 @@ Cohesion: 0.09
 Nodes (13): BAND, BASE, DB, LANGS, oldSeed, pageErrors, PAGES, problems (+5 more)
 
 ### Community 24 - "t"
-Cohesion: 0.17
-Nodes (21): PagesAdmin(), GET(), revalidate, GET(), revalidate, buildLlms(), events(), facts() (+13 more)
+Cohesion: 0.19
+Nodes (20): PagesAdmin(), dynamic, GET(), dynamic, GET(), EventCard(), EventGrid(), EventList() (+12 more)
 
 ### Community 25 - "p6-geo.mjs"
 Cohesion: 0.08
 Nodes (29): ADDRESSES, apple, at(), bad(), BOTS, calendarLinks, checkGraph(), composeAddress() (+21 more)
 
 ### Community 27 - "admin-auth.ts"
-Cohesion: 0.05
-Nodes (74): POST(), lockedMessage(), login(), LoginState, logout(), minutesLeft(), LoginForm(), LoginPage() (+66 more)
+Cohesion: 0.06
+Nodes (61): POST(), lockedMessage(), login(), LoginState, logout(), minutesLeft(), LoginForm(), LoginPage() (+53 more)
 
 ### Community 28 - "sharp-linux.mjs"
 Cohesion: 0.33
 Nodes (4): PKGS, ROOT, sharpPkg, SIDE
 
-### Community 29 - "with-server.mjs"
-Cohesion: 0.40
-Nodes (4): [cmd, ...args], ROOT, run, srv
+### Community 29 - "final-live.mjs"
+Cohesion: 0.10
+Nodes (18): adminJson(), backup(), bad(), BASE, confirmDelete(), deleteEvent(), deleteReport(), deleteUpload() (+10 more)
 
-### Community 31 - "readSite"
-Cohesion: 0.12
-Nodes (34): POST(), generateMetadata(), P, PrivacyPage(), PageEdit(), generateMetadata(), generateMetadata(), generateMetadata() (+26 more)
+### Community 30 - "warm-images.mjs"
+Cohesion: 0.16
+Nodes (15): ACCEPT, BASE, CONCURRENCY, decode(), FALLBACK_PATHS, images, kb(), pagePaths() (+7 more)
+
+### Community 31 - "[lang]/layout.tsx"
+Cohesion: 0.15
+Nodes (10): fraunces, instrument, Params, RootLayout(), BOTS, DISALLOW, RevealObserver(), ScrollTop() (+2 more)
 
 ### Community 32 - "records.ts"
 Cohesion: 0.06
-Nodes (72): config, dailyMaintenance(), dynamic, GET(), dynamic, POST(), persons(), RegistrationsAdmin() (+64 more)
+Nodes (77): config, dailyMaintenance(), dynamic, GET(), dynamic, POST(), POST(), persons() (+69 more)
 
-### Community 33 - "p1-maintenance.mjs"
-Cohesion: 0.18
-Nodes (17): initialDoc(), budapestDay(), dayOffset(), fileAdapter(), fixtureEvent(), minusDays(), readSeed(), runTsModule() (+9 more)
+### Community 33 - "privacy.ts"
+Cohesion: 0.27
+Nodes (9): BACKUPS_KEPT, MESSAGE_RETENTION_DAYS, REGISTRATION_RETENTION_DAYS, fillPrivacy(), parsePrivacy(), PRIVACY_TOKENS, PrivacyBlock, privacyValues() (+1 more)
 
-### Community 34 - "HeroIntro.tsx"
-Cohesion: 0.67
-Nodes (3): gradient(), HeroIntro(), SWEEP
+### Community 34 - "Sections.tsx"
+Cohesion: 0.11
+Nodes (24): EventsPage(), P, revalidate, Params, revalidate, Labels, MapEmbed(), ContactBlock() (+16 more)
 
 ### Community 35 - "google-reviews.ts"
 Cohesion: 0.08
 Nodes (27): dynamic, GET(), HEADERS, Labels, Reviews(), State, apiBase(), Counter (+19 more)
 
 ### Community 36 - "qa-flow.mjs"
-Cohesion: 0.20
-Nodes (6): BASE, DB, errors, fail(), go(), ROOT
+Cohesion: 0.16
+Nodes (10): writeSite(), ROOT, BASE, DB, errors, fail(), go(), ROOT (+2 more)
 
 ### Community 37 - "seo.ts"
 Cohesion: 0.12
-Nodes (28): EventsPage(), P, backdrop(), FONT, FULL, GET(), titleSize(), EventsHome() (+20 more)
+Nodes (29): backdrop(), FONT, FULL, GET(), titleSize(), TrailCard(), resolveImage(), brandTitle() (+21 more)
 
 ### Community 38 - "P2 — Valós méretű feltöltések (G18) — bizonyítékok"
 Cohesion: 0.25
@@ -231,12 +232,12 @@ Cohesion: 0.29
 Nodes (6): Csiszolás és üzleti, Fontos, Gyűrűsi Ménes — átnézés a megbízó szempontjai szerint (2026-09-13), Kritikus, Rendben (mérve), Ütközés-ellenőrzés az ügyfél kéréseivel (C01–C15)
 
 ### Community 43 - "p4-privacy.mjs"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (15): BACK, bad(), base, checkRequired(), DAY_WORDS, decode(), LP, MSG (+7 more)
 
-### Community 45 - "p3-auth.mjs"
-Cohesion: 0.17
-Nodes (11): assert(), ROOT, load(), getText(), b64url(), checkPublicNoAdminLink(), cleanups, expectAdmin200() (+3 more)
+### Community 45 - "with-server.mjs"
+Cohesion: 0.40
+Nodes (4): [cmd, ...args], ROOT, run, srv
 
 ### Community 47 - "p6-seo.mjs"
 Cohesion: 0.11
@@ -270,53 +271,45 @@ Nodes (5): BASE, report(), ROOT, lines, problems
 Cohesion: 0.25
 Nodes (7): Egyesítés — P5 (feat/p5-integraciok) és P6 (feat/p6-seo-geo) a main-be: bizonyítékok (2026-09-14), Egyesítés utáni integrációs hibák (javítva), Futtatott ellenőrzések (a javított `mail.ts`-sel, HEAD ad32594 + a javítás), Futtatott ellenőrzések (a végső kóddal), Integrációs javítás, Második egyesítési kör (2026-09-14 délután) — a P5/P6 újrafuttatási ágak, main a4cb24e-ről, Ütközések és feloldásuk
 
-### Community 56 - "p3-admin-ux.mjs"
-Cohesion: 0.17
-Nodes (12): sleep(), startBlobs(), tmpDir(), BASE, cleanups, L(), PHOTOS, readSite() (+4 more)
+### Community 57 - "p1-maintenance.mjs"
+Cohesion: 0.06
+Nodes (61): cleanups, initialDoc(), log(), lostUpdateControl(), migration(), PAGE_KEYS, parallelSaves(), RUN (+53 more)
 
-### Community 57 - "p2-uploads.mjs"
-Cohesion: 0.16
-Nodes (9): parallelSaves(), CheckError, chromeExe, dbReset(), BASE, cleanups, noisyJpeg(), pdfFixture() (+1 more)
+### Community 58 - "Folytatás az Ellenőrzés fázisban (2026-09-14 délután)"
+Cohesion: 0.20
+Nodes (9): A megmaradt LCP-hiba oka: versenyhelyzet, A teljes kapusor utáni javítás: beragadt RSC-előtöltések (stale-while-revalidate a böngészőben), Folytatás az Ellenőrzés fázisban (2026-09-14 délután), Kiinduló mérés (50821c2 buildje), Mi készült, P7 — Mobil sebesség (G27) — bizonyítékok, Utolsó G27-futás (a fenti változtatásokkal), Változtatások (+1 more)
 
-### Community 58 - "p1-data.mjs"
-Cohesion: 0.27
-Nodes (9): cleanups, log(), lostUpdateControl(), migration(), PAGE_KEYS, RUN, submissions(), blobsAdapter() (+1 more)
-
-### Community 59 - "[lang]/layout.tsx"
-Cohesion: 0.22
-Nodes (7): fraunces, generateMetadata(), instrument, Params, RootLayout(), ScrollTop(), SITE_URL
+### Community 59 - "readSite"
+Cohesion: 0.09
+Nodes (44): generateMetadata(), P, PrivacyPage(), revalidate, EventPage(), generateMetadata(), P, revalidate (+36 more)
 
 ### Community 60 - "db-demo.mjs"
 Cohesion: 0.39
 Nodes (7): addDays(), DB, DEMO_EVENT_IDS, demoEvents(), nextWeekday(), ROOT, ymd()
 
 ### Community 61 - "P4 — Nyilvános javítások és adatkezelés (G25, G26, a G23 képleírás-pontja) — bizonyítékok"
-Cohesion: 0.50
-Nodes (3): A tájékoztató ígéretei és a kód, Mi készült, P4 — Nyilvános javítások és adatkezelés (G25, G26, a G23 képleírás-pontja) — bizonyítékok
-
-### Community 63 - "startNext"
-Cohesion: 0.67
-Nodes (3): fail(), killPort(), startNext()
+Cohesion: 0.22
+Nodes (8): A tájékoztató ígéretei és a kód, G25 napló (p4-public, a lényeg), G26 napló (p4-privacy), Kapuk és ellenőrzések (a végleges kódon), Mi készült, Mérések a javítás előtt (01bf729 buildje), Nem kapu, de megnéztem, P4 — Nyilvános javítások és adatkezelés (G25, G26, a G23 képleírás-pontja) — bizonyítékok
 
 ## Knowledge Gaps
-- **377 isolated node(s):** `eslintConfig`, `config`, `LEGACY`, `nextConfig`, `name` (+372 more)
+- **424 isolated node(s):** `eslintConfig`, `config`, `LEGACY`, `nextConfig`, `name` (+419 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `readSite()` connect `readSite` to `records.ts`, `Sections.tsx`, `blobsAvailable`, `store.ts`, `seo.ts`, `SubPage.tsx`, `types.ts`, `t`, `admin-auth.ts`?**
+- **Why does `revalidateSite()` connect `qa-flow.mjs` to `p7-speed.mjs`, `p4-privacy.mjs`, `p4-public.mjs`, `p1-maintenance.mjs`, `db-demo.mjs`?**
+  _High betweenness centrality (0.075) - this node is a cross-community bridge._
+- **Why does `readSite()` connect `readSite` to `records.ts`, `Sections.tsx`, `store.ts`, `seo.ts`, `types.ts`, `t`, `admin-auth.ts`?**
   _High betweenness centrality (0.033) - this node is a cross-community bridge._
-- **Why does `blobsAvailable()` connect `blobsAvailable` to `records.ts`, `google-reviews.ts`, `store.ts`, `admin-auth.ts`, `readSite`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **Why does `isLang()` connect `readSite` to `Sections.tsx`, `google-reviews.ts`, `seo.ts`, `[lang]/layout.tsx`, `types.ts`, `admin-auth.ts`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **What connects `eslintConfig`, `config`, `LEGACY` to the rest of the system?**
-  _377 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `blobsAvailable` be split into smaller, more focused modules?**
-  _Cohesion score 0.06537282941777324 - nodes in this community are weakly interconnected._
-- **Should `Sections.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.10695187165775401 - nodes in this community are weakly interconnected._
+  _424 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `upload-complete/route.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.061711079943899017 - nodes in this community are weakly interconnected._
+- **Should `p7-speed.mjs` be split into smaller, more focused modules?**
+  _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
 - **Should `compilerOptions` be split into smaller, more focused modules?**
   _Cohesion score 0.06896551724137931 - nodes in this community are weakly interconnected._
+- **Should `store.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.06217430368373764 - nodes in this community are weakly interconnected._

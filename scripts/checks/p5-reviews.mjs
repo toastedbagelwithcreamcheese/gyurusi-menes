@@ -74,9 +74,19 @@ async function scrollTo(page, target) {
 /** A blokk 600 px-en belülre görgetése, majd a betöltés várása. */
 async function scrollNear(page) {
   const vh = await page.evaluate(() => window.innerHeight);
-  const top = await reviewsTop(page);
-  assert(top !== null, "nincs [data-reviews] váz a lapon");
-  await scrollTo(page, top - vh - 400);
+  /* P7: 900 px alatt a fölötte álló blokkok content-visibility: auto-val becsült (900 px-es) magasságot kapnak, és csak a nézet közelében
+     renderelődnek a valódi méretükre — egy előre kiszámolt célra ugorva a blokk utána elcsúszik. Ezért, ahogy egy görgető látogató,
+     újramérünk, amíg a blokk teteje a nézet alja alatt 400 ± 150 px-re nem kerül. */
+  for (let i = 0; i < 12; i++) {
+    const top = await reviewsTop(page);
+    if (i === 0) assert(top !== null, "nincs [data-reviews] váz a lapon");
+    else if (top === null) return; // a blokk a kérés után eltávolította magát (pl. elfogyott a napi keret)
+    const scrollY = await page.evaluate(() => window.scrollY);
+    const dist = top - scrollY - vh;
+    if (Math.abs(dist - 400) <= 150) return;
+    await scrollTo(page, top - vh - 400);
+    await sleep(250);
+  }
 }
 
 async function details() { return mock.calls().filter((c) => c.kind === "details"); }
