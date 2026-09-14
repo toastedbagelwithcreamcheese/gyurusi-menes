@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getStore } from "@netlify/blobs";
-import { blobsAvailable } from "./store";
+import { kv, supabaseActive } from "./supabase";
 import type { Lang } from "@/content/types";
 
 /**
@@ -9,10 +8,11 @@ import type { Lang } from "@/content/types";
  * (docs/review-2026-09-13/r9-google-policy.md): a vélemény, az értékelés és más Places-tartalom nem tárolható,
  * csak a hely azonosítója (place ID). Ezért:
  *   · a főoldal HTML-je nem tartalmaz Google-adatot, csak egy üres vázat — azt is csak GOOGLE_PLACES_KEY mellett;
- *   · a böngésző a blokk közelében kéri a GET /api/reviews-t, ami minden kérésre élőben kérdez (no-store: se Blobs, se ISR, se CDN);
+ *   · a böngésző a blokk közelében kéri a GET /api/reviews-t, ami minden kérésre élőben kérdez (no-store: se adatbázis, se ISR, se CDN);
  *   · tárolt csak a place ID (GOOGLE_PLACE_ID, ha nincs: egyszeri szöveges keresés) és egy napi hívásszámláló —
  *     GOOGLE_REVIEWS_DAILY_CAP (alap 30) betöltés után aznap nincs több Google-hívás, a blokk eltűnik.
- * Tár: a Blobs „google” tára, helyben data/google/. A Places címe GOOGLE_PLACES_API_BASE-szel felülírható (scripts/mock-places.mjs).
+ * Tár: a Supabase `kv` táblája (google/place-id, google/daily-calls), helyben data/google/. A Places címe GOOGLE_PLACES_API_BASE-szel
+ * felülírható (scripts/mock-places.mjs).
  */
 export type ReviewAuthor = { name: string; url?: string; photo?: string };
 /** `original`: csak ha a Google lefordította a véleményt — ilyenkor az eredeti szöveg is megnézhető. */
@@ -24,8 +24,11 @@ const QUERY = "Gyűrűsi Ménes, 8932 Gyűrűs, Petőfi Sándor u. 2.";
 const FIELDS = "rating,userRatingCount,googleMapsUri,reviews";
 const DEFAULT_CAP = 30;
 const TIMEOUT_MS = 6000;
+/* Helyi fájlnév (data/google/<név>.json) és a kv-kulcs. */
 const PLACE_KEY = "place-id";
 const COUNTER_KEY = "daily-calls";
+const KV_PLACE = `google/${PLACE_KEY}`;
+const KV_COUNTER = `google/${COUNTER_KEY}`;
 const DIR = path.join(process.cwd(), "data/google");
 
 export const reviewsEnabled = () => !!process.env.GOOGLE_PLACES_KEY?.trim();
@@ -38,7 +41,6 @@ function dailyCap(): number {
 const today = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Budapest" }).format(new Date());
 
 /* ---------------- a kis állapottár: place ID + napi számláló ---------------- */
-const store = () => getStore({ name: "google", consistency: "strong" });
 let localQueue: Promise<unknown> = Promise.resolve();
 /** Helyben egy folyamat fut: az írásokat sorba állítjuk, hogy két egyidejű kérés ne ugyanazt a helyet foglalja le. */
 function serial<T>(fn: () => Promise<T>): Promise<T> { const p = localQueue.then(fn, fn); localQueue = p.catch(() => undefined); return p; }
@@ -57,17 +59,14 @@ type Counter = { day: string; count: number };
 /** Lefoglal egy betöltést a napi keretből. `false`: a keret elfogyott — ilyenkor nincs Google-hívás. */
 async function reserveCall(cap: number): Promise<boolean> {
   const day = today();
-  if (blobsAvailable()) {
+  if (supabaseActive()) {
     for (let i = 0; i < 8; i++) {
-      const cur = (await store().getWithMetadata(COUNTER_KEY, { type: "json" })) as { data: Counter | null; etag?: string } | null;
-      const count = cur?.data?.day === day ? cur.data.count : 0;
+      const cur = await kv.get<Counter>(KV_COUNTER);
+      const count = cur?.value?.day === day ? cur.value.count : 0;
       if (count >= cap) return false;
       const next: Counter = { day, count: count + 1 };
       /* Feltételes írás: ha közben más kérés is írt, újraolvasunk — így egyidejű betöltéseknél sem lépjük túl a keretet. */
-      const res = !cur ? await store().setJSON(COUNTER_KEY, next, { onlyIfNew: true })
-        : cur.etag ? await store().setJSON(COUNTER_KEY, next, { onlyIfMatch: cur.etag })
-        : await store().setJSON(COUNTER_KEY, next);
-      if (res.modified) return true;
+      if (cur ? await kv.update(KV_COUNTER, next, cur.version) : await kv.insert(KV_COUNTER, next)) return true;
     }
     return false; // nyolcszor ütköztünk: inkább kimarad egy betöltés, mint hogy a keret fölé menjünk
   }
@@ -84,8 +83,8 @@ async function reserveCall(cap: number): Promise<boolean> {
 async function placeId(key: string): Promise<string | null> {
   const fromEnv = process.env.GOOGLE_PLACE_ID?.trim();
   if (fromEnv) return fromEnv;
-  const saved = blobsAvailable()
-    ? ((await store().get(PLACE_KEY, { type: "json" })) as { id?: string } | null)
+  const saved = supabaseActive()
+    ? (await kv.get<{ id?: string }>(KV_PLACE))?.value ?? null
     : await readLocal<{ id?: string }>(PLACE_KEY);
   if (saved?.id) return saved.id;
   const res = await fetch(`${apiBase()}/v1/places:searchText`, {
@@ -97,7 +96,7 @@ async function placeId(key: string): Promise<string | null> {
   /* A place ID a szabály szerint korlátlanul tárolható — a Places válaszaiból egyedül ezt tesszük el. */
   if (id) {
     const value = { id, savedAt: new Date().toISOString() };
-    if (blobsAvailable()) await store().setJSON(PLACE_KEY, value); else await writeLocal(PLACE_KEY, value);
+    if (supabaseActive()) await kv.set(KV_PLACE, value); else await writeLocal(PLACE_KEY, value);
   }
   return id;
 }

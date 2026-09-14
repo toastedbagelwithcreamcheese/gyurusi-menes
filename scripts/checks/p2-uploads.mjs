@@ -13,8 +13,8 @@
  *  D) szerveroldali védelem közvetlen API-hívással: 5 MB-os kép → 413 MB-os üzenettel; nem kép → 415; hibás képbájtok → 422;
  *     nem-PDF első darab → 415; 25 MB-ra bejelentett darab → 413; hiányos összefűzés → 400; idegen Origin → 403
  *  E) félbemaradt darabok: egy 25 órája és egy most kezdett feltöltés → POST /api/admin/maintenance → csak a régi törlődik
- *  F) Netlify Blobs-szimulátor (második next start szabad porton, a P1-es előtéttel): kép és 12 MB-os PDF az API-n át, a streamelt
- *     letöltés bájtra egyezik, a Content-Length a metaadatból jön; a félbemaradt darabok takarítása a Blobs-tárban is
+ *  F) helyi Supabase (második next start szabad porton): kép és 12 MB-os PDF az API-n át a Storage-ba, a streamelt letöltés bájtra
+ *     egyezik, a Content-Length a tárolt objektum méretével egyezik; a félbemaradt darabok takarítása az upload-chunks tárolóban is
  * Csak ha minden állítás teljesült: PASS: p2-uploads
  */
 import { chromium } from "playwright-core";
@@ -22,7 +22,7 @@ import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import { CheckError, ROOT, assert, chromeExe, dayOffset, dbReset, freePort, sleep, startBlobs, startNext, tmpDir } from "./_p1-harness.mjs";
+import { CheckError, ROOT, assert, chromeExe, dayOffset, dbReset, freePort, sleep, startNext, startSupabase, tmpDir } from "./_p1-harness.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3012").replace(/\/$/, "");
 const DATA = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, "data");
@@ -314,50 +314,56 @@ try {
   assert(!(await exists(path.join(chunkRoot, stale))) && JSON.stringify(leftE) === JSON.stringify([fresh]), `E: a darabok könyvtára utána: ${leftE.join(", ")} (várt: csak ${fresh})`);
   log(`  E: a 25 órája kezdett feltöltés törölve, a friss megmaradt; a sikeres és az elutasított feltöltések darabjai már nincsenek (${leftE.length} maradt)`);
 
-  /* ---------- F) Netlify Blobs-szimulátor ---------- */
-  log("F) Netlify Blobs-szimulátor (második next start, szabad port)");
-  const blobs = await startBlobs();
-  cleanups.push(() => blobs.stop());
-  const isolated = await tmpDir("p2-blobs-data-");
+  /* ---------- F) helyi Supabase ---------- */
+  log("F) helyi Supabase (második next start, szabad port)");
+  const sb = await startSupabase();
+  cleanups.push(() => sb.stop());
+  const isolated = await tmpDir("p2-supabase-data-");
   cleanups.push(() => fs.rm(isolated, { recursive: true, force: true }));
-  const srv = await startNext({ port: await freePort(), env: { NETLIFY_BLOBS_CONTEXT: blobs.context, DATA_DIR: isolated }, label: "next (blobs)" });
+  const srv = await startNext({ port: await freePort(), env: { ...sb.env, DATA_DIR: isolated }, label: "next (supabase)" });
   cleanups.push(() => srv.stop());
-  const files = blobs.store("files");
   const bapi = (p, init) => call(srv.base, p, init);
+  const storageList = async (prefix) => {
+    const res = await fetch(`${sb.url}/storage/v1/object/list/upload-chunks`, { method: "POST", headers: { ...sb.headers, "content-type": "application/json" }, body: JSON.stringify({ prefix, limit: 100 }) });
+    return (await res.json()).filter((i) => i.id !== null);
+  };
+  const storageGet = async (bucket, key) => { const res = await fetch(`${sb.url}/storage/v1/object/${bucket}/${key}`, { headers: sb.headers }); return res.ok ? Buffer.from(await res.arrayBuffer()) : null; };
 
   const webp = await sharp(smallJpeg).resize(2400).webp({ quality: 85 }).toBuffer();
-  r = await bapi("/api/admin/upload-image?alt=P2%20blobs&name=blobs.webp", { headers: { "content-type": "image/webp" }, body: webp });
+  r = await bapi("/api/admin/upload-image?alt=P2%20supabase&name=supabase.webp", { headers: { "content-type": "image/webp" }, body: webp });
   assert(r.status === 200 && r.j.image?.id, `F: képfeltöltés → ${r.status} ${r.j.error}`);
   const bImg = await fetch(`${srv.base}/files/${r.j.image.id}.webp`);
   const bImgBody = Buffer.from(await bImg.arrayBuffer());
-  const bImgMeta = await files.getMetadata(`${r.j.image.id}.webp`);
-  assert(bImg.ok && Number(bImg.headers.get("content-length")) === bImgBody.length && bImgMeta?.metadata?.size === bImgBody.length, `F: kép letöltése: ${bImg.status}, Content-Length ${bImg.headers.get("content-length")}, test ${bImgBody.length}, metaadat ${JSON.stringify(bImgMeta?.metadata)}`);
+  const stored = await storageGet("files", `${r.j.image.id}.webp`);
+  assert(bImg.ok && Number(bImg.headers.get("content-length")) === bImgBody.length && stored?.length === bImgBody.length && sha(stored) === sha(bImgBody), `F: kép letöltése: ${bImg.status}, Content-Length ${bImg.headers.get("content-length")}, test ${bImgBody.length}, a Storage-ban ${stored?.length ?? "nincs"}`);
 
   const buf12 = await fs.readFile(pdf12.file);
-  const bId = `p2blobs${hex()}`;
+  const bId = `p2supa${hex()}`;
   for (let i = 0; i < 4; i++) {
     r = await bapi(`/api/admin/upload-chunk?uploadId=${bId}&index=${i}&total=4&size=${buf12.length}&name=b12.pdf`, { headers: octet, body: buf12.subarray(i * CHUNK, Math.min(buf12.length, (i + 1) * CHUNK)) });
     assert(r.status === 200, `F: ${i + 1}. darab → ${r.status} ${r.j.error}`);
   }
-  assert((await files.list({ prefix: `chunks/${bId}/` })).blobs.length === 5, "F kontroll: a 4 darab + leíró nincs a Blobs-tárban");
-  r = await bapi("/api/admin/upload-complete", { headers: { "content-type": "application/json" }, body: JSON.stringify({ uploadId: bId, total: 4, size: buf12.length, name: "b12.pdf", title: "P2 Blobs 12 MB", date: dayOffset(0), published: true }) });
+  assert((await storageList(bId)).length === 5, "F kontroll: a 4 darab + leíró nincs az upload-chunks tárolóban");
+  r = await bapi("/api/admin/upload-complete", { headers: { "content-type": "application/json" }, body: JSON.stringify({ uploadId: bId, total: 4, size: buf12.length, name: "b12.pdf", title: "P2 Supabase 12 MB", date: dayOffset(0), published: true }) });
   assert(r.status === 200 && r.j.report?.file, `F: összefűzés → ${r.status} ${r.j.error}`);
   const bPdf = await fetch(srv.base + r.j.report.file);
   const bPdfBody = Buffer.from(await bPdf.arrayBuffer());
   assert(bPdf.ok && sha(bPdfBody) === pdf12.sha && Number(bPdf.headers.get("content-length")) === pdf12.bytes && bPdf.headers.get("content-type") === "application/pdf", `F: PDF letöltése: ${bPdf.status}, ${bPdfBody.length} bájt, Content-Length ${bPdf.headers.get("content-length")}`);
-  assert((await files.list({ prefix: `chunks/${bId}/` })).blobs.length === 0, "F: a sikeres összefűzés után a darabok a Blobs-tárban maradtak");
+  assert((await storageList(bId)).length === 0, "F: a sikeres összefűzés után a darabok az upload-chunks tárolóban maradtak");
 
   const bStale = `p2stale${hex()}`, bFresh = `p2fresh${hex()}`;
   for (const id of [bStale, bFresh]) {
     r = await bapi(`/api/admin/upload-chunk?uploadId=${id}&index=0&total=1&size=64&name=felbe.pdf`, { headers: octet, body: pdfBytes(64) });
     assert(r.status === 200, `F: félbemaradt darab → ${r.status} ${r.j.error}`);
   }
-  const bMf = await files.get(`chunks/${bStale}/manifest`, { type: "json" });
-  await files.setJSON(`chunks/${bStale}/manifest`, { ...bMf, startedAt: new Date(Date.now() - 25 * 3600e3).toISOString() });
+  const bMf = JSON.parse((await storageGet("upload-chunks", `${bStale}/manifest.json`)).toString("utf8"));
+  const backdate = await fetch(`${sb.url}/storage/v1/object/upload-chunks/${bStale}/manifest.json`, { method: "POST", headers: { ...sb.headers, "content-type": "application/json", "x-upsert": "true" }, body: JSON.stringify({ ...bMf, startedAt: new Date(Date.now() - 25 * 3600e3).toISOString() }) });
+  assert(backdate.ok, `F: a leíró visszadátumozása nem sikerült (${backdate.status})`);
   r = await bapi("/api/admin/maintenance");
-  const bLeftStale = (await files.list({ prefix: `chunks/${bStale}/` })).blobs.length, bLeftFresh = (await files.list({ prefix: `chunks/${bFresh}/` })).blobs.length;
+  const bLeftStale = (await storageList(bStale)).length, bLeftFresh = (await storageList(bFresh)).length;
   assert(r.status === 200 && r.j.report?.chunkUploadsDeleted === 1 && bLeftStale === 0 && bLeftFresh === 2, `F: karbantartás → ${r.status} ${JSON.stringify(r.j.report ?? r.j)}, maradt: régi ${bLeftStale}, friss ${bLeftFresh}`);
-  log(`  F: kép (${huMB(bImgBody.length)}, Content-Length a metaadatból) és 12 MB-os PDF 4 darabban → streamelt letöltés bájtra egyezik; darabok törölve; a 25 órás félbemaradt feltöltés törölve, a friss megmaradt`);
+  assert((await fs.readdir(isolated)).length === 0, "F: a Supabase-futás a fájl-driverre is írt");
+  log(`  F: kép (${huMB(bImgBody.length)}, a Storage-ban bájtra ugyanaz) és 12 MB-os PDF 4 darabban → streamelt letöltés bájtra egyezik; darabok törölve; a 25 órás félbemaradt feltöltés törölve, a friss megmaradt`);
 
   passed = true;
 } catch (e) {

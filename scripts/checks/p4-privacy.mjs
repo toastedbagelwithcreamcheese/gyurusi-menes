@@ -107,7 +107,7 @@ const REQUIRED = {
   },
 };
 const NAIH = ["Nemzeti Adatvédelmi és Információszabadság Hatóság", "NAIH", "1055 Budapest, Falk Miksa utca 9-11.", "1363 Budapest, Pf. 9.", "ugyfelszolgalat@naih.hu", "+36 1 391 1400", "www.naih.hu"];
-const PROCESSORS = ["Netlify, Inc.", "101 2nd Street, San Francisco, CA 94105", "Resend", "Plus Five Five, Inc.", "Google Ireland Limited", "Gordon House, Barrow Street, Dublin 4"];
+const PROCESSORS = ["Netlify, Inc.", "101 2nd Street, San Francisco, CA 94105", "Supabase Pte. Ltd.", "65 Chulia Street #38-02/03, OCBC Centre, Singapore 049513", "Resend", "Plus Five Five, Inc.", "Google Ireland Limited", "Gordon House, Barrow Street, Dublin 4"];
 
 function checkRequired(l, html, where) {
   const R = REQUIRED[l]; const secs = sections(html);

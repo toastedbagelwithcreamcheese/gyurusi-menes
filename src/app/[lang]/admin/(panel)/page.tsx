@@ -3,6 +3,7 @@ import { readSite, upcoming, formatRange, t } from "@/lib/store";
 import { listMessages, listRegistrations } from "@/lib/records";
 import { adminProtected, adminUserRequired } from "@/lib/admin-auth";
 import { contactRecipient, mailConfigured, mailSender } from "@/lib/mail";
+import { supabaseConfigured, supabaseActive } from "@/lib/supabase";
 import { eventMissingTranslations, trLabel } from "@/lib/translations";
 import { sendTestEmail } from "./actions";
 
@@ -27,11 +28,21 @@ function EnvRow({ name, children }: { name: string; children: React.ReactNode })
  */
 function StatusPanel() {
   const mail = mailConfigured(), to = contactRecipient(), from = mailSender();
-  const reviews = envSet("GOOGLE_PLACES_KEY"), locked = adminProtected();
+  const reviews = envSet("GOOGLE_PLACES_KEY"), locked = adminProtected(), database = supabaseActive();
   return (
     <section className="card status-panel" data-status-panel aria-labelledby="status-cim">
       <h2 id="status-cim">Beállítások állapota</h2>
       <p className="hint">Ezeket nem itt, hanem a tárhelyen, környezeti változóként kell megadni (Netlify: Site configuration → Environment variables), és utána újra kell deployolni az oldalt. Kulcsot és jelszót biztonsági okból nem mutatunk, csak azt, hogy be van-e állítva.</p>
+
+      <div className="status-group" data-status="database">
+        <h3>Adatbázis (Supabase) <span className={`pill ${database ? "pill-on" : "pill-warn"}`} data-status-value={database ? "on" : "off"}>{database ? "Supabase" : "Helyi fájl"}</span></h3>
+        <EnvRow name="SUPABASE_URL">{database
+          ? "A tartalom, a jelentkezések, az üzenetek, a mentések és a feltöltött fájlok a Supabase-projektben tárolódnak."
+          : supabaseConfigured()
+            ? "Be van állítva, de a STORE_DRIVER=file miatt most a helyi data/ mappát használja (tesztelés)."
+            : "Nincs beállítva: az adatok a helyi data/ mappába kerülnek. Élesben (Netlify-on) adatbázis nélkül semmit nem lehet menteni. A projekt címe: Supabase → Project Settings → API → Project URL."}</EnvRow>
+        <EnvRow name="SUPABASE_SERVICE_ROLE_KEY">A szerver ezzel a titkos kulccsal ír és olvas (Supabase → Project Settings → API keys → service_role). Soha ne kerüljön a böngészőbe vagy a kódba. A táblákat a supabase/migrations mappa SQL-je hozza létre (SQL Editor).</EnvRow>
+      </div>
 
       <div className="status-group" data-status="mail">
         <h3>E-mail-küldés (Resend) <span className={`pill ${mail ? "pill-on" : "pill-warn"}`} data-status-value={mail ? "on" : "off"}>{mail ? "Kulcs beállítva" : "Nem küld e-mailt"}</span></h3>

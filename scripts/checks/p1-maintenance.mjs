@@ -7,15 +7,15 @@
  *     a mai (a dokumentummal és a megmaradt rekordokkal); GET /api/admin/backup → letölthető JSON; alkalmi futás az
  *     /admin/uzenetek betöltésekor: egy órán belül nem, egy óra után igen; ADMIN_USER+ADMIN_PASSWORD mellett az /api/admin/*
  *     hitelesítés nélkül 401, rossz jelszóval 401, jóval 200.
- *  B) netlify/functions/daily-maintenance.mts: schedule "@daily"; a függvény SIMA Node-ban (Next nélkül) betöltve, a Blobs-
- *     szimulátor ellen ugyanezt elvégzi (törlés, mai mentés a „backups” tárban, 30 megtartva, lejárt korlát-bejegyzés törölve).
- *  C) tartós sebességkorlát a Blobs-szimulátorral: jelentkezés → szerver-újraindítás → ugyanarról az IP-ről 10 s-on belül 429,
+ *  B) netlify/functions/daily-maintenance.mts: schedule "@daily"; a függvény SIMA Node-ban (Next nélkül) betöltve, a helyi
+ *     Supabase ellen ugyanezt elvégzi (törlés, mai mentés a backups táblában, 30 megtartva, lejárt korlát-bejegyzés törölve).
+ *  C) tartós sebességkorlát a helyi Supabase-zel: jelentkezés → szerver-újraindítás → ugyanarról az IP-ről 10 s-on belül 429,
  *     másik IP-ről 200; a tárban csak IP-hash. Kontroll: fájl-driveren (memória) újraindítás után ugyanez 200.
  * A végén npm run db:reset. Csak ha minden állítás teljesült: PASS: p1-maintenance
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { CheckError, ROOT, assert, blobsAdapter, budapestDay, dayOffset, dbReset, fileAdapter, fixtureEvent, minusDays, readSeed, runTsModule, startBlobs, startNext, tmpDir } from "./_p1-harness.mjs";
+import { CheckError, ROOT, assert, budapestDay, dayOffset, dbReset, fileAdapter, fixtureEvent, minusDays, readSeed, runTsModule, startNext, startSupabase, supabaseAdapter, tmpDir } from "./_p1-harness.mjs";
 
 const log = (...a) => console.log(...a);
 const cleanups = [];
@@ -132,44 +132,45 @@ try {
   log(`  A4: ADMIN_USER+ADMIN_PASSWORD mellett /api/admin/backup és /maintenance: nélküle 401, rossz jelszóval 401, jóval 200 (a proxy /admin-ja nélküle a belépő oldalra visz, jóval 200) ${JSON.stringify(codes)}`);
   await srv.stop();
 
-  /* ---------------- B) ütemezett Netlify-függvény, Next nélkül, Blobs ellen ---------------- */
-  log("B) netlify/functions/daily-maintenance.mts — sima Node-ban, Blobs-szimulátor ellen");
+  /* ---------------- B) ütemezett Netlify-függvény, Next nélkül, Supabase ellen ---------------- */
+  log("B) netlify/functions/daily-maintenance.mts — sima Node-ban, helyi Supabase ellen");
   const fnFile = "netlify/functions/daily-maintenance.mts";
   const src = await fs.readFile(path.join(ROOT, fnFile), "utf8");
   assert(/export\s+const\s+config\s*=\s*\{\s*schedule:\s*"@daily"\s*\}/.test(src) && /export\s+default\s+async\s+function/.test(src), `${fnFile}: nincs export default függvény vagy config = { schedule: "@daily" }`);
-  const blobs = await startBlobs();
-  cleanups.push(() => blobs.stop());
-  const ba = blobsAdapter(blobs);
+  const sb = await startSupabase();
+  cleanups.push(() => sb.stop());
+  const ba = supabaseAdapter(sb);
   await load(ba, fixtures());
-  const rl = blobs.store("ratelimit");
-  await rl.setJSON(`register-${"0".repeat(24)}`, { hits: [NOW - 3600e3], exp: NOW - 3590e3 });
-  await rl.setJSON(`contact-${"f".repeat(24)}`, { hits: [NOW], exp: NOW + 3600e3 });
+  await sb.api("POST", "/rest/v1/rate_limits?on_conflict=key", [
+    { key: `register-${"0".repeat(24)}`, hits: [NOW - 3600e3], exp: new Date(NOW - 3590e3).toISOString() },
+    { key: `contact-${"f".repeat(24)}`, hits: [NOW], exp: new Date(NOW + 3600e3).toISOString() },
+  ], "resolution=merge-duplicates,return=minimal");
   const dirB = await tmpDir("p1-maint-fn-");
   cleanups.push(() => fs.rm(dirB, { recursive: true, force: true }));
-  const cleanEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(NETLIFY|DATA_DIR|RATELIMIT_SALT)/.test(k)));
+  const cleanEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(NETLIFY|DATA_DIR|RATELIMIT_SALT|SUPABASE_|STORE_DRIVER)/.test(k)));
   const out = await runTsModule(fnFile, `if (m.config?.schedule !== "@daily") { console.log("CONFIG-HIBA"); process.exit(3); } const r = await m.default(new Request("http://localhost/.netlify/functions/daily-maintenance", { method: "POST", body: "{}" })); console.log("REPORT " + await r.text());`,
-    { ...cleanEnv, NETLIFY_BLOBS_CONTEXT: blobs.context, DATA_DIR: dirB });
+    { ...cleanEnv, ...sb.env, DATA_DIR: dirB });
   const line = (out.stdout ?? "").split("\n").find((l) => l.startsWith("REPORT "));
   assert(out.status === 0 && line, `a függvény sima Node-ban nem futott le (kilépés ${out.status}): ${(out.stderr || out.stdout || "").slice(-1500)}`);
   const fnReport = JSON.parse(line.slice(7));
   await assertAfter(ba, fnReport);
-  const rlKeys = (await rl.list()).blobs.map((b) => b.key);
+  const rlKeys = (await sb.api("GET", "/rest/v1/rate_limits?select=key")).map((r) => r.key);
   assert(fnReport.rateLimitsPruned === 1 && !rlKeys.includes(`register-${"0".repeat(24)}`) && rlKeys.includes(`contact-${"f".repeat(24)}`), `a lejárt sebességkorlát-bejegyzés takarítása hibás: ${JSON.stringify(fnReport)} / ${rlKeys.join(",")}`);
-  assert((await fs.readdir(dirB)).length === 0, "a függvény a fájl-driverre írt, nem a Blobs-ra");
-  log(`  B: schedule "@daily"; a függvény Next nélkül betöltve a Blobs ellen: 4 jelentkezés + 2 üzenet törölve, mai mentés a „backups” tárban, 30 megtartva, 1 lejárt korlát-bejegyzés törölve (${fnReport.ms} ms)`);
+  assert((await fs.readdir(dirB)).length === 0, "a függvény a fájl-driverre írt, nem a Supabase-be");
+  log(`  B: schedule "@daily"; a függvény Next nélkül betöltve a helyi Supabase ellen: 4 jelentkezés + 2 üzenet törölve, mai mentés a backups táblában, 30 megtartva, 1 lejárt korlát-bejegyzés törölve (${fnReport.ms} ms)`);
 
   /* ---------------- C) tartós sebességkorlát ---------------- */
-  log("C) tartós sebességkorlát (Blobs-szimulátor), újraindítással");
+  log("C) tartós sebességkorlát (helyi Supabase), újraindítással");
   const dirC = await tmpDir("p1-maint-rl-");
   cleanups.push(() => fs.rm(dirC, { recursive: true, force: true }));
-  const envB = { NETLIFY_BLOBS_CONTEXT: blobs.context, DATA_DIR: dirC };
-  srv = await startNext({ port: 3012, env: envB, label: "blobs-1" });
+  const envB = { ...sb.env, DATA_DIR: dirC };
+  srv = await startNext({ port: 3012, env: envB, label: "supabase-1" });
   const t0 = Date.now();
   const r1 = await register(srv.base, "203.0.113.50");
   const r1j = await r1.json().catch(() => null);
   assert(r1.status === 200 && r1j?.stored === true, `első jelentkezés → ${r1.status} ${JSON.stringify(r1j)}`);
   await srv.stop();
-  srv = await startNext({ port: 3012, env: envB, label: "blobs-2" });
+  srv = await startNext({ port: 3012, env: envB, label: "supabase-2" });
   const r2 = await register(srv.base, "203.0.113.50");
   const elapsed = Date.now() - t0;
   assert(elapsed < 9500, `nem mérhető: az újraindítás ${elapsed} ms-ig tartott, a 10 s-os ablak lejárt volna`);
@@ -177,13 +178,14 @@ try {
   assert(r2.status === 429 && r2j?.ok === false && typeof r2j.error === "string", `újraindítás után ugyanarról az IP-ről (${elapsed} ms) → ${r2.status} ${JSON.stringify(r2j)} — 429 várt`);
   const r3 = await register(srv.base, "203.0.113.51");
   assert(r3.status === 200, `másik IP-ről → ${r3.status} (200 várt)`);
-  const keys = (await rl.list()).blobs.map((b) => b.key);
-  const regKeys = keys.filter((k) => /^register-[0-9a-f]{24}$/.test(k));
-  assert(regKeys.length >= 2 && keys.includes("_salt"), `a „ratelimit” tár kulcsai: ${keys.join(", ")}`);
-  for (const k of keys) assert(!k.includes("203.0.113") && !(await rl.get(k, { type: "text" })).includes("203.0.113"), `nyers IP a sebességkorlát tárában: ${k}`);
-  log(`  C1: jelentkezés → újraindítás → ugyanarról az IP-ről ${elapsed} ms után 429, másik IP-ről 200; a tárban ${regKeys.length} IP-hash kulcs, nyers IP nincs`);
+  const rows = await sb.api("GET", "/rest/v1/rate_limits?select=*");
+  const regKeys = rows.map((r) => r.key).filter((k) => /^register-[0-9a-f]{24}$/.test(k));
+  const saltRow = await sb.api("GET", "/rest/v1/kv?key=eq.ratelimit%2Fsalt&select=value");
+  assert(regKeys.length >= 2 && saltRow.length === 1 && /^[0-9a-f]{32}$/.test(saltRow[0].value?.salt ?? ""), `a rate_limits tábla kulcsai: ${rows.map((r) => r.key).join(", ")}; só a kv táblában: ${saltRow.length}`);
+  for (const row of rows) assert(!JSON.stringify(row).includes("203.0.113"), `nyers IP a sebességkorlát táblájában: ${row.key}`);
+  log(`  C1: jelentkezés → újraindítás → ugyanarról az IP-ről ${elapsed} ms után 429, másik IP-ről 200; a táblában ${regKeys.length} IP-hash kulcs, nyers IP nincs, a só a kv táblában`);
   await srv.stop();
-  assert((await fs.readdir(dirC)).length === 0, "a Blobs-futás a fájl-driverre is írt");
+  assert((await fs.readdir(dirC)).length === 0, "a Supabase-futás a fájl-driverre is írt");
 
   /* Kontroll: memóriában (fájl-driver) az újraindítás elviszi a korlátot — a C1-es 429-et tehát a tartós tár adta. */
   await fileAdapter(dirC).writeDoc(fixtures().doc);

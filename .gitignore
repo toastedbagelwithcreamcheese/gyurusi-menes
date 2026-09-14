@@ -71,3 +71,5 @@ graphify-out.bak*/
 
 # a p6-seo éles domainű próba-buildje (NEXT_DIST_DIR, a futás végén törlődik)
 /.next-seo/
+data/backups/
+data/maintenance.json

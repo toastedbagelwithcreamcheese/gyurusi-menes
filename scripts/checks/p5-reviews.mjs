@@ -12,8 +12,8 @@
  *     · a tárban (data/) és a Next gyorsítótárában (.next/server, .next/cache) nincs véleményszöveg és darabszám —
  *       pozitív kontroll: ugyanez a keresés a mock valódi HTTP-válaszát tartalmazó fájlban megtalálja
  *     · a napi számláló a tárban van, és pontosan a hívások számát mutatja
- *  B) Netlify Blobs-szimulátor, GOOGLE_PLACE_ID NÉLKÜL, GOOGLE_REVIEWS_DAILY_CAP=1:
- *     · első betöltés: egy keresés + egy lekérés, a place ID a Blobs-tárban (a keresés ott megtalálja), vélemény nincs
+ *  B) helyi Supabase (scripts/supabase-local.mjs), GOOGLE_PLACE_ID NÉLKÜL, GOOGLE_REVIEWS_DAILY_CAP=1:
+ *     · első betöltés: egy keresés + egy lekérés, a place ID a kv táblában (google/place-id), vélemény sehol az adatbázisban
  *     · második betöltés: 429, a blokk eltűnik, nincs új hívás
  *     · újraindítás nagyobb kerettel: csak lekérés, keresés nincs (a tárolt place ID-t használja)
  *  C) build KULCS NÉLKÜL: se váz a HTML-ben, se hívás végiggörgetve; /api/reviews 404 hívás nélkül; nincs aggregateRating
@@ -23,7 +23,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright-core";
-import { BlobsServer } from "@netlify/blobs/server";
+import { ensureLocalSupabase, resetLocalSupabase } from "../supabase-local.mjs";
 import { startMockPlaces, MOCK_PLACE_ID, MOCK_MARKER, MOCK_COUNT } from "../mock-places.mjs";
 import { ROOT, BASE, CHROME, CheckFail, assert, cleanEnv, build, startNext, dbReset, scanDir, hasNeedle, api, waitFor, sleep } from "./_p5-harness.mjs";
 
@@ -32,7 +32,7 @@ const GOOGLE_DIR = path.join(ROOT, "data/google");
 /* A darabszám önálló számként (nem egy hex-hash részleteként — a Turbopack gyorsítótárában ilyen hamis találat volt). */
 const NEEDLES = [MOCK_MARKER, new RegExp(`(?<![0-9a-fA-F])${MOCK_COUNT}(?![0-9a-fA-F])`), "Próba Szerző"];
 
-let server, mock, browser, blobs, blobsDir, scratch;
+let server, mock, browser, sbLocal, scratch;
 let passed = false;
 
 /** A főoldal JSON-LD-je: létezik, értelmezhető, és sehol nincs benne aggregateRating / Review. */
@@ -241,26 +241,30 @@ try {
   console.log(`A6) IP-korlát: egy címről 5×200, a 6. kérés 429 (Retry-After ${seq6[5].headers.get("retry-after")} s), Google-hívás nélkül; kontroll: másik IP-ről 200`);
   await server.stop(); server = null;
 
-  /* ================= B) Blobs-szimulátor, place ID nélkül, keret = 1 ================= */
+  /* ================= B) helyi Supabase, place ID nélkül, keret = 1 ================= */
   dbReset(); await fs.rm(GOOGLE_DIR, { recursive: true, force: true }); mock.clear();
-  blobsDir = await fs.mkdtemp(path.join(os.tmpdir(), "p5-blobs-"));
-  blobs = new BlobsServer({ directory: blobsDir, token: "p5-token", port: 0 });
-  const { port: bport } = await blobs.start();
-  const ctxB64 = Buffer.from(JSON.stringify({ edgeURL: `http://127.0.0.1:${bport}`, uncachedEdgeURL: `http://127.0.0.1:${bport}`, siteID: "p5-site", token: "p5-token" })).toString("base64");
-  const envB = (cap) => cleanEnv({ GOOGLE_PLACES_KEY: KEY, GOOGLE_PLACES_API_BASE: mock.url, GOOGLE_REVIEWS_DAILY_CAP: String(cap), NETLIFY_BLOBS_CONTEXT: ctxB64 });
+  sbLocal = await ensureLocalSupabase();
+  await resetLocalSupabase(sbLocal);
+  const sbGet = async (p) => {
+    const r = await fetch(sbLocal.url + p, { headers: { apikey: sbLocal.serviceKey, authorization: `Bearer ${sbLocal.serviceKey}` } });
+    if (!r.ok) throw new CheckFail(`helyi Supabase ${p}: HTTP ${r.status}`);
+    return r.json();
+  };
+  const kvValue = async (key) => (await sbGet(`/rest/v1/kv?key=eq.${encodeURIComponent(key)}&select=value`))[0]?.value ?? null;
+  const envB = (cap) => cleanEnv({ GOOGLE_PLACES_KEY: KEY, GOOGLE_PLACES_API_BASE: mock.url, GOOGLE_REVIEWS_DAILY_CAP: String(cap), SUPABASE_URL: sbLocal.url, SUPABASE_SERVICE_ROLE_KEY: sbLocal.serviceKey });
   server = await startNext(envB(1));
 
   const B1 = await newPage();
   await B1.page.goto(BASE + "/", { waitUntil: "networkidle" });
   await scrollNear(B1.page);
-  assert(await waitFor(() => B1.page.locator('[data-reviews="loaded"]').count(), 10000), `Blobs-driverrel nem töltődött be (/api/reviews: ${B1.apiStatuses.join(",")})\n${server.log().slice(-1500)}`);
+  assert(await waitFor(() => B1.page.locator('[data-reviews="loaded"]').count(), 10000), `Supabase-driverrel nem töltődött be (/api/reviews: ${B1.apiStatuses.join(",")})\n${server.log().slice(-1500)}`);
   await sleep(800);
   const kinds1 = mock.calls().map((c) => c.kind).join(",");
   assert(kinds1 === "search,details", `első betöltés hívásai: ${kinds1} (search,details kell)`);
   await B1.ctx.close();
-  const idHits = await scanDir(blobsDir, [MOCK_PLACE_ID]);
-  assert(idHits.length > 0, "a place ID nem került a Blobs-tárba (a keresés nem találja)");
-  assert(!(await fs.stat(GOOGLE_DIR).catch(() => null)), "Blobs mellett is a data/google-ba írt");
+  const placeValue = await kvValue("google/place-id");
+  assert(placeValue?.id === MOCK_PLACE_ID, `a place ID nem került a kv táblába: ${JSON.stringify(placeValue)}`);
+  assert(!(await fs.stat(GOOGLE_DIR).catch(() => null)), "Supabase mellett is a data/google-ba írt");
 
   const B2 = await newPage();
   await B2.page.goto(BASE + "/", { waitUntil: "networkidle" });
@@ -270,7 +274,7 @@ try {
   assert(await waitFor(async () => (await B2.page.locator("[data-reviews]").count()) === 0, 5000), "429 után a blokk látszik");
   assert(mock.calls().length === 2, `a keret felett is hívás történt (${mock.calls().length})`);
   await B2.ctx.close();
-  console.log(`B1) Blobs: első betöltés ${kinds1}, place ID a Blobs-tárban (${path.relative(blobsDir, path.resolve(ROOT, idHits[0].file))}); keret=1 mellett a második 429, a blokk eltűnt, nincs új hívás`);
+  console.log(`B1) Supabase: első betöltés ${kinds1}, place ID a kv táblában (google/place-id); keret=1 mellett a második 429, a blokk eltűnt, nincs új hívás`);
 
   await server.stop(); server = null;
   server = await startNext(envB(5));
@@ -282,18 +286,20 @@ try {
   const kinds3 = mock.calls().slice(2).map((c) => c.kind).join(",");
   assert(kinds3 === "details", `újraindítás után a hívások: ${kinds3} (csak details kell — a tárolt place ID-vel)`);
   await B3.ctx.close();
-  const hitsB = [...await scanDir(blobsDir, NEEDLES), ...await scanDir(path.join(ROOT, "data"), NEEDLES)];
-  assert(hitsB.length === 0, `Google-tartalom a Blobs-tárban vagy a data/-ban: ${JSON.stringify(hitsB.slice(0, 5))}`);
-  const blobFiles = [];
-  const walk = async (d) => { for (const e of await fs.readdir(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) await walk(p); else blobFiles.push(path.relative(blobsDir, p)); } };
-  await walk(blobsDir);
-  const counterFile = blobFiles.find((f) => /google/.test(f) && /daily-calls$/.test(f));
-  assert(counterFile, `nincs napi számláló a Blobs „google” tárában (${blobFiles.join(", ")})`);
-  const bc = JSON.parse(await fs.readFile(path.join(blobsDir, counterFile), "utf8"));
-  assert(bc.count === 2, `a Blobs-számláló nem 2: ${JSON.stringify(bc)}`);
-  console.log(`B2) újraindítás után csak details (tárolt place ID); Blobs „google” tár: ${blobFiles.filter((f) => /google/.test(f)).length} fájl, számláló ${bc.count} (${counterFile}); vélemény és darabszám sehol a Blobs-tárban és a data/-ban`);
+  /* Az adatbázis teljes tartalmában (minden tábla) és a data/-ban nincs véleményszöveg, szerző és darabszám. Az időbélyegeket és a
+     verziószámokat kivesszük a keresésből — a darabszám-minta egy időbélyeg számjegyein hamis találatot adna. */
+  const tables = ["site_content", "kv", "registrations", "messages", "backups", "rate_limits"];
+  const dump = JSON.stringify(await Promise.all(tables.map((t) => sbGet(`/rest/v1/${t}?select=*`))))
+    .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?/g, "").replace(/"version":\d+/g, "");
+  const hitsDb = NEEDLES.filter((n) => (n instanceof RegExp ? n.test(dump) : dump.includes(n))).map(String);
+  const hitsData = await scanDir(path.join(ROOT, "data"), NEEDLES);
+  assert(hitsDb.length === 0 && hitsData.length === 0, `Google-tartalom a Supabase-ben (${hitsDb.join(", ")}) vagy a data/-ban: ${JSON.stringify(hitsData.slice(0, 5))}`);
+  assert(dump.includes(MOCK_PLACE_ID), "kontroll: a keresés a kv táblában tárolt place ID-t sem találja — így a hiány sem bizonyít");
+  const dbCounter = await kvValue("google/daily-calls");
+  assert(dbCounter?.count === 2, `a napi számláló a kv táblában nem 2: ${JSON.stringify(dbCounter)}`);
+  console.log(`B2) újraindítás után csak details (tárolt place ID); a kv táblában a place ID és a napi számláló (${dbCounter.count}); vélemény, szerző és darabszám sehol a Supabase-ben és a data/-ban (kontroll: a place ID megtalálható)`);
   await server.stop(); server = null;
-  await blobs.stop(); blobs = null;
+  await resetLocalSupabase(sbLocal);
 
   /* ================= C) kulcs nélkül ================= */
   build(cleanEnv(), "kulcs nélkül");
@@ -324,9 +330,8 @@ try {
 } finally {
   await browser?.close().catch(() => {});
   await server?.stop();
-  await blobs?.stop().catch(() => {});
+  if (sbLocal) await resetLocalSupabase(sbLocal).catch(() => {});
   await mock?.close();
-  if (blobsDir) await fs.rm(blobsDir, { recursive: true, force: true });
   if (scratch) await fs.rm(scratch, { recursive: true, force: true });
   await fs.rm(GOOGLE_DIR, { recursive: true, force: true });
   try { dbReset(); } catch (e) { console.error("FAIL: db:reset a végén:", e.message); passed = false; process.exitCode = 1; }

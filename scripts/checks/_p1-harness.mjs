@@ -1,12 +1,11 @@
 /**
  * Közös tesztkeret a P1 kapukhoz (p1-data.mjs, p1-maintenance.mjs). Nem önálló kapu, nem ír PASS-t.
- *  · startNext: saját `next start` a megadott porton, tiszta környezettel (DATA_DIR, NETLIFY_BLOBS_CONTEXT… csak amit átadunk).
- *  · startBlobs: a @netlify/blobs helyi szimulátora (BlobsServer, ideiglenes könyvtárral) és elé egy vékony előtét, amely
- *    a szimulátorból hiányzó két Netlify-garanciát pótolja: ETag a GET-válaszon (tartalom-hash), és ATOMI feltételes írás
- *    (If-Match / If-None-Match kulcsonként sorba állítva). A 11.0.3-as szimulátor GET-je nem ad ETag-et, a feltételes PUT-ja
- *    pedig „ellenőriz, aztán ír”, így két egyidejű író mindkettője átcsúszhat — ezekkel a kód ütközéskezelése nem mérhető.
- *    Az előtét kulcsonként számolja a feltételes és feltétel nélküli írásokat és az ütközéseket (412).
- *  · fileAdapter / blobsAdapter: a teszt ugyanazokkal a lépésekkel olvassa-írja a két drivert.
+ *  · startNext: saját `next start` a megadott porton, tiszta környezettel (DATA_DIR, SUPABASE_URL… csak amit átadunk).
+ *  · startSupabase: a HELYI Supabase (scripts/supabase-local.mjs — nem az éles projekt), kiürítve, és elé egy mérő előtét: táblánként
+ *    számolja a feltételes írásokat (PATCH …&version=eq.N, ill. ON CONFLICT DO NOTHING beszúrás), ezek közül az ütközéseket (üres
+ *    válasz: a feltétel közben megszűnt) és a feltétel nélküli írásokat; a megadott táblák GET-jeit késlelteti, hogy a párhuzamos
+ *    írók olvasásai biztosan átfedjenek.
+ *  · fileAdapter / supabaseAdapter: a teszt ugyanazokkal a lépésekkel olvassa-írja a két drivert.
  *  · runTsModule: TypeScript-modul futtatása sima Node-ban (típuslehántással), Next és útvonal-aliasok nélkül.
  */
 import { spawn, spawnSync } from "node:child_process";
@@ -18,8 +17,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getStore } from "@netlify/blobs";
-import { BlobsServer } from "@netlify/blobs/server";
+import { ensureLocalSupabase, resetLocalSupabase } from "../supabase-local.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -60,7 +58,10 @@ const killPort = (port) => spawnSync("sh", ["-c", `lsof -ti tcp:${port} -sTCP:LI
 export async function startNext({ port, env = {}, label = "next" }) {
   if (port === OWN_PORT) killPort(port);
   const base = { ...process.env };
-  for (const k of ["NETLIFY_BLOBS_CONTEXT", "NETLIFY_SITE_ID", "NETLIFY_TOKEN", "NETLIFY", "DATA_DIR", "ADMIN_USER", "ADMIN_PASSWORD", "ADMIN_OPEN_DEMO", "RESEND_API_KEY", "GOOGLE_PLACES_KEY", "RATELIMIT_SALT"]) delete base[k];
+  for (const k of ["NETLIFY_BLOBS_CONTEXT", "NETLIFY_SITE_ID", "NETLIFY_TOKEN", "NETLIFY", "DATA_DIR", "ADMIN_USER", "ADMIN_PASSWORD", "ADMIN_OPEN_DEMO", "RESEND_API_KEY", "GOOGLE_PLACES_KEY", "RATELIMIT_SALT", "STORE_DRIVER"]) delete base[k];
+  /* A Next a .env.local-ból a folyamatban NEM létező kulcsot tölti be: az éles Supabase- és levelező kulcsok üres értékkel zárva
+     maradnak, hacsak a próba (env) kifejezetten meg nem adja őket. */
+  for (const k of ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY", "SUPABASE_PROJECT_ID", "RESEND_API_KEY", "CONTACT_TO", "CONTACT_FROM", "GOOGLE_PLACES_KEY", "GOOGLE_PLACE_ID", "ADMIN_USER", "ADMIN_PASSWORD"]) base[k] = "";
   const logs = [];
   /* Jelszó nélkül a production build admin-ja zárva (fail-closed); a próbák a nyitott demót kifejezetten kérik — a zárt eset
      próbája `env: { ADMIN_OPEN_DEMO: "" }`-vel indít (p3-auth D). */
@@ -100,80 +101,75 @@ export async function startNext({ port, env = {}, label = "next" }) {
   };
 }
 
-/** Blobs-szimulátor + Netlify-szemantikájú előtét. `slowKeys`: "<tárnév>/<kulcs>" (pl. "site:site/site"), ezek GET-je `readDelayMs`-ig tart. */
-export async function startBlobs({ slowKeys = [], readDelayMs = 0 } = {}) {
-  const dir = await tmpDir("p1-blobs-");
-  const token = "p1-token", siteID = "p1site";
-  const backend = new BlobsServer({ directory: dir, token });
-  const { port: backendPort } = await backend.start();
-  const backendURL = `http://127.0.0.1:${backendPort}`;
+/** Mező ↔ oszlop a rekordtáblákban (ugyanaz, mint a src/lib/records.ts-ben). */
+const COLUMNS = {
+  registrations: [["id", "id"], ["eventId", "event_id"], ["name", "name"], ["phone", "phone"], ["email", "email"], ["count", "count"], ["note", "note"], ["receivedAt", "received_at"]],
+  messages: [["id", "id"], ["name", "name"], ["email", "email"], ["phone", "phone"], ["message", "message"], ["page", "page"], ["receivedAt", "received_at"], ["read", "read"]],
+};
+export const toRow = (kind, rec) => Object.fromEntries(COLUMNS[kind].filter(([f]) => rec[f] !== undefined).map(([f, c]) => [c, rec[f]]));
+export const fromRow = (kind, row) => {
+  const o = {}; for (const [f, c] of COLUMNS[kind]) if (row[c] !== null && row[c] !== undefined) o[f] = row[c];
+  if (o.receivedAt) o.receivedAt = new Date(o.receivedAt).toISOString();
+  return o;
+};
+
+const HOP = new Set(["connection", "keep-alive", "transfer-encoding", "content-length", "host", "expect", "upgrade", "proxy-connection"]);
+
+/**
+ * Helyi Supabase + mérő előtét. `slow`: táblanevek (pl. "site_content") vagy kv-kulcsok ("kv:p1-control") — ezek GET-je `readDelayMs`-ig tart.
+ * A statisztika és az idővonal kulcsa ugyanez az azonosító. Induláskor és leállításkor a helyi tár kiürül.
+ */
+export async function startSupabase({ slow = [], readDelayMs = 0 } = {}) {
+  const sb = await ensureLocalSupabase();
+  await resetLocalSupabase(sb);
   const stats = { conditional: {}, unconditional: {}, conflicts: {} };
-  const timeline = []; // a lassított kulcsok GET-jei és minden PUT: { id, op, t0, t1, status, cond }
+  const timeline = [];
   const bump = (m, k) => { m[k] = (m[k] ?? 0) + 1; };
-  const queues = new Map();
-  const serial = (k, fn) => { const run = (queues.get(k) ?? Promise.resolve()).then(fn); queues.set(k, run.catch(() => {})); return run; };
-  const etagOf = (buf) => `"${createHash("sha256").update(buf).digest("hex")}"`;
 
   const server = http.createServer(async (req, res) => {
     try {
       const arrived = Date.now();
-      const chunks = []; for await (const c of req) chunks.push(c);
-      const body = Buffer.concat(chunks);
+      const parts = []; for await (const c of req) parts.push(c);
+      const body = Buffer.concat(parts);
       const url = new URL(req.url, "http://elotet");
-      const parts = url.pathname.split("/").filter((p) => p && !p.startsWith("region:")).map(decodeURIComponent);
-      const key = parts.length >= 3 ? parts.slice(2).join("/") : null;
-      const id = key ? `${parts[1]}/${key}` : null;
-      const auth = { authorization: req.headers.authorization ?? "" };
-      const send = (status, headers = {}, buf) => { res.writeHead(status, headers); res.end(buf); };
-
-      if (req.method === "GET" && key) {
-        const t0 = Date.now();
-        if (slowKeys.includes(id)) await sleep(readDelayMs);
-        const r = await fetch(backendURL + req.url, { headers: auth });
-        const buf = Buffer.from(await r.arrayBuffer());
-        const h = {}; const meta = r.headers.get("x-amz-meta-user"); if (meta) h["x-amz-meta-user"] = meta;
-        if (r.status === 200) h.etag = etagOf(buf);
-        if (slowKeys.includes(id)) timeline.push({ id, op: "GET", t0, t1: Date.now(), status: r.status });
-        return send(r.status, h, buf);
-      }
-      if ((req.method === "PUT" || req.method === "DELETE") && key) {
-        return await serial(id, async () => {
-          if (req.method === "DELETE") { const r = await fetch(backendURL + req.url, { method: "DELETE", headers: auth }); return send(r.status); }
-          const ifMatch = req.headers["if-match"], ifNone = req.headers["if-none-match"];
-          if (ifMatch || ifNone) {
-            bump(stats.conditional, id);
-            const cur = await fetch(backendURL + req.url, { headers: auth });
-            const exists = cur.status === 200;
-            const curTag = exists ? etagOf(Buffer.from(await cur.arrayBuffer())) : null;
-            if ((ifNone === "*" && exists) || (ifMatch && (!exists || curTag !== ifMatch))) { bump(stats.conflicts, id); timeline.push({ id, op: "PUT", cond: true, t0: arrived, t1: Date.now(), status: 412 }); return send(412); }
-          } else bump(stats.unconditional, id);
-          const headers = { ...auth };
-          for (const h of ["content-type", "x-amz-meta-user", "cache-control"]) if (req.headers[h]) headers[h] = req.headers[h];
-          const r = await fetch(backendURL + req.url, { method: "PUT", headers, body });
-          timeline.push({ id, op: "PUT", cond: !!(ifMatch || ifNone), t0: arrived, t1: Date.now(), status: r.status });
-          return send(r.status, r.status === 200 ? { etag: etagOf(body) } : {});
-        });
-      }
-      /* Lista és HEAD változatlanul (a lista ETag-je a szimulátoré — azt a kód csak változásjelzőnek használja). */
-      const r = await fetch(backendURL + req.url, { method: req.method, headers: auth });
-      const buf = req.method === "HEAD" ? undefined : Buffer.from(await r.arrayBuffer());
-      const h = {}; for (const k of ["content-type", "x-amz-meta-user"]) { const v = r.headers.get(k); if (v) h[k] = v; }
-      return send(r.status, h, buf);
-    } catch (e) { res.writeHead(500); res.end(String(e)); }
+      const table = url.pathname.match(/^\/rest\/v1\/([a-z_]+)$/)?.[1] ?? null;
+      const id = table === "kv" ? `kv:${(url.searchParams.get("key") ?? "").replace(/^eq\./, "")}` : table;
+      const isSlow = req.method === "GET" && !!table && slow.includes(id);
+      if (isSlow) await sleep(readDelayMs);
+      const headers = Object.fromEntries(Object.entries(req.headers).filter(([k]) => !HOP.has(k)));
+      const r = await fetch(sb.url + req.url, { method: req.method, headers, body: req.method === "GET" || req.method === "HEAD" ? undefined : body, redirect: "manual" });
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (table && ["POST", "PATCH", "PUT"].includes(req.method)) {
+        const prefer = String(req.headers.prefer ?? "");
+        const cond = (req.method === "PATCH" && url.searchParams.has("version")) || (req.method === "POST" && prefer.includes("ignore-duplicates"));
+        const empty = buf.toString("utf8").trim() === "[]";
+        if (cond) { bump(stats.conditional, id); if (r.ok && empty) bump(stats.conflicts, id); } else bump(stats.unconditional, id);
+        timeline.push({ id, op: req.method, cond, t0: arrived, t1: Date.now(), status: r.ok && cond && empty ? 409 : r.status });
+      } else if (isSlow) timeline.push({ id, op: "GET", t0: arrived, t1: Date.now(), status: r.status });
+      const out = {}; r.headers.forEach((v, k) => { if (!HOP.has(k) && k !== "content-encoding") out[k] = v; });
+      res.writeHead(r.status, out); res.end(buf);
+    } catch (e) { res.writeHead(502); res.end(String(e)); }
   });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
-  const shimURL = `http://127.0.0.1:${server.address().port}`;
-  const context = Buffer.from(JSON.stringify({ edgeURL: shimURL, uncachedEdgeURL: shimURL, siteID, token })).toString("base64");
+  const proxyURL = `http://127.0.0.1:${server.address().port}`;
+  const headers = { apikey: sb.serviceKey, authorization: `Bearer ${sb.serviceKey}` };
+  /** Közvetlen hívás a helyi Supabase-re (az előtét nélkül — a teszt saját írásai ne számítsanak bele a mérésbe). */
+  const api = async (method, p, body, prefer) => {
+    const r = await fetch(sb.url + p, { method, headers: { ...headers, "content-type": "application/json", ...(prefer ? { prefer } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+    const t = await r.text();
+    if (!r.ok) throw new Error(`helyi Supabase ${method} ${p}: HTTP ${r.status} ${t.slice(0, 200)}`);
+    return t ? JSON.parse(t) : null;
+  };
   let stopped = false;
   return {
-    dir, context,
-    store: (name) => getStore({ name, siteID, token, edgeURL: shimURL, uncachedEdgeURL: shimURL, consistency: "strong" }),
+    url: sb.url, proxyURL, serviceKey: sb.serviceKey, anonKey: sb.anonKey, headers, api,
+    env: { SUPABASE_URL: proxyURL, SUPABASE_SERVICE_ROLE_KEY: sb.serviceKey },
     timeline: (key) => timeline.filter((e) => e.id === key),
     snapshot: (key) => ({ conditional: stats.conditional[key] ?? 0, unconditional: stats.unconditional[key] ?? 0, conflicts: stats.conflicts[key] ?? 0 }),
     async stop() {
       if (stopped) return; stopped = true;
       server.closeAllConnections?.(); await new Promise((r) => server.close(r));
-      await backend.stop(); await fs.rm(dir, { recursive: true, force: true });
+      await resetLocalSupabase(sb).catch(() => {});
     },
   };
 }
@@ -200,21 +196,20 @@ export function fileAdapter(dir) {
   };
 }
 
-/** A Blobs-driver adatai a szimulátorban (az előtéten át). */
-export function blobsAdapter(blobs) {
-  const site = blobs.store("site"), backups = blobs.store("backups");
+/** A Supabase-driver adatai a helyi Supabase-ben (közvetlenül, az előtét nélkül). */
+export function supabaseAdapter(sb) {
+  const { api } = sb;
+  const upsert = (table, conflict, row) => api("POST", `/rest/v1/${table}?on_conflict=${conflict}`, row, "resolution=merge-duplicates,return=minimal");
   return {
-    label: "blobs",
-    readDoc: () => site.get("site", { type: "json" }),
-    writeDoc: (d) => site.setJSON("site", d),
-    records: async (kind) => {
-      const { blobs: list } = await site.list({ prefix: `${kind}/` });
-      return (await Promise.all(list.map((b) => site.get(b.key, { type: "json" })))).filter(Boolean);
-    },
-    putRecord: (kind, rec) => site.setJSON(`${kind}/${rec.id}`, rec),
-    backups: async () => (await backups.list()).blobs.map((b) => b.key).filter((n) => BACKUP_RE.test(n)).sort().reverse(),
-    readBackup: (name) => backups.get(name, { type: "json" }),
-    putBackup: (name, data) => backups.setJSON(name, data),
+    label: "supabase",
+    readDoc: async () => (await api("GET", "/rest/v1/site_content?id=eq.site&select=data"))[0]?.data ?? null,
+    /* A verzió léptetésével: egy közben induló feltételes író így észreveszi a változást. */
+    writeDoc: async (d) => { const cur = (await api("GET", "/rest/v1/site_content?id=eq.site&select=version"))[0]; await upsert("site_content", "id", { id: "site", data: d, version: (cur?.version ?? 0) + 1 }); },
+    records: async (kind) => (await api("GET", `/rest/v1/${kind}?select=*&limit=1000`)).map((r) => fromRow(kind, r)),
+    putRecord: (kind, rec) => upsert(kind, "id", toRow(kind, rec)),
+    backups: async () => (await api("GET", "/rest/v1/backups?select=name&order=name.desc")).map((r) => r.name).filter((n) => BACKUP_RE.test(n)),
+    readBackup: async (name) => (await api("GET", `/rest/v1/backups?name=eq.${encodeURIComponent(name)}&select=data`))[0]?.data ?? null,
+    putBackup: (name, data) => upsert("backups", "name", { name, data }),
   };
 }
 
@@ -231,7 +226,7 @@ export function runTsModule(file, code, env) {
   }`;
   const register = `import { register } from "node:module"; register(${JSON.stringify("data:text/javascript," + encodeURIComponent(hook))});`;
   const main = `const m = await import(${JSON.stringify(new URL(`file://${path.resolve(ROOT, file)}`).href)}); ${code}`;
-  /* Aszinkron indítás: a Blobs-előtét ebben a folyamatban fut — egy spawnSync megállítaná, és a gyerek örökké rá várna. */
+  /* Aszinkron indítás: a Supabase-előtét ebben a folyamatban fut — egy spawnSync megállítaná, és a gyerek örökké rá várna. */
   return new Promise((resolve) => {
     const child = spawn(process.execPath, ["--no-warnings", "--import", "data:text/javascript," + encodeURIComponent(register), "--input-type=module", "-e", main], { cwd: ROOT, env, stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "", stderr = "";

@@ -1,18 +1,18 @@
 /**
  * G16 — adatbiztonság egyidejű íráskor. Használat: node scripts/checks/p1-data.mjs   (előtte: npm run build)
- * Mindkét driveren (fájl, és Netlify Blobs-szimulátor két szerverpéldánnyal, mint a Netlify-függvények):
+ * Mindkét driveren (fájl, és helyi Supabase két szerverpéldánnyal, mint a Netlify-függvények):
  *  1. 30 egyidejű jelentkezés (különböző x-forwarded-for) + 10 üzenet → mind 200, és mind külön kulcson eltárolva;
  *  2. 10 párhuzamos admin-mentés: 10 böngészőlap egyszerre ment 5 aloldal-címet és 5 esemény-címet szerver-akcióval
- *     → mind a 10 változás megmaradt. Blobs-on azt is mérjük, hogy tényleg volt ütközés (412), és hogy a dokumentumba
- *     egyetlen írás sem ment feltétel nélkül;
+ *     → mind a 10 változás megmaradt. Supabase-en azt is mérjük, hogy tényleg volt ütközés (a feltételes frissítés üres választ
+ *     kapott, mert a version közben változott), és hogy a dokumentumba egyetlen írás sem ment feltétel nélkül;
  *  3. migráció: a dokumentumba ágyazott régi tömbök listázáskor átkerülnek (egy tétel már korábban átmásolva,
  *     egy használhatatlan azonosítóval), több egyidejű listázás után sincs duplikáció, a tömbök kiürülnek.
- * Kontroll: ugyanezen az előtéten 10 feltétel nélküli olvas-módosít-ír elveszít frissítéseket — a mérés látja a veszteséget.
+ * Kontroll: ugyanezen az előtéten 10 feltétel nélküli olvas-módosít-ír (kv tábla) elveszít frissítéseket — a mérés látja a veszteséget.
  * Elszigetelt DATA_DIR-ben fut; a végén npm run db:reset. Csak ha minden állítás teljesült: PASS: p1-data
  */
 import fs from "node:fs/promises";
 import { chromium } from "playwright-core";
-import { CheckError, assert, blobsAdapter, chromeExe, dayOffset, dbReset, fileAdapter, fixtureEvent, freePort, readSeed, startBlobs, startNext, tmpDir } from "./_p1-harness.mjs";
+import { CheckError, assert, chromeExe, dayOffset, dbReset, fileAdapter, fixtureEvent, freePort, readSeed, startNext, startSupabase, supabaseAdapter, tmpDir } from "./_p1-harness.mjs";
 
 const RUN = Date.now().toString(36);
 const PAGE_KEYS = ["huculosveny", "turak", "oktatas", "taborok", "egyesulet"];
@@ -95,7 +95,7 @@ async function migration(ad, bases) {
   assert(!regsBefore.some((r) => r.id === legacyRegs[0].id) && !msgsBefore.some((m) => m.name === legacyMsgs[0].name), `${ad.label}: kontroll: a régi tételek már a listázás előtt a saját kulcsukon voltak`);
   assert(Array.isArray((await ad.readDoc()).registrations), `${ad.label}: kontroll: a régi tömb nincs a dokumentumban`);
 
-  /* Listázás: több egyidejű lapbetöltés (Blobs-on mindkét példányon) — a párhuzamos migráció sem duplikálhat. */
+  /* Listázás: több egyidejű lapbetöltés (Supabase-en mindkét példányon) — a párhuzamos migráció sem duplikálhat. */
   const loads = await Promise.all([...bases, ...bases].flatMap((b) => [fetch(`${b}/admin/jelentkezesek`), fetch(`${b}/admin/uzenetek`)]));
   assert(loads.every((r) => r.status === 200), `${ad.label}: admin-lista: ${loads.map((r) => r.status).join(",")}`);
 
@@ -121,12 +121,18 @@ async function migration(ad, bases) {
 }
 
 /* Kontroll: feltétel nélküli olvas-módosít-ír ugyanezen az előtéten veszít — tehát a fenti „mind megmaradt” mérés látná a hibát. */
-async function lostUpdateControl(blobs) {
-  const s = blobs.store("site");
-  await s.setJSON("control", { fields: {} });
-  await Promise.all(Array.from({ length: 10 }, async (_, i) => { const cur = await s.get("control", { type: "json" }); cur.fields[`f${i}`] = i; await s.setJSON("control", cur); }));
-  const kept = Object.keys((await s.get("control", { type: "json" })).fields).length;
-  await s.delete("control");
+async function lostUpdateControl(sb) {
+  const key = "p1-control";
+  await sb.api("POST", "/rest/v1/kv?on_conflict=key", { key, value: { fields: {} } }, "resolution=merge-duplicates,return=minimal");
+  const h = { ...sb.headers, "content-type": "application/json" };
+  await Promise.all(Array.from({ length: 10 }, async (_, i) => {
+    /* Az előtéten át: az olvasás lassított, így a 10 író mind ugyanazt a régi értéket látja. */
+    const cur = (await (await fetch(`${sb.proxyURL}/rest/v1/kv?key=eq.${key}&select=value`, { headers: h })).json())[0].value;
+    cur.fields[`f${i}`] = i;
+    await fetch(`${sb.proxyURL}/rest/v1/kv?key=eq.${key}`, { method: "PATCH", headers: h, body: JSON.stringify({ value: cur }) });
+  }));
+  const kept = Object.keys((await sb.api("GET", `/rest/v1/kv?key=eq.${key}&select=value`))[0].value.fields).length;
+  await sb.api("DELETE", `/rest/v1/kv?key=eq.${key}`);
   assert(kept < 10, `kontroll: 10 feltétel nélküli olvas-módosít-ír mind megmaradt (${kept}) — így a mérés nem látná a veszteséget`);
   log(`  kontroll: feltétel nélküli írással 10 párhuzamos frissítésből csak ${kept} maradt meg`);
 }
@@ -151,35 +157,35 @@ try {
   assert(tmpLeft.length === 0, `fájl: ideiglenes fájlok maradtak: ${tmpLeft.join(", ")}`);
   await srvFile.stop();
 
-  log("B) Netlify Blobs-szimulátor, két szerverpéldány (next start :3012 + szabad port)");
-  const blobs = await startBlobs({ slowKeys: ["site:site/site", "site:site/control"], readDelayMs: 250 });
-  cleanups.push(() => blobs.stop());
-  await lostUpdateControl(blobs);
-  const ba = blobsAdapter(blobs);
+  log("B) helyi Supabase mérő előtéttel, két szerverpéldány (next start :3012 + szabad port)");
+  const sb = await startSupabase({ slow: ["site_content", "kv:p1-control"], readDelayMs: 250 });
+  cleanups.push(() => sb.stop());
+  await lostUpdateControl(sb);
+  const ba = supabaseAdapter(sb);
   await ba.writeDoc(initialDoc());
-  const dirB = await tmpDir("p1-data-blobs-");
+  const dirB = await tmpDir("p1-data-supabase-");
   cleanups.push(() => fs.rm(dirB, { recursive: true, force: true }));
-  const env = { NETLIFY_BLOBS_CONTEXT: blobs.context, DATA_DIR: dirB };
+  const env = { ...sb.env, DATA_DIR: dirB };
   const portB = await freePort();
-  const [srvA, srvB] = await Promise.all([startNext({ port: 3012, env, label: "blobs-A" }), startNext({ port: portB, env, label: "blobs-B" })]);
+  const [srvA, srvB] = await Promise.all([startNext({ port: 3012, env, label: "supabase-A" }), startNext({ port: portB, env, label: "supabase-B" })]);
   cleanups.push(() => srvA.stop(), () => srvB.stop());
   const bases = [srvA.base, srvB.base];
   await submissions(ba, bases);
-  const before = blobs.snapshot("site:site/site"), savesStart = Date.now();
+  const before = sb.snapshot("site_content"), savesStart = Date.now();
   await parallelSaves(ba, bases, browser);
-  const after = blobs.snapshot("site:site/site");
+  const after = sb.snapshot("site_content");
   const conflicts = after.conflicts - before.conflicts, conditional = after.conditional - before.conditional, unconditional = after.unconditional - before.unconditional;
-  assert(unconditional === 0, `blobs: a mentések alatt ${unconditional} feltétel nélküli írás ment a dokumentumba`);
+  assert(unconditional === 0, `supabase: a mentések alatt ${unconditional} feltétel nélküli írás ment a dokumentumba`);
   if (conflicts < 1 || process.env.P1_TIMELINE) {
-    const tl = blobs.timeline("site:site/site").filter((e) => e.t0 >= savesStart);
+    const tl = sb.timeline("site_content").filter((e) => e.t0 >= savesStart);
     const z = tl[0]?.t0 ?? 0;
     console.error("  idővonal (ms):", tl.map((e) => `${e.op}${e.cond ? "*" : ""} ${e.t0 - z}-${e.t1 - z} ${e.status}`).join(" | "));
   }
-  assert(conflicts >= 1, `blobs: a párhuzamos mentések alatt nem volt ütközés (412; ${conditional} feltételes írás) — így a teszt nem bizonyítja az újrapróbálást`);
-  log(`  2. blobs: 10 párhuzamos admin-mentésből mind a 10 megmaradt — ${conditional} feltételes írás, ebből ${conflicts} ütközés (412) újrapróbálva, feltétel nélküli írás: 0`);
+  assert(conflicts >= 1, `supabase: a párhuzamos mentések alatt nem volt ütközés (${conditional} feltételes írás) — így a teszt nem bizonyítja az újrapróbálást`);
+  log(`  2. supabase: 10 párhuzamos admin-mentésből mind a 10 megmaradt — ${conditional} feltételes írás, ebből ${conflicts} ütközés (a version közben változott) újrapróbálva, feltétel nélküli írás: 0`);
   await migration(ba, bases);
   const strays = await fs.readdir(dirB);
-  assert(strays.length === 0, `blobs: az alkalmazás a fájl-driverre is írt (${strays.join(", ")}) — nem a Blobs-drivert használta`);
+  assert(strays.length === 0, `supabase: az alkalmazás a fájl-driverre is írt (${strays.join(", ")}) — nem a Supabase-drivert használta`);
   await Promise.all([srvA.stop(), srvB.stop()]);
   passed = true;
 } catch (e) {

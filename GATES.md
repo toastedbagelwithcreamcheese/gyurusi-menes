@@ -2,7 +2,7 @@
 
 OWNS: **
 
-Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táborok, Egyesület), Netlify Blobs-alapú admin (fájl-driver helyben), eseménynaptár kiemelt eseménnyel és jelentkezéssel (csak igényfelmérés, adminban látszik), egyesületi beszámolók (PDF-feltöltés), HU/EN/DE i18n automatikus felismeréssel és váltóval, a tulajdonos (Vörös József) mindig elöl, aloldalanként saját kapcsolati rész, galéria kivéve, hero és eseményképek szerkeszthetők, üzenetek az info@gyurusimenes.hu-ra (Resend, env-gated).
+Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táborok, Egyesület), Supabase-alapú admin (2026-09-14 előtt Netlify Blobs; fájl-driver helyben), eseménynaptár kiemelt eseménnyel és jelentkezéssel (csak igényfelmérés, adminban látszik), egyesületi beszámolók (PDF-feltöltés), HU/EN/DE i18n automatikus felismeréssel és váltóval, a tulajdonos (Vörös József) mindig elöl, aloldalanként saját kapcsolati rész, galéria kivéve, hero és eseményképek szerkeszthetők, üzenetek az info@gyurusimenes.hu-ra (Resend, env-gated).
 
 - [x] G1: A projekt hibátlanul buildel
   CHECK: npm run build
@@ -64,7 +64,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   EXPECT: PASS: shots
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=01e8ae3d5d30bfab6d6b6fd7eb90bd1874d5880941e1c8df3e4bd7179da17c8c; output-bytes=865
 
-- [ ] G13: Élesben (Netlify, Blobs-driver): deploy után /, /en, /de, /egyesulet 200; admin-flow ugyanezt a kört a Blobs ellen végigfutja (esemény létrehozás → látszik → törlés), bizonyítva, hogy a tartalom Netlify-on is megmarad
+- [ ] G13: Élesben (Netlify, Supabase-driver): deploy után /, /en, /de, /egyesulet 200; admin-flow ugyanezt a kört az éles adatbázis ellen végigfutja (esemény létrehozás → látszik → törlés), bizonyítva, hogy a tartalom Netlify-on is megmarad
   CHECK: BASE_URL=https://gyurusi-menes-demo.netlify.app node scripts/admin-flow.mjs
   EXPECT: ADMIN_FLOW_OK
   EVIDENCE: pending
@@ -85,7 +85,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
 
 Forrás: docs/review-2026-09-13/ (átnézés, 39 szempont + 12 saját lelet). Az ügyfél kérései (criteria.json C01–C15) változtathatatlanok. Kulcsok, jelszó, DNS, adószám az ügyféltől jön — ezeket helyi mockkal/szimulációval ellenőrizzük, élesben csak be kell állítani. Minden ellenőrző szkript csak akkor ír `PASS: <név>`-et, ha minden állítása teljesült.
 
-- [x] G16: Adatbiztonság egyidejű íráskor: 30 egyidejű jelentkezés és 10 üzenet a fájl-driverrel ÉS helyi Netlify Blobs-szimulátorral mind eltárolódik; 10 párhuzamos admin-mentés a tartalomdokumentumon nem vész el (feltételes írás / újrapróbálás); a régi, dokumentumba ágyazott jelentkezések és üzenetek migrálódnak
+- [x] G16: Adatbiztonság egyidejű íráskor: 30 egyidejű jelentkezés és 10 üzenet a fájl-driverrel ÉS a helyi Supabase-zel (két szerverpéldány) mind eltárolódik; 10 párhuzamos admin-mentés a tartalomdokumentumon nem vész el (feltételes írás / újrapróbálás); a régi, dokumentumba ágyazott jelentkezések és üzenetek migrálódnak
   CHECK: node scripts/checks/p1-data.mjs
   EXPECT: PASS: p1-data
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=d6922f6f576c14461e780aa8a16a566eead4a72c6621227a6be635ced5ec2a75; output-bytes=957
@@ -144,6 +144,20 @@ Forrás: docs/review-2026-09-13/ (átnézés, 39 szempont + 12 saját lelet). Az
   CHECK: node scripts/with-server.mjs node scripts/checks/p7-speed.mjs
   EXPECT: PASS: p7-speed
 
-- [ ] G28: Élő-szerű ellenőrzés Netlify draft deployon (valódi Blobs, CDN, függvénykorlátok): 20 egyidejű jelentkezés mind tárolva; 8 MB-os fotó és 12 MB-os PDF feltöltése és letöltése; admin-mentés után a nyilvános lap legfeljebb 15 s alatt frissül; gyorsítótár-találatnál TTFB legfeljebb 250 ms; Lighthouse mobil Performance legalább 95 a draft URL-en; a próbaadatok utána eltávolítva
+- [ ] G28: Élő-szerű ellenőrzés Netlify draft deployon (valódi Supabase, CDN, függvénykorlátok): 20 egyidejű jelentkezés mind tárolva; 8 MB-os fotó és 12 MB-os PDF feltöltése és letöltése; admin-mentés után a nyilvános lap legfeljebb 15 s alatt frissül; gyorsítótár-találatnál TTFB legfeljebb 250 ms; Lighthouse mobil Performance legalább 95 a draft URL-en; a próbaadatok utána eltávolítva
   CHECK: node scripts/checks/final-live.mjs
   EXPECT: PASS: final-live
+
+## Supabase-átállás (2026-09-14)
+
+A megbízó döntése: az adatréteg Netlify Blobs helyett Supabase (tábla + Storage). A séma: supabase/migrations/*.sql; a helyi kapuk (G16–G18, G22) a helyi Supabase-t használják (scripts/supabase-local.mjs), az éles projektet nem.
+
+- [ ] G29: Az éles Supabase-projektben megvan a séma: a 6 tábla (site_content, registrations, messages, kv, rate_limits, backups) és a 2 privát Storage-tároló (files, upload-chunks); az anon kulcs egyik táblát sem olvassa, a kv táblát nem írja, a files tárolót nem listázza
+  CHECK: node scripts/supabase-import.mjs --check
+  EXPECT: PASS: supabase-import
+  EVIDENCE: pending
+
+- [ ] G30: Élesben a Supabase az adatbázis: a production admin állapotpanelje Supabase-t mutat; a mentés-API tartalomdokumentuma (események, beszámolók, feltöltések, nyitókép, utolsó mentés ideje) egyezik a site_content sorral; egy production karbantartás-futás a Supabase kv táblájába írja az időbélyegét és a mai mentést a backups táblába
+  CHECK: node scripts/checks/supabase-live.mjs
+  EXPECT: PASS: supabase-live
+  EVIDENCE: pending

@@ -1,18 +1,18 @@
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getStore } from "@netlify/blobs";
 import seedJson from "../../data/seed.json";
 import type { Lang } from "@/content/types";
+import { DATABASE_MISSING_MESSAGE, databaseMissingOnNetlify, db, eq, supabaseActive } from "./supabase";
 
 /**
  * Tartalomtár két driverrel, egy felülettel:
- *   · helyben (next dev, saját gép): data/site.json — olvasható, írható, git-ben követhető;
- *   · Netlify-on: Netlify Blobs „site” tár — a függvények fájlrendszere csak olvasható,
- *     a Blobs viszont a Netlify ingyenes csomag része, nem kell külön adatbázis.
- * Első futáskor a Blobs a beépített site.json-ból kapja a magját. Ha a Blobs valamiért
- * nem elérhető (pl. build-lépés), a beépített tartalom jön — az oldal sosem marad üresen.
- * A jelentkezések és üzenetek rekordonként külön kulcson élnek (records.ts); karbantartás és mentés: maintenance.ts.
+ *   · Supabase (élesben, és helyben is, ha a SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY be van állítva): a `site_content` tábla
+ *     egyetlen sora (id = 'site'), a `version` oszloppal ütközésbiztosan írva — src/lib/supabase.ts, séma: supabase/migrations/;
+ *   · helyi fájl (tesztek, beállítás nélküli fejlesztés, vagy STORE_DRIVER=file): data/site.json.
+ * Üres adatbázisban az első olvasás a beépített magot (data/seed.json) teszi be. Ha az adatbázis nem elérhető (pl. build-lépés),
+ * a beépített tartalom jön — az oldal sosem marad üresen; írni viszont ilyenkor nem lehet, és a hiba megmondja, miért.
+ * A jelentkezések és üzenetek soronként saját táblában élnek (records.ts); karbantartás és mentés: maintenance.ts.
  * Relatív importok és csak típus-import az aliasokból: a Netlify-függvény (netlify/functions/) a Next nélkül is betölti.
  */
 
@@ -59,7 +59,7 @@ export type SiteContent = {
   pages: Record<PageKey, Page>;
   events: Event[];
   routes: TrailRoute[];
-  /* A jelentkezések és az üzenetek NEM itt élnek, hanem rekordonként külön kulcson (src/lib/records.ts). */
+  /* A jelentkezések és az üzenetek NEM itt élnek, hanem soronként saját táblában (src/lib/records.ts). */
   reports: Report[];
   uploads: Upload[];
   legal: Legal;
@@ -71,12 +71,7 @@ export type SiteContent = {
 export const dataDir = () => (process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(process.cwd(), "data"));
 const siteFile = () => path.join(dataDir(), "site.json");
 const KEY = "site";
-
-export function blobsAvailable(): boolean {
-  return !!(process.env.NETLIFY_BLOBS_CONTEXT || (globalThis as { netlifyBlobsContext?: unknown }).netlifyBlobsContext
-    || (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_TOKEN) || process.env.NETLIFY === "true");
-}
-const store = () => getStore({ name: "site", consistency: "strong" });
+const seed = () => structuredClone(seedJson as unknown as SiteContent);
 
 /* ---------- Közös segédek az írásokhoz (a records, a maintenance és a ratelimit is ezeket használja) ---------- */
 
@@ -120,7 +115,6 @@ export const retryPause = (attempt: number) => new Promise<void>((r) => setTimeo
 
 /** `strict`: íráshoz olvasunk — egy létező, de olvashatatlan fájlt ne írjon felül a mag. */
 async function readLocal(strict = false): Promise<SiteContent> {
-  const seed = () => structuredClone(seedJson as unknown as SiteContent);
   let raw: string;
   try { raw = await fs.readFile(siteFile(), "utf8"); }
   catch (e) { if (!strict || (e as NodeJS.ErrnoException).code === "ENOENT") return seed(); throw e; }
@@ -130,14 +124,14 @@ async function readLocal(strict = false): Promise<SiteContent> {
 
 /** Régebbi tárolt tartalom kiegészítése a mag új kulcsaival (pl. `legal`), hogy egy új mező soha ne döntsön el egy lapot. */
 function withDefaults(data: Partial<SiteContent>): SiteContent {
-  const seed = seedJson as unknown as SiteContent;
-  const out = { ...structuredClone(seed), ...data } as SiteContent;
+  const base = seedJson as unknown as SiteContent;
+  const out = { ...structuredClone(base), ...data } as SiteContent;
   for (const k of ["events", "routes", "reports", "uploads"] as const) if (!Array.isArray(out[k])) out[k] = [];
-  if (!out.legal?.imprint || !out.legal?.privacy) out.legal = structuredClone(seed.legal);
-  if (!out.owner) out.owner = structuredClone(seed.owner);
-  for (const k of PAGE_KEYS) if (!out.pages?.[k]) out.pages = { ...structuredClone(seed.pages), ...(out.pages ?? {}) };
+  if (!out.legal?.imprint || !out.legal?.privacy) out.legal = structuredClone(base.legal);
+  if (!out.owner) out.owner = structuredClone(base.owner);
+  for (const k of PAGE_KEYS) if (!out.pages?.[k]) out.pages = { ...structuredClone(base.pages), ...(out.pages ?? {}) };
   out.uploads = out.uploads.map(normalizeUpload);
-  migrateLegacyContent(out, seed);
+  migrateLegacyContent(out, base);
   return out;
 }
 
@@ -155,41 +149,50 @@ function normalizeUpload(u: Upload): Upload {
   return { ...u, alt: { hu: FILE_NAME_RE.test(s) || s === "kép" ? "" : s, en: "", de: "" } };
 }
 
-/* A korábbi magból (2026-08/09) a már feltöltött tárakba (Netlify Blobs, helyi site.json) került, azóta hibásnak talált tartalom.
+/* A korábbi magokból a már feltöltött tárakba (Netlify Blobs → Supabase, helyi site.json) került, azóta elavult tartalom.
    Csak a SZÓ SZERINT változatlan régi alapértéket cseréljük: amit az admin átírt, azt nem bántjuk. */
-const LEGACY_PRIVACY_SHA256 = "0df2c56f8a8eabac2d6e2ace791ee519fbd5738df186e864ecbcdb64f6babbff";
+const LEGACY_PRIVACY_SHA256 = new Set([
+  "0df2c56f8a8eabac2d6e2ace791ee519fbd5738df186e864ecbcdb64f6babbff", // 2026-08/09: törlést ígért kód nélkül, adatkezelő és NAIH nélkül
+  "61ad810992c7d0105bca38dbbc96348adeba3628b8203c7f70e1276f1f0b6aac", // 2026-09-13/14: a Netlify-t nevezte meg adattárolóként (a Supabase előtt)
+]);
 const LEGACY_EXAMPLE_EVENTS: Record<string, string> = { "oszi-lovastura-2026-09-19": "Őszi lovastúra a Zalai-dombságban", "oszi-szuneti-lovastabor-2026": "Őszi szüneti lovastábor" };
-const legacyHash = (l: L) => createHash("sha256").update([l.hu, l.en, l.de].join(String.fromCharCode(0))).digest("hex");
+/* A böngésző a textarea sortöréseit CRLF-ként küldi: az admin-mentésen átment, változatlan szöveg is egyezzen. */
+const legacyHash = (l: L) => createHash("sha256").update([l.hu, l.en, l.de].map((s) => String(s ?? "").replace(/\r\n/g, "\n")).join(String.fromCharCode(0))).digest("hex");
 
 /**
- *  · a régi adatkezelési szöveg valótlant ígért („a jelentkezéseket az esemény után töröljük” — kód nélkül), és hiányzott belőle
- *    az adatkezelő, a jogalap és a NAIH → a változatlan régi szöveg helyére az új, szerkezetes sablon kerül;
+ *  · a régi adatkezelési szövegek (a változatlan régi alapérték) → az új, szerkezetes sablon;
  *  · a két kitalált példaesemény (időpont, időtartam, program nem igazolt) → kikerül, ha az azonosítója ÉS a magyar címe is a régi.
  *    A helyi kipróbáláshoz az `npm run db:demo` más azonosítóval teszi vissza őket.
  * Csak olvasáskor hat; a következő mentés tartósan így írja vissza.
  */
-function migrateLegacyContent(out: SiteContent, seed: SiteContent) {
+function migrateLegacyContent(out: SiteContent, base: SiteContent) {
   const p = out.legal?.privacy;
-  if (p && typeof p.hu === "string" && legacyHash(p) === LEGACY_PRIVACY_SHA256) out.legal = { ...out.legal, privacy: structuredClone(seed.legal.privacy) };
+  if (p && typeof p.hu === "string" && LEGACY_PRIVACY_SHA256.has(legacyHash(p))) out.legal = { ...out.legal, privacy: structuredClone(base.legal.privacy) };
   if (out.events.some((e) => LEGACY_EXAMPLE_EVENTS[e.id] !== undefined && e.title?.hu === LEGACY_EXAMPLE_EVENTS[e.id])) {
     out.events = out.events.filter((e) => !(LEGACY_EXAMPLE_EVENTS[e.id] !== undefined && e.title?.hu === LEGACY_EXAMPLE_EVENTS[e.id]));
   }
 }
 
+type SiteRow = { data: Partial<SiteContent>; version: number };
+
 export async function readSite(): Promise<SiteContent> {
-  if (blobsAvailable()) {
+  if (supabaseActive()) {
     try {
-      const data = (await store().get(KEY, { type: "json" })) as Partial<SiteContent> | null;
-      if (data) return withDefaults(data);
-      const seed = structuredClone(seedJson as unknown as SiteContent);
-      /* Csak ha közben senki nem írt bele: egy párhuzamos első mentést a mag nem írhat felül. */
-      try { await store().setJSON(KEY, seed, { onlyIfNew: true }); } catch { /* build-lépésben nincs írás — nem baj */ }
-      return seed;
+      const rows = await db.select<SiteRow>("site_content", `id=${eq(KEY)}&select=data`);
+      if (rows[0]?.data) return withDefaults(rows[0].data);
+      const first = seed();
+      /* Csak ha közben senki nem írt bele: egy párhuzamos első mentést a mag nem írhat felül. A build (next build) sosem ír az adatbázisba —
+         egy helyi build a .env.local kulcsaival különben az éles, még üres táblába tenné a magot. */
+      if (process.env.NEXT_PHASE !== "phase-production-build") {
+        try { await db.insertIgnore("site_content", "id", { id: KEY, data: first }); } catch { /* nincs jog vagy tábla — az olvasás a magot adja */ }
+      }
+      return first;
     } catch (e) {
-      console.warn("[store] Blobs nem elérhető, beépített tartalom:", e instanceof Error ? e.message : e);
-      return structuredClone(seedJson as unknown as SiteContent);
+      console.warn("[store] az adatbázis nem elérhető, beépített tartalom:", e instanceof Error ? e.message : e);
+      return seed();
     }
   }
+  if (databaseMissingOnNetlify()) { console.warn(`[store] ${DATABASE_MISSING_MESSAGE}`); return seed(); }
   return readLocal();
 }
 
@@ -197,26 +200,28 @@ const WRITE_TRIES = 10;
 
 /**
  * A tartalomdokumentum módosítása — ütközésbiztosan, mert admin-mentés, karbantartás és migráció egyszerre is futhat:
- *   · Blobs-on: olvasás ETag-gel, majd feltételes írás (onlyIfMatch; ha még nincs dokumentum, onlyIfNew). Ha közben
- *     más írt, újraolvas és újra alkalmazza a módosítást — legfeljebb 10 kísérlet, véletlen várakozással.
+ *   · Supabase-en: olvasás a `version`-nel, majd feltételes frissítés (`version = a beolvasott`; ha még nincs sor, beszúrás csak
+ *     szabad kulcsra). Ha közben más írt, újraolvas és újra alkalmazza a módosítást — legfeljebb 10 kísérlet, véletlen várakozással.
  *   · helyben: folyamaton belüli sor + egyedi ideiglenes fájl + atomi átnevezés.
  * A `mutate` ezért TÖBBSZÖR is lefuthat: csak a kapott dokumentumot módosítsa, mellékhatás nélkül.
  * Minden mentés beírja az `updatedAt`-ot (a sitemap lastmod-ja); a nem tartalmi írás (pl. a régi rekordok áthelyezése) `touch: false`-szal kéri, hogy ne.
  */
 export async function writeSite(mutate: (s: SiteContent) => void | Promise<void>, opts: { touch?: boolean } = {}): Promise<SiteContent> {
   const apply = async (site: SiteContent) => { await mutate(site); if (opts.touch !== false) site.updatedAt = new Date().toISOString(); };
-  if (blobsAvailable()) return withLock("site", async () => {
+  if (supabaseActive()) return withLock("site", async () => {
     for (let attempt = 0; ; attempt++) {
-      const cur = await store().getWithMetadata(KEY, { type: "json" });
-      const site = cur?.data ? withDefaults(cur.data as Partial<SiteContent>) : structuredClone(seedJson as unknown as SiteContent);
+      const cur = (await db.select<SiteRow>("site_content", `id=${eq(KEY)}&select=data,version`))[0];
+      const site = cur?.data ? withDefaults(cur.data) : seed();
       await apply(site);
-      /* ETag nélkül (csak a helyi Blobs-szimulátor ilyen) nincs mihez feltételt kötni — ott egy folyamat fut, a sor véd. */
-      const cond = !cur ? { onlyIfNew: true } : cur.etag ? { onlyIfMatch: cur.etag } : {};
-      if ((await store().setJSON(KEY, site, cond)).modified) return site;
+      const saved = cur
+        ? await db.update("site_content", `id=${eq(KEY)}&version=${eq(cur.version)}`, { data: site, version: cur.version + 1, updated_at: new Date().toISOString() })
+        : await db.insertIgnore("site_content", "id", { id: KEY, data: site });
+      if (saved.length === 1) return site;
       if (attempt + 1 >= WRITE_TRIES) throw new Error("A tartalmat közben más is módosította, és többszöri próbálkozásra sem sikerült menteni. Töltsd újra a lapot, és mentsd újra.");
       await retryPause(attempt);
     }
   });
+  if (databaseMissingOnNetlify()) throw new Error(DATABASE_MISSING_MESSAGE);
   return withLock("files", async () => {
     const site = await readLocal(true);
     await apply(site);

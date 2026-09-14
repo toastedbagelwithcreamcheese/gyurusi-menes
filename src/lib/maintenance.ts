@@ -1,17 +1,17 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getStore } from "@netlify/blobs";
-import { blobsAvailable, dataDir, readSite, withLock, writeFileAtomic } from "./store";
+import { dataDir, readSite, withLock, writeFileAtomic } from "./store";
 import type { Message, Registration, SiteContent } from "./store";
 import { deleteMessage, deleteRegistration, listMessages, listRegistrations } from "./records";
 import { pruneRateLimits } from "./ratelimit";
 import { pruneStaleChunks } from "./chunks";
+import { DATABASE_MISSING_MESSAGE, databaseMissingOnNetlify, db, inList, kv, supabaseActive } from "./supabase";
 
 /**
  * Karbantartás — az adatkezelési tájékoztató megőrzési ígéreteinek kódja, és a mentés:
  *   · jelentkezések törlése az esemény vége (endDate || date) után 30 nappal;
  *   · a 365 napnál régebbi üzenetek törlése;
- *   · napi mentés a „backups” tárba (helyben data/backups/) YYYY-MM-DD.json néven — tartalomdokumentum
+ *   · napi mentés a `backups` táblába (helyben data/backups/) YYYY-MM-DD.json néven — tartalomdokumentum
  *     + minden jelentkezés és üzenet —, az utolsó 30 marad meg;
  *   · lejárt sebességkorlát-bejegyzések törlése;
  *   · a 24 óránál régebben kezdett, félbemaradt darabolt feltöltések (PDF) törlése (chunks.ts).
@@ -28,8 +28,6 @@ export const OPPORTUNISTIC_INTERVAL_MS = 3600_000;
 const DAY = 864e5;
 const BACKUP_RE = /^\d{4}-\d{2}-\d{2}\.json$/;
 const LAST_RUN_KEY = "maintenance/last-run";
-const siteStore = () => getStore({ name: "site", consistency: "strong" });
-const backupStore = () => getStore({ name: "backups", consistency: "strong" });
 const lastRunFile = () => path.join(dataDir(), "maintenance.json");
 const backupDir = () => path.join(dataDir(), "backups");
 
@@ -53,7 +51,7 @@ export async function buildBackup(now = new Date()): Promise<Backup> {
 /** A tárolt napi mentések neve, legújabb elöl. */
 export async function listBackups(): Promise<string[]> {
   let names: string[];
-  if (blobsAvailable()) names = (await backupStore().list()).blobs.map((b) => b.key);
+  if (supabaseActive()) names = (await db.select<{ name: string }>("backups", "select=name&order=name.desc&limit=1000")).map((r) => r.name);
   else {
     try { names = await fs.readdir(backupDir()); }
     catch (e) { if ((e as NodeJS.ErrnoException).code === "ENOENT") return []; throw e; }
@@ -66,23 +64,22 @@ async function writeDailyBackup(now: Date): Promise<{ name: string; created: boo
   const name = `${budapestDay(now)}.json`;
   if ((await listBackups()).includes(name)) return { name, created: false };
   const data = await buildBackup(now);
-  if (blobsAvailable()) return { name, created: (await backupStore().setJSON(name, data, { onlyIfNew: true })).modified };
+  if (supabaseActive()) return { name, created: (await db.insertIgnore("backups", "name", { name, data })).length === 1 };
   return { name, created: await writeFileAtomic(path.join(backupDir(), name), JSON.stringify(data), { exclusive: true }) };
 }
 
 async function pruneBackups(): Promise<number> {
   const old = (await listBackups()).slice(BACKUPS_KEPT);
-  for (const name of old) {
-    if (blobsAvailable()) await backupStore().delete(name);
-    else await fs.rm(path.join(backupDir(), name), { force: true });
-  }
+  if (!old.length) return 0;
+  if (supabaseActive()) await db.remove("backups", `name=${inList(old)}`, "name");
+  else for (const name of old) await fs.rm(path.join(backupDir(), name), { force: true });
   return old.length;
 }
 
 type LastRun = { at: string };
 async function markRun(now: Date): Promise<void> {
   const value: LastRun = { at: now.toISOString() };
-  if (blobsAvailable()) { await siteStore().setJSON(LAST_RUN_KEY, value); return; }
+  if (supabaseActive()) { await kv.set(LAST_RUN_KEY, value); return; }
   await withLock("files", () => writeFileAtomic(lastRunFile(), JSON.stringify(value)));
 }
 
@@ -90,10 +87,10 @@ async function markRun(now: Date): Promise<void> {
 async function claimRun(now: Date): Promise<boolean> {
   const due = (v: unknown) => { const at = Date.parse((v as LastRun | null)?.at ?? ""); return !Number.isFinite(at) || now.getTime() - at >= OPPORTUNISTIC_INTERVAL_MS; };
   const value: LastRun = { at: now.toISOString() };
-  if (blobsAvailable()) {
-    const cur = await siteStore().getWithMetadata(LAST_RUN_KEY, { type: "json" });
-    if (cur && !due(cur.data)) return false;
-    return (await siteStore().setJSON(LAST_RUN_KEY, value, !cur ? { onlyIfNew: true } : cur.etag ? { onlyIfMatch: cur.etag } : {})).modified;
+  if (supabaseActive()) {
+    const cur = await kv.get<LastRun>(LAST_RUN_KEY);
+    if (cur && !due(cur.value)) return false;
+    return cur ? kv.update(LAST_RUN_KEY, value, cur.version) : kv.insert(LAST_RUN_KEY, value);
   }
   return withLock("files", async () => {
     let cur: unknown = null;
@@ -106,6 +103,7 @@ async function claimRun(now: Date): Promise<boolean> {
 
 /** Egy teljes karbantartási kör (ütemezett függvény, kézi futtatás). */
 export async function runMaintenance(now = new Date(), opts: { claimed?: boolean } = {}): Promise<MaintenanceReport> {
+  if (databaseMissingOnNetlify()) throw new Error(DATABASE_MISSING_MESSAGE);
   const t0 = Date.now();
   if (!opts.claimed) await markRun(now);
 

@@ -1,22 +1,23 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
-import { getStore } from "@netlify/blobs";
-import { blobsAvailable, dataDir, processGlobal, readSite, retryPause, withLock, writeFileAtomic, writeSite } from "./store";
+import { dataDir, readSite, withLock, writeFileAtomic, writeSite } from "./store";
 import type { Message, Registration, SiteContent } from "./store";
+import { DATABASE_MISSING_MESSAGE, databaseMissingOnNetlify, db, eq, supabaseActive } from "./supabase";
 
 /**
- * Jelentkezések és üzenetek — rekordonként külön kulcson, NEM a tartalomdokumentumban:
- *   · Netlify-on a „site” Blobs-tár registrations/<id> és messages/<id> kulcsai;
+ * Jelentkezések és üzenetek — soronként, NEM a tartalomdokumentumban:
+ *   · Supabase-en a `registrations` és a `messages` tábla (supabase/migrations/);
  *   · helyben data/registrations/<id>.json és data/messages/<id>.json.
  * Így két egyidejű beküldés sosem írja felül egymást (az egy dokumentumos tárolásnál 20 egyidejű
- * jelentkezésből 3 maradt meg). Új rekord csak szabad kulcsra kerülhet (onlyIfNew / kizárólagos létrehozás),
- * a módosítás feltételes írással megy. Relatív importok, next/* nélkül: a Netlify-függvény is betölti.
+ * jelentkezésből 3 maradt meg). Új rekord csak szabad kulcsra kerülhet (ON CONFLICT DO NOTHING / kizárólagos létrehozás).
+ * Relatív importok, next/* nélkül: a Netlify-függvény is betölti.
  */
 
 type Kind = "registrations" | "messages";
 const KINDS: Kind[] = ["registrations", "messages"];
 type Rec = { id: string; receivedAt: string };
+type Row = Record<string, unknown>;
 /** A régi tartalomdokumentum, amelyben még benne lehetnek a beágyazott tömbök. */
 type LegacyDoc = SiteContent & { registrations?: unknown; messages?: unknown };
 
@@ -25,10 +26,25 @@ export const isRecordId = (id: string) => ID_RE.test(id);
 /** Időrendbe rendezhető, ütközésmentes azonosító: <ms base36>-<8 hex>. */
 const newId = () => `${Date.now().toString(36)}-${randomUUID().slice(0, 8)}`;
 
-const store = () => getStore({ name: "site", consistency: "strong" });
-const blobKey = (kind: Kind, id: string) => `${kind}/${id}`;
 const fileOf = (kind: Kind, id: string) => path.join(dataDir(), kind, `${id}.json`);
 const notFound = (e: unknown) => (e as NodeJS.ErrnoException)?.code === "ENOENT";
+
+/** Mező ↔ oszlop: a kódban camelCase, a táblában snake_case. */
+const COLUMNS: Record<Kind, [field: string, column: string][]> = {
+  registrations: [["id", "id"], ["eventId", "event_id"], ["name", "name"], ["phone", "phone"], ["email", "email"], ["count", "count"], ["note", "note"], ["receivedAt", "received_at"]],
+  messages: [["id", "id"], ["name", "name"], ["email", "email"], ["phone", "phone"], ["message", "message"], ["page", "page"], ["receivedAt", "received_at"], ["read", "read"]],
+};
+const toRow = (kind: Kind, rec: object): Row => {
+  const r = rec as Row;
+  return Object.fromEntries(COLUMNS[kind].filter(([f]) => r[f] !== undefined).map(([f, c]) => [c, r[f]]));
+};
+const fromRow = (kind: Kind, row: Row): Row => {
+  const out: Row = {};
+  for (const [f, c] of COLUMNS[kind]) if (row[c] !== null && row[c] !== undefined) out[f] = row[c];
+  /* A Postgres időbélyege (…+00:00, mikroszekundum) → ugyanaz az ISO-alak, mint a fájl-driveren (a rendezés és a határidők szöveges összevetés). */
+  if (typeof out.receivedAt === "string") out.receivedAt = new Date(out.receivedAt).toISOString();
+  return out;
+};
 
 async function eachLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<void>): Promise<void> {
   let i = 0;
@@ -38,32 +54,24 @@ async function eachLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<
 /** Létrehozás csak szabad kulcsra. `false`, ha a kulcs már foglalt — sosem ír felül meglévő rekordot. */
 async function create(kind: Kind, rec: Rec): Promise<boolean> {
   if (!isRecordId(rec.id)) throw new Error(`Érvénytelen azonosító: ${rec.id}`);
-  if (blobsAvailable()) return (await store().setJSON(blobKey(kind, rec.id), rec, { onlyIfNew: true })).modified;
+  if (supabaseActive()) return (await db.insertIgnore(kind, "id", toRow(kind, rec))).length === 1;
+  if (databaseMissingOnNetlify()) throw new Error(DATABASE_MISSING_MESSAGE);
   return writeFileAtomic(fileOf(kind, rec.id), JSON.stringify(rec, null, 2), { exclusive: true });
 }
 
-/**
- * Minden rekord egy fajtából. Blobs-on a lista csak kulcsot és ETag-et ad, ezért a folyamat megjegyzi a már
- * letöltött rekordokat (ETag szerint), és csak az újakat/változottakat kéri le — egy meleg függvénypéldányban
- * az admin lapjai így nem töltenek le minden betöltéskor minden rekordot.
- */
+const PAGE = 1000; // a Supabase REST alapból legfeljebb 1000 sort ad egy kérésre
+
+/** Minden rekord egy fajtából. */
 async function readAll(kind: Kind): Promise<unknown[]> {
-  if (blobsAvailable()) {
-    const { blobs } = await store().list({ prefix: `${kind}/` });
-    const cache = processGlobal(`records.${kind}`, () => new Map<string, { etag: string; value: unknown }>());
-    const live = new Set(blobs.map((b) => b.key));
-    for (const k of cache.keys()) if (!live.has(k)) cache.delete(k);
-    const out: unknown[] = [];
-    await eachLimit(blobs, 12, async (b) => {
-      const hit = cache.get(b.key);
-      if (hit && b.etag && hit.etag === b.etag) { out.push(hit.value); return; }
-      const value: unknown = await store().get(b.key, { type: "json" });
-      if (value == null) return; // közben törölték
-      if (b.etag) cache.set(b.key, { etag: b.etag, value });
-      out.push(value);
-    });
-    return out.map((v) => structuredClone(v));
+  if (supabaseActive()) {
+    const out: Row[] = [];
+    for (let offset = 0; ; offset += PAGE) {
+      const rows = await db.select<Row>(kind, `select=*&order=received_at.desc,id.asc&limit=${PAGE}&offset=${offset}`);
+      out.push(...rows.map((r) => fromRow(kind, r)));
+      if (rows.length < PAGE) return out;
+    }
   }
+  if (databaseMissingOnNetlify()) return [];
   const dir = path.join(dataDir(), kind);
   let names: string[];
   try { names = (await fs.readdir(dir)).filter((n) => n.endsWith(".json")); } catch (e) { if (notFound(e)) return []; throw e; }
@@ -77,28 +85,26 @@ async function readAll(kind: Kind): Promise<unknown[]> {
 
 async function remove(kind: Kind, id: string): Promise<boolean> {
   if (!isRecordId(id)) return false;
-  if (blobsAvailable()) { await store().delete(blobKey(kind, id)); return true; }
+  if (supabaseActive()) return (await db.remove(kind, `id=${eq(id)}`, "id")).length > 0;
+  if (databaseMissingOnNetlify()) throw new Error(DATABASE_MISSING_MESSAGE);
   return withLock("files", async () => {
     try { await fs.unlink(fileOf(kind, id)); return true; } catch (e) { if (notFound(e)) return false; throw e; }
   });
 }
 
-/** Egy rekord módosítása: Blobs-on ETag-feltételes írás újrapróbálással; a közben törölt rekordot nem támasztja fel. */
+/** Egy rekord módosítása; a közben törölt rekordot nem támasztja fel. */
 async function update<T extends Rec>(kind: Kind, id: string, change: (r: T) => T | null): Promise<T | null> {
   if (!isRecordId(id)) return null;
-  if (blobsAvailable()) {
-    for (let i = 0; ; i++) {
-      const cur = await store().getWithMetadata(blobKey(kind, id), { type: "json" });
-      if (!cur) return null;
-      const next = change(cur.data as T);
-      if (!next) return cur.data as T;
-      /* ETag nélkül (csak a helyi Blobs-szimulátor ilyen) feltétel nélkül írunk — ott egy folyamat fut. */
-      const res = await store().setJSON(blobKey(kind, id), next, cur.etag ? { onlyIfMatch: cur.etag } : {});
-      if (res.modified) return next;
-      if (i >= 7) throw new Error("A tételt közben más is módosította, és többszöri próbálkozásra sem sikerült menteni. Próbáld újra.");
-      await retryPause(i);
-    }
+  if (supabaseActive()) {
+    const row = (await db.select<Row>(kind, `id=${eq(id)}&select=*`))[0];
+    if (!row) return null;
+    const cur = fromRow(kind, row) as unknown as T;
+    const next = change(cur);
+    if (!next) return cur;
+    const saved = await db.update<Row>(kind, `id=${eq(id)}`, toRow(kind, next));
+    return saved.length ? next : null;
   }
+  if (databaseMissingOnNetlify()) throw new Error(DATABASE_MISSING_MESSAGE);
   return withLock("files", async () => {
     let cur: T;
     try { cur = JSON.parse(await fs.readFile(fileOf(kind, id), "utf8")) as T; } catch (e) { if (notFound(e)) return null; throw e; }
@@ -116,7 +122,7 @@ const asItems = (v: unknown): Partial<Rec>[] => (Array.isArray(v) ? v.filter((x)
 const legacyId = (r: Partial<Rec>) => (typeof r.id === "string" && isRecordId(r.id) ? r.id : `legacy-${createHash("sha256").update(JSON.stringify(r)).digest("hex").slice(0, 20)}`);
 
 /**
- * A tartalomdokumentum régi `registrations` / `messages` tömbjeinek áthelyezése a saját kulcsaikra.
+ * A tartalomdokumentum régi `registrations` / `messages` tömbjeinek áthelyezése a saját helyükre.
  * Lusta (a listázás hívja) és idempotens: a már meglévő kulcsot nem írja felül, és a dokumentumból csak az
  * átmásolt tételeket veszi ki — egy félbeszakadt vagy két párhuzamos futás sem duplikál, és semmi nem vész el.
  */
@@ -161,12 +167,16 @@ async function add<T extends Rec>(kind: Kind, fields: Omit<T, "id" | "receivedAt
 export type NewRegistration = Omit<Registration, "id" | "receivedAt">;
 export type NewMessage = Omit<Message, "id" | "receivedAt" | "read">;
 
-/** Új jelentkezés a saját kulcsára. Legújabb elöl a listában. */
+/** Új jelentkezés a saját sorára. Legújabb elöl a listában. */
 export const addRegistration = (r: NewRegistration) => add<Registration>("registrations", r);
 export const listRegistrations = () => listKind<Registration>("registrations");
 export const deleteRegistration = (id: string) => remove("registrations", id);
 /** Egy esemény összes jelentkezésének törlése (az esemény törlésekor). A törölt darabszámot adja. */
 export async function deleteRegistrationsForEvent(eventId: string): Promise<number> {
+  if (supabaseActive()) {
+    try { await migrateLegacyRecords(); } catch (e) { console.warn("[records] a régi tételek áthelyezése nem sikerült:", e instanceof Error ? e.message : e); }
+    return (await db.remove("registrations", `event_id=${eq(eventId)}`, "id")).length;
+  }
   let n = 0;
   for (const r of await listRegistrations()) if (r.eventId === eventId && (await remove("registrations", r.id))) n++;
   return n;
