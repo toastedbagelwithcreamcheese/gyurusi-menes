@@ -14,6 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { revalidateSite } from "./revalidate.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const BASE = (process.env.BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
@@ -21,7 +22,8 @@ const DB = path.join(ROOT, "data/site.json");
 const fail = (m) => { console.error("FAIL:", m); process.exit(1); };
 const exe = process.env.PW_CHROME ?? path.join(os.homedir(), "Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing");
 const readDb = async () => JSON.parse(await fs.readFile(DB, "utf8"));
-const writeDb = async (d) => fs.writeFile(DB, JSON.stringify(d, null, 2));
+/** Közvetlen írás a helyi DB-be, utána a nyilvános lapok gyorsítótárának érvénytelenítése (P7: a lapok ISR-en futnak). */
+const writeDb = async (d) => { await fs.writeFile(DB, JSON.stringify(d, null, 2)); await revalidateSite(BASE); };
 /** A jelentkezések és üzenetek rekordonként külön fájlban: data/registrations/<id>.json, data/messages/<id>.json — legújabb elöl. */
 const readRecords = async (kind) => {
   const dir = path.join(ROOT, "data", kind);
@@ -32,6 +34,7 @@ const readRecords = async (kind) => {
 
 spawnSync("node", [path.join(ROOT, "scripts/db-reset.mjs")], { stdio: "ignore" });
 { const demo = spawnSync("node", [path.join(ROOT, "scripts/db-demo.mjs")], { encoding: "utf8" }); if (demo.status !== 0) fail("db:demo: " + demo.stderr); }
+await revalidateSite(BASE);
 const browser = await chromium.launch({ executablePath: exe, headless: true });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "hu-HU" });
 const page = await ctx.newPage();
@@ -91,6 +94,7 @@ try {
   if ((await page.locator("[data-featured-event]").count()) !== 0) fail("nincs esemény: mégis van kiemelt");
   console.log("C2) nincs esemény: mindkét lap a magyarázó szöveget adja");
   spawnSync("node", [path.join(ROOT, "scripts/db-reset.mjs")], { stdio: "ignore" });
+  await revalidateSite(BASE);
 
   /* D) admin visszajelzések — a nem-PDF fájlt már a böngésző utasítja el (ReportUpload), feltöltési kérés nélkül */
   const txt = path.join(os.tmpdir(), "qa-nem-pdf.txt"); await fs.writeFile(txt, "ez nem pdf");

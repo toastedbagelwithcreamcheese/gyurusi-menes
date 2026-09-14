@@ -10,6 +10,15 @@ const LEGACY: Array<[string, string]> = [
 
 const nextConfig: NextConfig = {
   images: { qualities: [55, 62, 70, 78], formats: ["image/avif", "image/webp"] },
+  /* Szándékosan NINCS experimental.isrFlushToDisk: false (P7): az a képoptimalizáló lemez-gyorsítótárát is kikapcsolja — minden kép
+     minden kérésre újrakódolódna (helyben ~50 ms képenként). A tesztszerverek induláskor érvénytelenítik a nyilvános lapokat
+     (scripts/with-server.mjs, a kapuk saját szerverindítói), így egy korábbi futás lemezre írt lapja nem zavar. */
+  experimental: {
+    /* Kevesebb, nagyobb JS-chunk az első betöltéshez (P7): a Turbopack alapból ~10 apró chunkot kért le minden lapon — mobilhálózaton
+       (és HTTP/1.1-en) minden kérés külön várakozás. A kis chunkok összeolvadnak; a React és a Next futtatókörnyezete külön marad
+       (maxMergeChunkSize alapérték), így a lapok közti navigáció továbbra is újrahasználja őket. */
+    turbopackChunking: { minChunkSize: 200_000, requestCost: 600_000 },
+  },
   /* A Next saját perjel-átirányítása (308) a config-átirányítások ELŐTT futna: a „/kapcsolat/” így 308 + 301 láncot,
      az „/oktatas/” 308-at kapna 301 helyett. Kikapcsolva; ugyanezt a lista végén mi tesszük meg, a régi címek után. */
   skipTrailingSlashRedirect: true,

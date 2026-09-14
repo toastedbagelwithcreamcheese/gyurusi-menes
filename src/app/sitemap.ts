@@ -4,8 +4,8 @@ import { alternatesFor, langPath } from "@/lib/paths";
 import { absUrl, publicPaths } from "@/lib/seo";
 import { readSite } from "@/lib/store";
 
-/** Óránként újragenerálva, hogy az adminban publikált új esemény build nélkül is bekerüljön. */
-export const revalidate = 3600;
+/** Kérésenként a tárból (P7): előre renderelve a build a magot sütné bele, és egy deploy után akár egy óráig a régi eseménylistát adná. */
+export const dynamic = "force-dynamic";
 
 /** Minden nyilvános lap mindhárom nyelven, a nyelvi alternatívákkal (hreflang + x-default). */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

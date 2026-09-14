@@ -28,6 +28,7 @@ import http from "node:http";
 import path from "node:path";
 import sharp from "sharp";
 import { CheckError, ROOT, assert, chromeExe, dayOffset, dbReset, freePort, readSeed, sleep, startNext, tmpDir } from "./_p1-harness.mjs";
+import { revalidateSite } from "../revalidate.mjs";
 
 const BASE = (process.env.BASE_URL ?? "http://localhost:3012").replace(/\/$/, "");
 const DATA = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, "data");
@@ -71,7 +72,7 @@ async function seedFixtures() {
   await fs.writeFile(path.join(DATA, "files/r-p3besz01.pdf"), pdf);
   site.reports = [{ id: "p3-rep-1", title: "P3 törlendő beszámoló", year: 2026, date: dayOffset(-3), file: "r-p3besz01.pdf", size: pdf.length, published: true }, ...site.reports];
   site.routes = [{ id: "p3-del-utvonal", name: L("P3 törlendő útvonal", "P3 route to delete", "P3 zu löschende Route"), summary: L("", "", ""), photos: [], published: false, order: 0 }];
-  await writeSite(site);
+  await writeSite(site); await revalidateSite(BASE);
   const rec = async (kind, r) => { await fs.mkdir(path.join(DATA, kind), { recursive: true }); await fs.writeFile(path.join(DATA, kind, `${r.id}.json`), JSON.stringify(r, null, 2)); };
   await rec("registrations", { id: "p3-reg-1", eventId: "p3-del-esemeny", name: "P3 Jelentkező", phone: "+36 30 000 0003", count: 2, receivedAt: new Date().toISOString() });
   await rec("messages", { id: "p3-msg-1", name: "P3 Üzenő", email: "p3@example.com", message: "P3 törlendő üzenet a kétlépcsős törlés teszthez.", receivedAt: new Date().toISOString(), read: false });

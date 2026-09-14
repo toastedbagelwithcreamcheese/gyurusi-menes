@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ImageMeta } from "@/lib/images";
+import { placeholderStyle } from "@/lib/placeholder";
 
 type Labels = { open: string; close: string; prev: string; next: string; of: string };
 const Ctx = createContext<{ open: (i: number) => void } | null>(null);
@@ -29,7 +30,8 @@ export function ZoomProvider({ items, labels, children }: { items: ImageMeta[]; 
       <div className="zoom" data-open={i !== null} role="dialog" aria-modal="true" aria-label={labels.open} aria-hidden={i === null} onClick={close}>
         {im && (
           <figure className="zoom-fig" onClick={(e) => e.stopPropagation()}>
-            <Image key={im.src} src={im.src} alt={im.alt} width={im.width} height={im.height} sizes="100vw" quality={78} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} priority />
+            {/* Kattintásra jelenik meg: azonnal töltődjön (loading="eager"), de ne kerüljön előtöltésként a lap fejébe. */}
+            <Image key={im.src} src={im.src} alt={im.alt} width={im.width} height={im.height} sizes="100vw" quality={78} style={placeholderStyle(im)} loading="eager" />
             <figcaption className="zoom-cap"><span>{im.alt}</span><span className="tabular">{(i ?? 0) + 1} {labels.of} {items.length}</span></figcaption>
           </figure>
         )}

@@ -1,11 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Reveal } from "@/components/Reveal";
-import { HeroIntro } from "./HeroIntro";
 import { HeroParallax } from "./HeroParallax";
 import { MapEmbed } from "./MapEmbed";
 import { Photo } from "@/components/Photo";
 import { resolveImage, type ImageMeta } from "@/lib/images";
+import { placeholderStyle } from "@/lib/placeholder";
 import type { Dictionary, Lang } from "@/content/types";
 import { langPath } from "@/lib/paths";
 import { formatRange, formatDate, featuredEvent, upcoming, past, t, PAGE_KEYS, type Event, type SiteContent } from "@/lib/store";
@@ -19,9 +19,10 @@ export function Paragraphs({ text, className = "" }: { text: string; className?:
   return <>{text.split(/\n\s*\n/).map((p, i) => <p key={i} className={className}>{p}</p>)}</>;
 }
 
-export function Img({ im, sizes, className = "", priority }: { im: ImageMeta | null; sizes: string; className?: string; priority?: boolean }) {
+/** `preload`: a lap tetején álló LCP-kép — <link rel="preload"> a fejben, magas letöltési prioritással, szinkron dekódolással (az első festésben, lásd SubPage Pic). */
+export function Img({ im, sizes, className = "", preload }: { im: ImageMeta | null; sizes: string; className?: string; preload?: boolean }) {
   if (!im) return null;
-  return <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes={sizes} quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} className={className} priority={priority} />;
+  return <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes={sizes} quality={62} style={placeholderStyle(im)} className={className} {...(preload ? { preload: true, fetchPriority: "high" as const, decoding: "sync" as const } : {})} />;
 }
 
 type P = { site: SiteContent; lang: Lang; d: Dictionary };
@@ -31,14 +32,20 @@ export function Hero({ site, lang, d }: P) {
   const im = resolveImage(site.hero.image, site, lang);
   const lines = splitTitle(t(site.hero.title, lang));
   return (
-    <section id="top" className="hero on-dark" aria-label={t(site.hero.title, lang)}>
+    <section id="top" className="hero on-dark in" aria-label={t(site.hero.title, lang)}>
       <HeroParallax>
         <div className="hero-media" data-layer="media">
-          {im && <Image src={im.src} alt={im.alt} fill sizes="100vw" priority fetchPriority="high" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", objectPosition: "50% 45%", backgroundColor: im.color }} />}
+          {/* Nem előtöltött és nem magas prioritású: a teljes képernyős hero-képet a Chrome háttérnek tekinti, sosem LCP-elem — az LCP a címsor
+              (P7, Lighthouse-szal mérve). Az előtöltés a valódi LCP (a Fraunces-os cím) elől vitte a sávszélességet; lusta sem lehet.
+              A fetchPriority="low" kell: a React 19 szerveroldali renderelése minden nem lusta <img>-hez magától <link rel="preload">-ot
+              tesz a fejbe, kivéve az alacsony prioritásúakat. */}
+          {im && <Image src={im.src} alt={im.alt} fill sizes="100vw" loading="eager" fetchPriority="low" quality={62} style={{ objectFit: "cover", objectPosition: "50% 45%", ...placeholderStyle(im) }} />}
           <div className="hero-shade" aria-hidden="true" />
         </div>
         <div className="wrap hero-in" data-layer="text">
-          <HeroIntro>
+          {/* A belépő (fénysáv a címsoron, lépcsőzetes emelkedés) tisztán CSS-ből fut — a hajtás feletti tartalom nem vár a JS-re (P7).
+              A data-js="false" a meglévő szabályok szerint mindent láthatóvá tesz; a mozgást a globals.css P7-blokkja adja. */}
+          <div className="hero-seq" data-js="false">
             <p className="caption hero-note" data-seq="first">{d.hero.note}</p>
             <h1 className="display">{lines.map((l, i) => <span key={i} className="hero-line" data-sweep="#f3efe6">{l}{i < lines.length - 1 ? " " : ""}</span>)}</h1>
             <p className="lead hero-sub" data-seq>{t(site.hero.subtitle, lang)}</p>
@@ -46,7 +53,7 @@ export function Hero({ site, lang, d }: P) {
               <Link href={langPath(lang, "/esemenyek")} className="btn btn-light">{d.hero.ctaPrimary} <Arrow /></Link>
               <Link href="#kapcsolat" className="btn btn-outline">{d.hero.ctaSecondary}</Link>
             </div>
-          </HeroIntro>
+          </div>
         </div>
       </HeroParallax>
       <p className="hero-scroll" aria-hidden="true">{d.hero.scroll}</p>
@@ -115,13 +122,14 @@ export function Intro({ site, lang, d }: P) {
 }
 
 /* ---------------- ESEMÉNYEK a főoldalon: kiemelt nagyban + a következők ---------------- */
-/** `level`: a kártya címének szintje — a főoldalon a szekció H2-je alatt H3, az eseménynaptárban közvetlenül a H1 alatt H2. */
-export function EventCard({ e, site, lang, d, tag, level = 3 }: { e: Event; site: SiteContent; lang: Lang; d: Dictionary; tag: string; level?: 2 | 3 }) {
+/** `level`: a kártya címének szintje — a főoldalon a szekció H2-je alatt H3, az eseménynaptárban közvetlenül a H1 alatt H2.
+ *  `preload`: az eseménynaptárban a kártya képe a hajtás felett áll, ott ez az LCP-kép. */
+export function EventCard({ e, site, lang, d, tag, level = 3, preload = false }: { e: Event; site: SiteContent; lang: Lang; d: Dictionary; tag: string; level?: 2 | 3; preload?: boolean }) {
   const title = t(e.title, lang);
   const im = resolveImage(e.image, site, lang);
   return (
     <Link href={langPath(lang, `/esemenyek/${e.id}`)} className="ev-feat" data-featured-event>
-      <figure className="photo ev-feat-ph"><Img im={im} sizes="(max-width: 800px) 100vw, 55vw" /></figure>
+      <figure className="photo ev-feat-ph"><Img im={im} sizes="(max-width: 800px) calc(100vw - 40px), 55vw" preload={preload} /></figure>
       <div className="ev-feat-body">
         <span className="ev-feat-tag" data-event-tag>{tag}</span>
         <p className="caption">{formatRange(e, lang)}{e.location ? ` · ${e.location}` : ""}</p>
@@ -160,7 +168,7 @@ export function EventGrid({ list, site, lang, d }: { list: Event[]; site: SiteCo
       {list.map((e) => { const im = resolveImage(e.image, site, lang); return (
         <li key={e.id}>
           <Link href={langPath(lang, `/esemenyek/${e.id}`)} className="ev-card">
-            <figure className="photo ev-card-ph">{im && <Image src={im.src} alt={im.alt} fill sizes="(max-width: 640px) 100vw, 33vw" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", backgroundColor: im.color }} />}
+            <figure className="photo ev-card-ph">{im && <Image src={im.src} alt={im.alt} fill sizes="(max-width: 640px) 100vw, 33vw" quality={62} style={{ objectFit: "cover", ...placeholderStyle(im) }} />}
               <span className="ev-card-date"><b>{e.date.slice(8).replace(/^0/, "")}</b><span>{formatDate(e.date, lang, { month: "short" })}</span></span>
             </figure>
             <span className="ev-card-body">
@@ -229,7 +237,7 @@ export function Tiles({ site, lang, d }: P) {
             return (
               <Reveal as="div" key={k} delay={(i % 5) * 70} className="tile-wrap">
                 <Link href={langPath(lang, `/${k}`)} className="tile-card">
-                  <figure className="photo tile-ph">{im && <Image src={im.src} alt={im.alt} fill sizes="(max-width: 560px) 100vw, (max-width: 1100px) 33vw, 20vw" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", backgroundColor: im.color }} />}</figure>
+                  <figure className="photo tile-ph">{im && <Image src={im.src} alt={im.alt} fill sizes="(max-width: 560px) 100vw, (max-width: 1100px) 33vw, 20vw" quality={62} style={{ objectFit: "cover", ...placeholderStyle(im) }} />}</figure>
                   <div className="tile-body"><span className="tile-idx" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span><h3 className="h3">{t(p.title, lang)}</h3><p>{t(p.lead, lang)}</p><span className="tile-more">{d.tiles.more} <Arrow /></span></div>
                 </Link>
               </Reveal>

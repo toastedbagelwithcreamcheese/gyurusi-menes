@@ -3,6 +3,7 @@ import { Reveal } from "@/components/Reveal";
 import { Paragraphs } from "./Sections";
 import { ZoomButton, ZoomProvider } from "./Zoom";
 import { resolveImage, type ImageMeta } from "@/lib/images";
+import { placeholderStyle } from "@/lib/placeholder";
 import { sortRoutes, t, type SiteContent, type TrailRoute } from "@/lib/store";
 import type { Dictionary, Lang } from "@/content/types";
 
@@ -32,7 +33,7 @@ export function TrailRoutes({ routes, site, lang, d }: { routes: TrailRoute[]; s
 }
 
 const Pic = ({ im, sizes, quality }: { im: ImageMeta; sizes: string; quality: number }) => (
-  <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes={sizes} quality={quality} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} />
+  <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes={sizes} quality={quality} style={placeholderStyle(im)} />
 );
 
 function TrailCard({ route, n, site, lang, d }: { route: TrailRoute; n: number; site: SiteContent; lang: Lang; d: Dictionary }) {

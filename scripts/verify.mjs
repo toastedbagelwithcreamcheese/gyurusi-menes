@@ -80,7 +80,9 @@ if (which === "css-motion") {
   /* Osztály-lefedettség: az új komponensek osztályai tényleg ott vannak (egy rossz blokk-csere levághatja a fájl végét). */
   const required = [".map-ph", ".hdr-pill", ".hero-line", ".sub-contact", ".grain", ".lang ", ".owner-grid", ".tiles", ".tile-card", ".ev-feat", ".evc", ".reg-grid", ".rep-year", ".sub-strip", ".contact-card", ".breed-strip", ".mnav", ".dock", ".sub-hero", ".zoom", ".route-map", ".sub-form", ".ev-grid", ".ftr2", ".legal-dl", ".trails", ".trail-card", ".trail-photos",
     /* P4: nyelvi lenyíló, lenyitható bemutatkozás, évenkénti korábbi események, adatkezelési sor és tájékoztató — a fájl végén */
-    ".lang-menu", ".intro-more", ".ev-year", ".form-privacy", ".legal-list"];
+    ".lang-menu", ".intro-more", ".ev-year", ".form-privacy", ".legal-list",
+    /* P7: CSS-ből induló belépők (Reveal mount, fejléc, hero-fénysáv) és a mobilon kikapcsolt szemcse — a fájl végén */
+    '.rise[data-in="mount"]', "@keyframes p7-hdr-rise", "@keyframes p7-hero-sweep", "@keyframes p7-hero-slide", "@keyframes p7-slide", "contain-intrinsic-size: auto 900px"];
   for (const c of required) if (!css.includes(c)) fail(`hiányzó osztály a globals.css-ből: ${c}`);
   for (const gone of [".lb ", ".gal ", ".marquee"]) if (css.includes(gone)) fail(`ott maradt a kivett blokk: ${gone}`);
   console.log(`${required.length} kötelező osztály megvan, a galéria/marquee CSS ki`);

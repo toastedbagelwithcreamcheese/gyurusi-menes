@@ -58,6 +58,13 @@ export async function startNext(env) {
     await sleep(500);
     if (i === 119) fail(`a next start nem indult el 60 s alatt:\n${log.slice(-2000)}`);
   }
+  /* P7: a nyilvános lapok ISR-gyorsítótára a közös .next könyvtárban él — induláskor minden nyilvános lap érvénytelen, hogy egy
+     korábbi futás (más adatbázis, más kulcs) lapja ne jöjjön. */
+  {
+    const auth = env.ADMIN_PASSWORD ? { authorization: `Basic ${Buffer.from(`${env.ADMIN_USER ?? ""}:${env.ADMIN_PASSWORD}`).toString("base64")}` } : {};
+    const rv = await fetch(`${BASE}/api/admin/revalidate`, { method: "POST", headers: auth }).catch((e) => ({ ok: false, status: String(e) }));
+    if (!rv.ok) fail(`a nyilvános lapok érvénytelenítése induláskor nem sikerült (${rv.status})`);
+  }
   return {
     log: () => log,
     stop: async () => { if (!exited) { child.kill("SIGTERM"); for (let i = 0; i < 20 && !exited; i++) await sleep(100); } killPort(); },

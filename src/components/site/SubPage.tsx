@@ -6,7 +6,9 @@ import { ContactDock } from "./ContactDock";
 import { ContactForm } from "./ContactForm";
 import { ZoomProvider, ZoomButton } from "./Zoom";
 import { Reveal } from "@/components/Reveal";
+import { menuPhoto } from "@/components/Photo";
 import { resolveImage, type ImageMeta } from "@/lib/images";
+import { placeholderStyle } from "@/lib/placeholder";
 import type { Dictionary, Lang } from "@/content/types";
 import type { PageContact, SiteContent } from "@/lib/store";
 import { t } from "@/lib/store";
@@ -21,7 +23,7 @@ export type Related = { href: string; title: string; meta?: string; image?: stri
 export function Shell({ site, lang, d, rest, phone, dockHref, children }: { site: SiteContent; lang: Lang; d: Dictionary; rest: string; phone?: string; dockHref?: string; children: React.ReactNode }) {
   return (
     <>
-      <Header lang={lang} d={d} phone={site.owner.phone || site.contact.phone} rest={rest} subpage />
+      <Header lang={lang} d={d} phone={site.owner.phone || site.contact.phone} rest={rest} subpage menuPhoto={menuPhoto()} />
       <main className="sub">{children}</main>
       <Footer site={site} lang={lang} d={d} />
       <ContactDock phone={phone ?? site.contact.phone} labels={{ message: d.contact.sub.write, call: d.contact.sub.call }} href={dockHref ?? "#irj-nekunk"} />
@@ -29,8 +31,11 @@ export function Shell({ site, lang, d, rest, phone, dockHref, children }: { site
   );
 }
 
-const Pic = ({ im, sizes, priority }: { im: ImageMeta; sizes: string; priority?: boolean }) => (
-  <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes={sizes} quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} priority={priority} />
+/** `preload`: a lap tetején álló LCP-kép (képfej) — <link rel="preload"> a fejben, magas letöltési prioritással (P7).
+ *  decoding="sync": a next/image alapértéke (async) a dekódolást az első festés utánra tolta, így a kép csak a következő képkockán
+ *  jelent meg — gyakran a hidratáló JS 13 ms-os futása után, és a Lighthouse ilyenkor a JS-t is az LCP feltételének számolta (+0,6 s). */
+const Pic = ({ im, sizes, preload }: { im: ImageMeta; sizes: string; preload?: boolean }) => (
+  <Image src={im.src} alt={im.alt} width={im.width} height={im.height} sizes={sizes} quality={62} style={placeholderStyle(im)} {...(preload ? { preload: true, fetchPriority: "high" as const, decoding: "sync" as const } : {})} />
 );
 
 /**
@@ -53,7 +58,7 @@ export function SubPage({ site, lang, d, rest, eyebrow, title, meta, image, stri
         <section className={`sub-hero on-dark ${image ? "" : "sub-hero-plain"}`}>
           {image && (
             <div className="sub-hero-media parallax">
-              <Pic im={image} sizes="100vw" priority />
+              <Pic im={image} sizes="100vw" preload />
               <div className="sub-hero-shade" aria-hidden="true" />
             </div>
           )}
@@ -113,7 +118,8 @@ export function SubPage({ site, lang, d, rest, eyebrow, title, meta, image, stri
               {related.map((r, i) => { const im = resolveImage(r.image, site); return (
                 <Reveal as="li" key={r.href} delay={i * 70}>
                   <Link href={r.href} className="rel-card">
-                    {im && <span className="rel-ph"><Image src={im.src} alt="" width={im.width} height={im.height} sizes="(max-width: 640px) 100vw, 33vw" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ backgroundColor: im.color }} /></span>}
+                    {/* A bélyegkép 96 × 72 px (.rel-ph): a 100vw-s méretjelzés 750 px-es képet töltött le hozzá. */}
+                    {im && <span className="rel-ph"><Image src={im.src} alt="" width={im.width} height={im.height} sizes="96px" quality={62} style={placeholderStyle(im)} /></span>}
                     <span className="rel-body">{r.meta && <span className="caption">{r.meta}</span>}<span className="h3">{r.title}</span></span>
                     <Arrow />
                   </Link>

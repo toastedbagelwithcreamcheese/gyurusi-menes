@@ -1034,3 +1034,86 @@ img.rev-avatar { display: block; object-fit: cover; background: var(--color-bone
   .legal-dl dd a { display: inline-flex; align-items: center; min-height: 44px; }
   .contact-card .cc-line a { min-width: 44px; justify-content: center; }
 }
+
+/* ==========================================================================
+   P7 — mobil sebesség: a hajtás feletti tartalom CSS-ből jelenik meg (nem vár a JS-re), GSAP csak asztalon
+   ========================================================================== */
+
+/* Reveal trigger="mount" (aloldali képfej, naptár és jogi lapok címe): CSS-animáció a HTML megérkezésekor, kliens-kód nélkül.
+   `backwards`: a kezdő képkocka a késleltetés alatt is érvényes, a végén nem marad rajta semmi. */
+@media (prefers-reduced-motion: no-preference) {
+  .rise[data-in="mount"] { animation: p7-rise 850ms var(--ease-out) backwards; }
+  .rise.mask[data-in="mount"] { animation: p7-mask 900ms var(--ease-out) backwards; }
+  .unveil[data-in="mount"] { animation: p7-unveil 1100ms var(--ease-out) backwards; }
+}
+@keyframes p7-rise { from { opacity: 0; transform: translateY(22px); } }
+@keyframes p7-mask { from { clip-path: inset(0 0 100% 0); transform: translateY(0.35em); } }
+@keyframes p7-unveil { from { clip-path: inset(0 0 100% 0); } }
+
+/* Fejléc: a márkanév, a menüpontok (késleltetés inline, Header.tsx), a nyelvváltó és a hívás-gomb belépője.
+   Korábban a hidratálás utáni .in osztály váltotta ki — a márkanév addig a sávja alatt, a menü átlátszón várt. */
+@media (prefers-reduced-motion: no-preference) {
+  .hdr .brand-line { animation: p7-hdr-line 700ms var(--ease-out) 80ms backwards; }
+  .hdr .hdr-nav a { animation: p7-hdr-rise 600ms var(--ease-out) backwards; }
+  .hdr .hdr-phone { animation: p7-hdr-rise 600ms var(--ease-out) 420ms backwards; }
+  .hdr .hdr-lang, .hdr .lang-menu { animation: p7-hdr-drop 400ms var(--ease-out) 300ms backwards; }
+}
+@keyframes p7-hdr-line { from { transform: translateY(110%); } }
+@keyframes p7-hdr-rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes p7-hdr-drop { from { opacity: 0; transform: translateY(-6px); } }
+
+/* Hero (korábban HeroIntro + GSAP): a kép lassú kicsinyedése minden szélességen. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero .hero-media img { animation: p7-hero-zoom 2400ms var(--ease-out) backwards; }
+}
+@keyframes p7-hero-zoom { from { transform: scale(1.06); } }
+
+/* Telefonon a címsor az LCP-elem (a teljes képernyős hero-képet a Chrome háttérnek tekinti): az első festéskor már látszik,
+   csak emelkedik — az átlátszóságból induló animáció az LCP-t a látható képkockáig tolná. A többi elem a hero-rise-zal jön. */
+@media (max-width: 639px) and (prefers-reduced-motion: no-preference) {
+  .hero-seq h1 { animation: p7-hero-slide 900ms var(--ease-out) 90ms backwards; }
+}
+@keyframes p7-hero-slide { from { transform: translateY(18px); } }
+
+/* Asztalon a fénysáv a címsor sorain — a korábbi GSAP-koreográfia időzítésével: soronként 1 s, power2.inOut, a második sor
+   0,35 s-mal később; a felirat, majd a gombok 0,8 / 0,9 s-nál emelkednek (expo.out). A háttér 232% széles:
+   [végszín 0–43,1%][32%-os sáv: szalma → csontfehér → fehér][átlátszó]; a pozíció 100% → 0% a sávot a szöveg bal széle elől
+   a jobb széle mögé viszi, a végállapot a teljesen kitöltött felirat. */
+@media (min-width: 640px) and (prefers-reduced-motion: no-preference) {
+  .hero-seq[data-js="false"] [data-sweep] {
+    color: transparent; -webkit-background-clip: text; background-clip: text;
+    background-image: linear-gradient(90deg, var(--color-paper-on-dark) 0%, var(--color-paper-on-dark) 43.1%, #d9c48f 43.1%, #f7f4ee 50%, #ffffff 56.9%, transparent 56.9%, transparent 100%);
+    background-size: 232% 100%; background-repeat: no-repeat; background-position: 0 0;
+    animation: p7-hero-sweep 1000ms cubic-bezier(0.45, 0, 0.55, 1) 50ms backwards;
+  }
+  .hero-seq[data-js="false"] [data-sweep]:nth-child(2) { animation-delay: 350ms; }
+  .hero-seq[data-js="false"] [data-seq] { animation: p7-hero-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+  .hero-seq[data-js="false"] [data-seq="first"] { animation-duration: 700ms; }
+  .hero-seq[data-js="false"] p[data-seq]:not([data-seq="first"]) { animation-delay: 800ms; }
+  .hero-seq[data-js="false"] div[data-seq] { animation-delay: 900ms; }
+}
+@keyframes p7-hero-sweep { from { background-position: 100% 0; } }
+@keyframes p7-hero-rise { from { opacity: 0; transform: translateY(18px); } }
+
+/* A teljes képernyős, fixált szemcse-réteg (SVG-zaj + mix-blend-mode) telefonon és tableten nem fut: minden görgetési képkockán
+   a teljes nézetet újra kellene keverni, a 3,5%-os hatás pedig kis kijelzőn nem látszik. */
+@media (max-width: 899px) { .grain { display: none; } }
+
+/* Telefonon (< 640 px) a hajtás feletti, CSS-ből induló belépők (Reveal trigger="mount") csak emelkednek — nem az átlátszóságból vagy
+   a takarásból indulnak, így a tartalom az első festéskor már látszik. Az átlátszóságból induló elemet és a benne álló képet a Chrome
+   nem veszi LCP-jelöltnek: a naptárban a kiemelt kép helyett egy lusta rácskép lett az LCP-elem, a festés a JS lefutása utánra csúszott. */
+@media (max-width: 639px) and (prefers-reduced-motion: no-preference) {
+  .rise[data-in="mount"], .rise.mask[data-in="mount"] { animation-name: p7-slide; }
+  .unveil[data-in="mount"] { animation: none; }
+}
+@keyframes p7-slide { from { transform: translateY(14px); } }
+
+/* Telefonon és tableten (< 900 px) a hajtás alatti nagy blokkok csak a képernyő közelébe érve renderelődnek (content-visibility: auto):
+   a betöltéskor nincs elrendezési és festési munkájuk, és a bennük álló lusta képeket sem kéri le előre a böngésző (a Chrome a lusta
+   képeket ~1250 px-rel a nézet alatt már letölti — a főoldalon öt kép érkezett így a legnagyobb festés előtt). A tartalom a DOM-ban és
+   az akadálymentes fában marad, az oldalon belüli keresés is megtalálja. Az „auto” a már látott méretet jegyzi meg; a 900 px csak becslés. */
+@media (max-width: 899px) {
+  #menes, #esemenyek, #aloldalak, #velemenyek, #kapcsolat, .ftr2, .sub-strip, .sub-form, .sub-related, .ev-section, .reg, .reports, .trails, .route-map {
+    content-visibility: auto; contain-intrinsic-size: auto 900px;
+  }
+}

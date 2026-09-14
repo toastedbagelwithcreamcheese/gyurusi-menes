@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { isLang, DEFAULT_LANG } from "@/content/types";
 import { DICTS, getDict } from "@/lib/i18n";
 import { NotFoundBody } from "@/components/site/NotFoundBody";
@@ -12,12 +11,10 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 }
 
 /** 404 — a törzs nyelvét a NotFoundBody az útvonal paraméteréből választja (lásd ott, miért nem itt). */
-export default async function NotFound() {
-  /* FIGYELEM, gyorsítótár: a not-found elemet a Next minden [lang] alatti lap RSC-csomagjába előre belerendereli, ezért
-     egy itteni kérés-idejű API az ÖSSZES nyilvános lapot kérésenként rendereltté teszi. Korábban ezt az itt olvasott
-     headers() tette (mellékhatásként); nélküle a lapok statikussá váltak, és a helyi DB közvetlen írása (qa-flow) nem
-     látszott. A connection() ugyanezt a viselkedést tartja meg, most kimondva. A statikus/ISR-kiszolgálásról a P7 dönt —
-     ha ezt a sort elveszi, a qa-flow közvetlen DB-írásait revalidate-tel kell kísérni. */
-  await connection();
+export default function NotFound() {
+  /* FIGYELEM, gyorsítótár: a not-found elemet a Next minden [lang] alatti lap RSC-csomagjába előre belerendereli, ezért itt
+     kérés-idejű API (headers(), cookies(), connection()) NEM lehet: az ÖSSZES nyilvános lapot kérésenként rendereltté tenné,
+     és kiesnének a gyorsítótárból (P7). A nyelvet a NotFoundBody a kliens-oldali útvonal-paraméterből veszi. A tesztek
+     közvetlen DB-írásai után a POST /api/admin/revalidate érvényteleníti a lapokat (scripts/revalidate.mjs). */
   return <NotFoundBody texts={{ hu: DICTS.hu.notFound, en: DICTS.en.notFound, de: DICTS.de.notFound }} />;
 }

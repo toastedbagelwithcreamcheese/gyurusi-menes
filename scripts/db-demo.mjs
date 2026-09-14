@@ -6,10 +6,12 @@
  * A dátumok a mai naphoz igazodnak, így a példák sosem járnak le: egy túra a legközelebbi, legalább 5 nap múlva
  * következő szombaton (kiemelt, jelentkezés nyitva), és egy ötnapos tábor hat hét múlva hétfőtől péntekig.
  * Többször futtatva sem duplikál: a korábbi példaeseményeket előbb kiveszi. Használat: npm run db:demo
+ * Ha a BASE_URL be van állítva, a futó szerver nyilvános lapjai is frissülnek a tárból (P7: ISR, lásd scripts/revalidate.mjs).
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { revalidateSite } from "./revalidate.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, "data");
@@ -71,4 +73,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const tmp = `${DB}.${process.pid}.demo.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(site, null, 2)); fs.renameSync(tmp, DB);
   console.log(`Példaesemények a helyi adatbázisban (${path.relative(ROOT, DB)}): ${events.map((e) => `${e.id} (${e.date}${e.endDate ? `–${e.endDate}` : ""})`).join(", ")}.`);
+  if (process.env.BASE_URL) await revalidateSite(process.env.BASE_URL, { required: false });
 }

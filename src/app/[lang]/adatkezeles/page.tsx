@@ -9,6 +9,9 @@ import { Shell } from "@/components/site/SubPage";
 import { Reveal } from "@/components/Reveal";
 
 type P = { params: Promise<{ lang: string }> };
+/* ISR: első kéréskor renderelődik a tárból, utána gyorsítótárból megy; a build nem renderel előre (lásd a [lang]/layout.tsx megjegyzését). */
+export const revalidate = 3600;
+export function generateStaticParams() { return []; }
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { lang } = await params; if (!isLang(lang)) return {};
   /* Indexelhető (korábban noindex volt): az adatkezelő és az elérhetőségek a keresők és az AI-keresők bizalmi jelei. */

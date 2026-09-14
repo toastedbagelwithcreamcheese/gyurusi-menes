@@ -19,6 +19,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { ROOT, readSeed, startNext, tmpDir } from "./_p1-harness.mjs";
+import { revalidateSite } from "../revalidate.mjs";
 
 const PORT = 3012;
 const problems = [];
@@ -73,10 +74,13 @@ console.log(`A) megőrzés a kódból: jelentkezés ${REG} nap, üzenet ${MSG} n
 
 /* ---------- szerver elszigetelt adatkönyvtárral ---------- */
 const dir = await tmpDir("p4-privacy-");
-const writeSite = (site) => fs.writeFile(path.join(dir, "site.json"), JSON.stringify(site, null, 2));
+/* P7: a nyilvános lapok ISR-gyorsítótárban vannak — a futó szerveren minden közvetlen tár-írás után érvénytelenítjük őket. */
+let serverUp = false;
+const writeSite = async (site) => { await fs.writeFile(path.join(dir, "site.json"), JSON.stringify(site, null, 2)); if (serverUp) await revalidateSite(`http://localhost:${PORT}`); };
 const base = structuredClone(seed);
 await writeSite(base);
 const srv = await startNext({ port: PORT, env: { DATA_DIR: dir }, label: "p4-privacy" });
+serverUp = true;
 const BASE = `http://localhost:${PORT}`;
 const page = async (p, init) => { const r = await fetch(BASE + p, { redirect: "manual", headers: { "accept-language": "hu", ...(init?.headers ?? {}) } }); return { status: r.status, html: await r.text(), headers: r.headers }; };
 const LP = { hu: "/adatkezeles", en: "/en/adatkezeles", de: "/de/adatkezeles" };

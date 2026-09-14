@@ -12,6 +12,9 @@ spawnSync("sh", ["-c", `lsof -ti tcp:${PORT} -sTCP:LISTEN | xargs kill -9 2>/dev
 const srv = spawn("npx", ["next", "start", "-p", PORT], { cwd: ROOT, env: { ...process.env, PORT }, stdio: ["ignore", "ignore", "inherit"] });
 const url = `http://localhost:${PORT}/`;
 for (let i = 0; i < 120; i++) { try { const r = await fetch(url, { redirect: "manual" }); if (r.status < 500) break; } catch { /* még indul */ } await new Promise((r) => setTimeout(r, 500)); }
+/* P7: a nyilvános lapok ISR-en futnak, és a Next a renderelt lapot a (közös) .next könyvtárba is kiírja — egy korábbi futás, más
+   adatbázissal renderelt lapja ne jöjjön: induláskor minden nyilvános lap érvénytelen, az első kérés a mostani tárból renderel. */
+{ const { revalidateSite } = await import("./revalidate.mjs"); await revalidateSite(`http://localhost:${PORT}`); }
 const [cmd, ...args] = process.argv.slice(2);
 const run = spawnSync(cmd, args, { cwd: ROOT, stdio: "inherit", env: { ...process.env, BASE_URL: `http://localhost:${PORT}` } });
 srv.kill("SIGTERM"); spawnSync("sh", ["-c", `lsof -ti tcp:${PORT} -sTCP:LISTEN | xargs kill -9 2>/dev/null`], { stdio: "ignore" });

@@ -5,6 +5,7 @@ import { getDict } from "@/lib/i18n";
 import { ldFor, ldHtml, metadataFor } from "@/lib/seo";
 import { readSite } from "@/lib/store";
 import { Header } from "@/components/site/Header";
+import { menuPhoto } from "@/components/Photo";
 import { Footer } from "@/components/site/Footer";
 import { ContactForm } from "@/components/site/ContactForm";
 import { ContactDock } from "@/components/site/ContactDock";
@@ -17,6 +18,10 @@ import { reviewsEnabled } from "@/lib/google-reviews";
    a Google szabálya szerint nem tárolható, ISR-be sütve sem — a <Reviews> a böngészőben, élőben tölti be. */
 
 type Params = Promise<{ lang: string }>;
+
+/* ISR: első kéréskor renderelődik a tárból, utána gyorsítótárból megy; a build nem renderel előre (lásd a [lang]/layout.tsx megjegyzését). */
+export const revalidate = 3600;
+export function generateStaticParams() { return []; }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { lang } = await params;
@@ -34,7 +39,7 @@ export default async function Home({ params }: { params: Params }) {
   const ld = ldFor(site, lang, "/");
   return (
     <>
-      <Header lang={lang} d={d} phone={site.owner.phone || site.contact.phone} rest="/" />
+      <Header lang={lang} d={d} phone={site.owner.phone || site.contact.phone} rest="/" menuPhoto={menuPhoto()} />
       <main>
         <Hero site={site} lang={lang} d={d} />
         <Owner site={site} lang={lang} d={d} />

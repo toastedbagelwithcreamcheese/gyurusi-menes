@@ -28,6 +28,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { revalidateSite } from "../revalidate.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const BASE = (process.env.BASE_URL ?? "http://localhost:3012").replace(/\/$/, "");
@@ -84,11 +85,11 @@ for (const [label, p, headers, status, want] of [
 console.log("1) ismeretlen böngészőnyelv (pl, fr, sk, cs, it) → 302 /en; a magyar, a német, a robot, a „*” és a süti változatlan");
 
 /* ---------- 2–7) böngésző ---------- */
-runNode("scripts/db-reset.mjs"); runNode("scripts/db-demo.mjs");
+runNode("scripts/db-reset.mjs"); runNode("scripts/db-demo.mjs"); await revalidateSite(BASE);
 {
   const r = await fetch(`${BASE}/esemenyek/${DEMO_ID}`, { headers: { "accept-language": "hu" } });
   const html = await r.text();
-  if (r.status !== 200 || !html.includes("data-registration")) throw new Error(`a db:demo eseménylapja nem elérhető jelentkezéssel (${r.status}) — a lapok statikusak lettek? (a teszt a helyi DB közvetlen írására épít)`);
+  if (r.status !== 200 || !html.includes("data-registration")) throw new Error(`a db:demo eseménylapja nem elérhető jelentkezéssel (${r.status}) — frissült a gyorsítótár? (a teszt a helyi DB közvetlen írására és a POST /api/admin/revalidate-re épít)`);
 }
 
 /** A mérés a böngészőben. `touch`: 390 px-en az érintési célok is. */
@@ -158,6 +159,16 @@ async function pool(items, n, fn) {
 }
 
 const browser = await chromium.launch({ executablePath: exe, headless: true });
+/* P7: 900 px alatt a hajtás alatti blokkok content-visibility: auto-val csak a képernyő közelében renderelődnek. A túlcsordulás-, érintésicél-
+   és magasságmérésnek a teljes elrendezés kell (ugyanaz, amit a látogató görgetés után lát), ezért a mérő böngészőben minden blokk renderelődik. */
+{
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (opts) => {
+    const c = await newContext(opts);
+    await c.addInitScript(() => { const add = () => { const s = document.createElement("style"); s.textContent = "*{content-visibility:visible!important}"; document.head.append(s); }; if (document.head) add(); else document.addEventListener("DOMContentLoaded", add); });
+    return c;
+  };
+}
 const pageErrors = [];
 const stats = { views: 0, small: 0 };
 try {
@@ -262,7 +273,7 @@ try {
   const withReport = async (published) => {
     const site = JSON.parse(await fs.readFile(DB, "utf8"));
     site.reports = [{ id: "p4-rep", title: "P4 próba beszámoló", year: 2025, date: "2025-05-01", file: "p4-nincs-ilyen.pdf", size: 1234, published }];
-    await fs.writeFile(DB, JSON.stringify(site, null, 2));
+    await fs.writeFile(DB, JSON.stringify(site, null, 2)); await revalidateSite(BASE);
     const html = await (await fetch(`${BASE}/egyesulet`, { headers: { "accept-language": "hu" } })).text();
     return { block: html.includes("data-reports"), title: html.includes("P4 próba beszámoló") };
   };
@@ -270,7 +281,7 @@ try {
   const pub = await withReport(true), unpub = await withReport(false);
   if (!pub.block || !pub.title) bad(`kontroll: közzétett beszámolóval sem jelenik meg a blokk (${JSON.stringify(pub)})`);
   if (unpub.block) bad("kontroll: nem közzétett beszámolóval is megjelenik a blokk");
-  runNode("scripts/db-reset.mjs"); runNode("scripts/db-demo.mjs");
+  runNode("scripts/db-reset.mjs"); runNode("scripts/db-demo.mjs"); await revalidateSite(BASE);
   console.log("4) Egyesület: beszámoló nélkül nincs blokk (3 nyelv, 7 szélesség); kontroll: közzétett beszámolóval megjelenik, nem közzétettel nem");
 
   /* ---------- 5–7) űrlapok, naptár, főoldal ---------- */

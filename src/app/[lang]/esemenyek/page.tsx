@@ -10,6 +10,10 @@ import { Reveal } from "@/components/Reveal";
 
 type P = { params: Promise<{ lang: string }> };
 
+/* ISR: első kéréskor renderelődik a tárból, utána gyorsítótárból megy; a build nem renderel előre (lásd a [lang]/layout.tsx megjegyzését). */
+export const revalidate = 3600;
+export function generateStaticParams() { return []; }
+
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { lang } = await params; if (!isLang(lang)) return {};
   return metadataFor(await readSite(), lang, "/esemenyek");
@@ -35,7 +39,7 @@ export default async function EventsPage({ params }: P) {
         <Reveal as="h1" className="h1 mask" trigger="mount" delay={80}>{d.events.title}</Reveal>
       </div>
       <div className="wrap">
-        {feat ? <Reveal trigger="mount" delay={140}><EventCard e={feat} site={site} lang={lang} d={d} tag={feat.featured ? d.events.featured : d.events.next} level={2} /></Reveal>
+        {feat ? <Reveal trigger="mount" delay={140}><EventCard e={feat} site={site} lang={lang} d={d} tag={feat.featured ? d.events.featured : d.events.next} level={2} preload /></Reveal>
           : <Reveal as="p" className="lead" trigger="mount" delay={140}>{d.events.none}</Reveal>}
         {up.length > 0 && <Reveal className="ev-section"><h2 className="eyebrow ev-sec-title">{d.events.upcoming}</h2><EventGrid list={up} site={site} lang={lang} d={d} /></Reveal>}
         {pst.length > 0 && <Reveal className="ev-section" data-past-events><h2 className="eyebrow ev-sec-title">{d.events.past}</h2><PastEvents list={pst} lang={lang} d={d} /></Reveal>}

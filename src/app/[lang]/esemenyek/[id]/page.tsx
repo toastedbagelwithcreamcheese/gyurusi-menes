@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { isLang, LANGS } from "@/content/types";
+import { isLang } from "@/content/types";
 import { getDict } from "@/lib/i18n";
 import { langPath } from "@/lib/paths";
 import { ldFor, ldHtml, metadataFor } from "@/lib/seo";
@@ -13,7 +13,9 @@ import { Reveal } from "@/components/Reveal";
 
 type P = { params: Promise<{ lang: string; id: string }> };
 
-export async function generateStaticParams() { const s = await readSite(); return LANGS.flatMap((lang) => s.events.filter((e) => e.published).map((e) => ({ lang, id: e.id }))); }
+/* ISR: első kéréskor renderelődik a tárból, utána gyorsítótárból megy; a build nem renderel előre (lásd a [lang]/layout.tsx megjegyzését). */
+export const revalidate = 3600;
+export function generateStaticParams() { return []; }
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { lang, id } = await params; if (!isLang(lang)) return {};
