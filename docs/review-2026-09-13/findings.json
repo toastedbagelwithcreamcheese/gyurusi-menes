@@ -1,0 +1,283 @@
+{
+ "C01": {
+  "verdict": "rendben",
+  "evidence": "Az öt aloldal mindhárom nyelven 200 (G9 http-kapu), belső linkbejárás: 52 link, 0 hibás.",
+  "suggestion": ""
+ },
+ "C02": {
+  "verdict": "részben",
+  "evidence": "Főoldal magassága: mobil (390) 10727 px, asztali (1440) 7812 px; szekciók: hero, tulajdonos, bemutatkozás (3 bekezdés + fajta-sáv), események, 5 csempe, 5 Google-vélemény, kapcsolat (2 kártya + űrlap), térkép. A megbeszélés óta a vélemények és a térkép került fel.",
+  "suggestion": "A főoldal ne nőjön tovább: a bemutatkozásból csak a kiemelt bekezdés + fajta-sáv maradjon a főoldalon, a 3 bekezdés „Tovább olvasom” lenyitással; a véleményekből mobilon 2–3 kártya vízszintes lapozóval. Tartalom nem vész el, csak rövidebb a görgetés."
+ },
+ "C03": {
+  "verdict": "részben",
+  "evidence": "A feltöltés működik kis fájllal (G10), de valós méretnél elbukik: local fotó 8.3 MB → POST [500] „hibaoldal” 60 s alatt; local PDF 2.6 MB → POST [500] „hibaoldal” 60 s alatt; live fotó 8.3 MB → POST [413] „hibaoldal” 71 s alatt; live PDF 2.6 MB → POST [504] „hibaoldal” 92 s alatt. A nyilvános Egyesület oldalon üres állapotban „Még nincs feltöltött beszámoló” áll.",
+  "suggestion": "Kritikus: a PDF-feltöltés ne a szerver-akción menjen át (Next alap 1 MB-os korlát, Netlify-függvény 6 MB) — közvetlen, darabolt feltöltés a tárba, vagy legalább a korlát emelése + előzetes méret-ellenőrzés érthető üzenettel. Amíg nincs beszámoló, a blokk ne látszódjon."
+ },
+ "C04": {
+  "verdict": "részben",
+  "evidence": "A tulajdonos-blokk közvetlenül a hero után áll (G9: data-owner a főoldalon), de a képe egy fekete mén („fekete-men”), nem a tulajdonos, és telefonszám nincs mellette (owner.phone üres, nem igazolt adat).",
+  "suggestion": "Portré Vörös Józsefről (te fotós vagy — egy rövid fotózás a ménesen), és a telefonszáma az ügyféltől. A portrétól lesz valóban „előtérben” a tulajdonos."
+ },
+ "C05": {
+  "verdict": "rendben",
+  "evidence": "A mondat mindhárom nyelven a tulajdonos-blokkban, a kapcsolati kártyán és a láblécben (owner.note; G9 szerint a tulajdonos minden lapon a kapcsolattartó előtt).",
+  "suggestion": ""
+ },
+ "C06": {
+  "verdict": "részben",
+  "evidence": "A /turak lapon illusztratív SVG-térkép (RouteMap.tsx, kódba égetve) + 3 általános kép az aloldal-képsávban. Útvonalanként nincs hely a képeknek, és az adminból nem szerkeszthető sem az útvonal, sem a hozzá tartozó kép.",
+  "suggestion": "Az ügyfél útvonal-képeket ÉS útvonalon készült képeket ígért: útvonalak az adminban (név, rövid leírás, térképkép vagy GPX, 2–4 fotó útvonalanként), a Túrák lapon útvonal-kártyákkal; az illusztráció csak addig, amíg nincs egy sem."
+ },
+ "C07": {
+  "verdict": "rendben",
+  "evidence": "G15 forgatókönyves QA: jelentkezés hibái mezőre mutatnak, sikeres jelentkezés tárolva, lezárt eseményre „nem lehet jelentkezni”; 6 esemény rácsban, 0 eseménynél magyarázó szöveg.",
+  "suggestion": ""
+ },
+ "C08": {
+  "verdict": "részben",
+  "evidence": "Élesben az admin jelszó nélkül nyílik: {'/admin': 200, '/admin/jelentkezesek': 200, '/admin/uzenetek': 200}, a láblécben „Admin” link: True — a jelentkezők neve és telefonszáma bárkinek látszik. Párhuzamos írás: 20 egyidejű jelentkezés (különböző IP): 10 kapott 200-at, 10 503-at, eltárolva 3.",
+  "suggestion": "Kritikus: admin jelszó azonnal (ADMIN_USER/ADMIN_PASSWORD a Netlify-on) és az „Admin” link ki a nyilvános láblécből. A jelentkezések és üzenetek külön kulcsokon tárolva (nem egy közös dokumentumban), hogy egyidejű beküldésnél se vesszen el egy sem."
+ },
+ "C09": {
+  "verdict": "hiányzik",
+  "evidence": "Netlify env: RESEND_API_KEY=nincs, CONTACT_TO=nincs → üzenet és jelentkezés csak az adminba kerül, e-mail nem megy. DNS: gyurusimenes.hu → 185.192.252.154 (a régi tárhely).",
+  "suggestion": "Ügyféltől: Resend-fiók (vagy más SMTP) és a gyurusimenes.hu SPF/DKIM rekordjai; nálunk CONTACT_TO=info@gyurusimenes.hu + kulcs. Addig az admin „Üzenetek” lapja az egyetlen csatorna — ezt élesítés előtt ki kell mondani nekik."
+ },
+ "C10": {
+  "verdict": "részben",
+  "evidence": "A főoldal alján az általános űrlap megvan, a tulajdonos kártyája elöl (G9); a láblécben is elöl. A tulajdonos telefonszáma sehol nem látszik, mert nincs igazolt szám (owner.phone üres).",
+  "suggestion": "Vörös József telefonszáma (és ha van, e-mailje) az ügyféltől; beírva az adminban azonnal megjelenik a kártyán, a láblécben és a fejléc hívás-gombján is."
+ },
+ "C11": {
+  "verdict": "rendben",
+  "evidence": "Mind az 5 aloldalon data-page-contact blokk és saját űrlap (data-contact-form=<oldal>), a táboroknál a tábor saját e-mailje (G9).",
+  "suggestion": ""
+ },
+ "C12": {
+  "verdict": "részben",
+  "evidence": "Kiválasztás a beépített 28 fotóból működik (G10: nyitókép-csere). Új, valós fotó feltöltése elbukik: local fotó 8.3 MB → POST [500] „hibaoldal” 60 s alatt; local PDF 2.6 MB → POST [500] „hibaoldal” 60 s alatt; live fotó 8.3 MB → POST [413] „hibaoldal” 71 s alatt; live PDF 2.6 MB → POST [504] „hibaoldal” 92 s alatt. A HEIC (iPhone-fotó Macről) a képfeldolgozóban nem is dekódolható (sharp heif bemenet: csak .avif).",
+  "suggestion": "Kritikus: a képet a böngésző méretezze és konvertálja feltöltés előtt (2000 px, JPEG/WebP, ~0,5 MB) — ez egyszerre oldja meg a méretkorlátot, a HEIC-et és a lassú mobilnetet; a szerver ezen felül adjon pontos üzenetet túl nagy fájlnál."
+ },
+ "C13": {
+  "verdict": "rendben",
+  "evidence": "G15: pontosan egy kiemelt esemény a főoldalon és a naptárban, 6 közelgőnél is. Apróság: a szekció címe és a kártya címkéje ugyanaz („Kiemelt esemény”).",
+  "suggestion": ""
+ },
+ "C14": {
+  "verdict": "rendben",
+  "evidence": "G8 no-gallery kapu: nincs galéria-útvonal, Lightbox-import, id=galeria; aloldalanként legfeljebb 3 kép (savePage), a nagyító csak ezekre.",
+  "suggestion": ""
+ },
+ "C15": {
+  "verdict": "részben",
+  "evidence": "HU/EN/DE lapok 200, Accept-Language: de → 302 /de, süti, robot → magyar (G9). De: a nem magyar/német böngésző (pl. lengyel, szlovák — a hucul-közösség!) magyar oldalt kap (proxy: negotiate(...) ?? DEFAULT_LANG). A 28 fotó alt-szövege csak magyar. Az adminban üresen hagyott EN/DE mező csendben magyarul jelenik meg az angol lapon. Fordítás-példák: „for riders who sit securely”, „a dead-end village”.",
+  "suggestion": "Ismeretlen nyelvű böngészőnek angol; képleírások három nyelven; az adminban jól látható jelzés, ha egy esemény angol/német szövege hiányzik (és opcionálisan „Fordítás” gomb); anyanyelvi lektor az EN/DE szövegekre."
+ },
+ "B01": {
+  "verdict": "részben",
+  "evidence": "Ellenőrizetlen vagy általam írt állítások az élő oldalon: két KITALÁLT közelgő esemény nyitott jelentkezéssel (őszi lovastúra 09-19 „reggel 9 órakor”, „félnapos”; őszi szüneti tábor 10-26–30 „ötnapos napközis”); a túratérkép jelmagyarázata („kezdőknek, rövid”, „egész délelőtt”); Táborok: „egy hétre”; adatkezelés: „A jelentkezéseket az esemény után töröljük” — ilyen kód nincs; az egyesület neve megerősítetlen.",
+  "suggestion": "Élesítés előtt: a két példaesemény ki az élő tárból (helyben maradhat), a térkép-jelmagyarázat semleges („1. útvonal”…) vagy az ügyfél mondatai, a tábor-hossz és az egyesület neve az ügyféltől; az adatkezelési ígéret vagy megvalósul (automatikus törlés), vagy kikerül."
+ },
+ "B02": {
+  "verdict": "rendben",
+  "evidence": "28 saját, helyszíni fotó (G4 images-kapu: 5,9 MB összesen, minden alt megvan, minden tartalmi hivatkozás érvényes); stock- és AI-kép nincs.",
+  "suggestion": ""
+ },
+ "B03": {
+  "verdict": "részben",
+  "evidence": "Az admin „Főoldal és kapcsolat” lapja 5131 px asztalon és 7267 px mobilon; minden szöveg háromszor (HU/EN/DE) beírandó; a képválasztó 28 bélyegképből áll, kereső nélkül; törlés (esemény a jelentkezéseivel, beszámoló, kép) megerősítés nélkül, egy kattintásra.",
+  "suggestion": "Az admin maradjon Emese-szintű: a magyar mező elöl, az EN/DE lenyitható „Fordítások” alatt; a hosszú lap fülekre bontva (Nyitókép · Tulajdonos · Bemutatkozás · Kapcsolat); minden törlés előtt „Biztosan törlöd?”; feltöltés közben folyamatjelző."
+ },
+ "B04": {
+  "verdict": "részben",
+  "evidence": "A design prémium, de a böngészőfülön és a Google-találatban a Next.js sablon alapértelmezett favicon-ja látszik (src/app/favicon.ico = a create-next-app sablon fájlja, első commit), iOS kezdőképernyő-ikon (apple-icon) nincs; a megosztási kép (OG) csak magyar felirattal, minden lapon ugyanaz.",
+  "suggestion": "Saját favicon és apple-icon a lógóból (erdőzöld kör, fehér ló); lapfüggő OG-kép (aloldal fejléckép + cím, nyelvenként). Ez az a részlet, amit az ügyfél először lát, amikor elküldi valakinek a linket."
+ },
+ "B05": {
+  "verdict": "részben",
+  "evidence": "Fejléc-túlcsordulás a 252 nézetből 11 esetben: német nyelven 1024 px-en minden lapon ~74–78 px-t lóg ki a pillből (a hívás-gomb levágva, képernyőkép nav-de-1024.png), magyarul 1024-en 3 px. 1280-tól mindhárom nyelv elfér. Mindig látszik, kompakt pill görgetésre.",
+  "suggestion": "A fejléc 1024–1180 px között (álló tablet, kis laptop) a hosszabb német menüpontokkal ne lógjon ki: ebben a sávban a nyelvkódok kerüljenek a hívás-gomb mellé egy lenyílóba, vagy a menüpontok betűköze/rése szűküljön; a gomb maradjon teljes."
+ },
+ "B06": {
+  "verdict": "rendben",
+  "evidence": "Az oktatás fejlécképe az osveny-ugras-gyerek = _42A4658.jpg (images.config.mjs 12. sor; seed pages.oktatas.images[0]); aloldal-keret: képfej címmel, szöveg + ragadós kapcsolat, képsáv, saját űrlap, kapcsolódó kártyák.",
+  "suggestion": ""
+ },
+ "B07": {
+  "verdict": "rendben",
+  "evidence": "Mind az 5 aloldal × 3 nyelv: data-page-contact + data-page-form + data-contact-form (G9).",
+  "suggestion": ""
+ },
+ "B08": {
+  "verdict": "rendben",
+  "evidence": "A képsáv képein data-zoom (G9: data-zoom=\"0\" minden aloldalon), a hero-nagyító eltávolítva (SubPage.tsx: zoomItems = strip).",
+  "suggestion": ""
+ },
+ "B09": {
+  "verdict": "rendben",
+  "evidence": "Lábléc ftr2: nagy mondat + CTA, 3 ikonos oszlop, jogi sor, © + „Készült szenvedéllyel Zalaegerszegen”, „Weboldalt tervezte és fejlesztette Kovács Bálint · +36 30 872 3777” (G9: data-footer, data-credit, telefonszám a főoldalon).",
+  "suggestion": ""
+ },
+ "B10": {
+  "verdict": "rendben",
+  "evidence": "SVG-térkép viewBox 20 90 940 450 + meet, mobilon kifutó, 26 px-es feliratok, a jobb szélső címke befelé (képernyőkép m-route2).",
+  "suggestion": ""
+ },
+ "B11": {
+  "verdict": "rendben",
+  "evidence": "Csempék: 5 oszlop, 4:3 kép, háromsoros clamp, egyforma kártyák (tiles.png képernyőkép); mobilon 1 oszlop.",
+  "suggestion": ""
+ },
+ "B12": {
+  "verdict": "rendben",
+  "evidence": "A magban két közelgő példaesemény (őszi túra, őszi tábor) — tesztelésre, lásd B01 élesítési figyelmeztetését.",
+  "suggestion": ""
+ },
+ "B13": {
+  "verdict": "rendben",
+  "evidence": "data/seed.json a mag, data/site.json a helyi DB (gitignore), npm run db:reset; README „Helyi adatbázis és tesztelés” fejezet.",
+  "suggestion": ""
+ },
+ "B14": {
+  "verdict": "részben",
+  "evidence": "Vízszintes túlcsordulás 10 nézetben: a főoldal mobilon oldalra görgethető — 390 px-en +57 px, 320 px-en +127 px — a térkép-blokk miatt (.map: min-height 320 px × aspect-ratio 4/3 = 427 px széles; mérve); 768 px-en +2 px; németül 320 px-en a „Veranstaltungskalender” cím 342 px egy 280 px-es dobozban. Hibás kép: 0, H1-hiba: 0.",
+  "suggestion": "Kritikus mobilon: a térkép-blokk min-height helyett max-width: 100% + aspect-ratio (mobilon 4/3, min. magasság nélkül) — ez a főoldal oldalirányú „lötyögését” szünteti meg. A hosszú német szavakra a címeknél hyphens: auto (lang=\"de\")."
+ },
+ "B15": {
+  "verdict": "rendben",
+  "evidence": "Élesben mérve: logó → főoldal 296–659 ms, scrollY 0 (ScrollTop + config-rewrite; a proxy RSC-hurok megszűnt).",
+  "suggestion": ""
+ },
+ "B16": {
+  "verdict": "részben",
+  "evidence": "Mobilon a főoldal oldalirányban görgethető (lásd B14). Érintési célok (390 px, HU, 12 lap): 44 px alatti 260 db — főleg a lábléc linkjei (27 px magasak) és a közösségi ikonok (40×40); 24 px alatti (WCAG 2.2 AA célméret): 25 db — a lábléc jogi linkjei (22 px) és a főoldali kapcsolati kártya telefon/e-mail/térkép linkjei (20 px). Menü-nyelvváltó: HU/EN/DE, középre igazítva, de három teljes szélességű sorban (m-menu3).",
+  "suggestion": "A térkép-túlcsordulás javítása (B14); a lábléc és a kapcsolati kártya linkjei legalább 44 px magas sorral (padding-block), a közösségi ikonok 44×44; a mobil menüben a HU/EN/DE egy sorban, három egyforma gombként — kevesebb görgetés a menü alján."
+ },
+ "B17": {
+  "verdict": "rendben",
+  "evidence": "Mérve: /esemenyek és /adatkezeles — fejléc alja 70 px, H1 teteje 178/172 px.",
+  "suggestion": ""
+ },
+ "B18": {
+  "verdict": "rendben",
+  "evidence": "Nyitott menüben tömör, világos pill a fotó fölött, sötét X gomb, olvasható logó és felirat (m-menu3 képernyőkép).",
+  "suggestion": ""
+ },
+ "B19": {
+  "verdict": "részben",
+  "evidence": "G15 QA: minden űrlap mezőre mutató, háromnyelvű hibát ad és visszaigazol. De: 20 egyidejű jelentkezés (különböző IP): 10 kapott 200-at, 10 503-at, eltárolva 3 — a visszaigazolt jelentkezések egy része elvész. Az űrlapoknál nincs link az adatkezelési tájékoztatóra.",
+  "suggestion": "Egyidejű beküldésnél se vesszen el adat (külön kulcsos tárolás, lásd C08), és az űrlap alá egy sor: „A küldéssel elfogadod az adatkezelési tájékoztatót” linkkel."
+ },
+ "B20": {
+  "verdict": "részben",
+  "evidence": "A várt hibák (rossz fájltípus, dátum, hiányzó cím) a Flash-sávban részletesen jelennek meg (G15). A valós méretű feltöltés viszont általános „Váratlan hiba” lapot ad, élesben azonosító nélkül („Azonosító: —”), 60–92 s várakozás után: local fotó 8.3 MB → POST [500] „hibaoldal” 60 s alatt; local PDF 2.6 MB → POST [500] „hibaoldal” 60 s alatt; live fotó 8.3 MB → POST [413] „hibaoldal” 71 s alatt; live PDF 2.6 MB → POST [504] „hibaoldal” 92 s alatt.",
+  "suggestion": "A méret ellenőrzése még a böngészőben (pontos üzenet: „8,3 MB — legfeljebb 5 MB”), feltöltés közben folyamatjelző, és a szerver 413/504-e is a Flash-sávba kerüljön, ne a hibaoldalra."
+ },
+ "B21": {
+  "verdict": "rendben",
+  "evidence": "Kattintásra betöltődő Google-térkép (MapEmbed), G9: data-map=idle és nincs iframe kattintás nélkül; G15: a gombra betöltődik; az adatkezelési szöveg kiegészítve.",
+  "suggestion": ""
+ },
+ "B22": {
+  "verdict": "részben",
+  "evidence": "Élesben 4,9★ / 43 / 5 vélemény. A Google Places szabályai (r9-google-policy.md, hivatalos oldalról idézve) szerint: a vélemények és az értékelés nem tárolhatók (csak a place ID) — nálunk 24 órás Blobs-cache + a főoldal revalidate=86400; a jelzés „Google Maps” logó vagy szöveg kell — nálunk „· Google”; a szerző avatarja is kell — nálunk nincs.",
+  "suggestion": "Megfelelővé tenni, különben a kulcsot a Google letilthatja: „Google Maps” jelzés a blokkon, szerzői avatar (photoUri), és a tárolás kiváltása — a vélemények lekérése a lap generálásakor, rövid CDN-élettartammal és költségplafonnal (Google Cloud kvóta: napi max. kérésszám)."
+ },
+ "B23": {
+  "verdict": "részben",
+  "evidence": "A visszaigazoló e-mail kódja kész, háromnyelvű (sendRegistrationConfirmation), de élesben nem megy ki: RESEND_API_KEY=nincs.",
+  "suggestion": "Ugyanaz a teendő, mint C09-nél: e-mail-szolgáltató + DNS; élesítés után egy próbajelentkezéssel ellenőrizni, hogy megérkezik, és nem spam."
+ },
+ "B24": {
+  "verdict": "rendben",
+  "evidence": "Lighthouse mobil: / P90/A100/BP100/SEO100 LCP 3.7 s, 442 KB; /turak P89/A100/BP100/SEO100 LCP 3.81 s, 469 KB; /esemenyek P92/A98/BP100/SEO100 LCP 3.43 s, 398 KB; /esemenyek/oszi-lovastura-2026-09-19 P94/A100/BP100/SEO100 LCP 3.07 s, 435 KB. Konzolhiba a rács-szkenben: 1 féle",
+  "suggestion": ""
+ },
+ "_extra": [
+  {
+   "id": "X1",
+   "prio": "kritikus",
+   "title": "Az adatkezelési tájékoztató nem teljes, és valótlant ígér",
+   "evidence": "Nincs benne az adatkezelő neve/elérhetősége, a jogalap, a megőrzési idő, a NAIH-panaszjog; a „jelentkezéseket az esemény után töröljük” mondat mögött nincs kód. Jelentkezésnél telefonszámot gyűjtünk.",
+   "suggestion": "Szakember (jogász / adatvédelmi sablon) nézze át; a törlési ígéretet vagy megvalósítjuk (napi automatikus törlés az esemény után X nappal), vagy kivesszük."
+  },
+  {
+   "id": "X2",
+   "prio": "fontos",
+   "title": "Impresszum: hiányzó kötelező adatok",
+   "evidence": "Adószám és nyilvántartási szám üres (legal.imprint.taxId/regNo); szolgáltatói adatként ezek kellenek.",
+   "suggestion": "Az ügyféltől bekérni, az /admin/jogi lapon beírni."
+  },
+  {
+   "id": "X3",
+   "prio": "fontos",
+   "title": "DNS-átállás és a régi címek",
+   "evidence": "gyurusimenes.hu → 185.192.252.154 (régi WordPress); a régi oldalon ma 200: /kapcsolat/ és /egyesulet/, a huculosveny aldomain is él.",
+   "suggestion": "Átálláskor 301-es átirányítások: /kapcsolat → /#kapcsolat, /gyerektaborok → /taborok, /egyeni-oktatas és /oktatas/ → /oktatas, /menes → /, /bertartas → /; a huculosveny aldomain → /huculosveny; utána NEXT_PUBLIC_SITE_URL, Google Cégprofil weboldal-link, Search Console."
+  },
+  {
+   "id": "X4",
+   "prio": "fontos",
+   "title": "Nincs mentés a tartalomról",
+   "evidence": "Az egész tartalom egyetlen Blobs-dokumentum; egy rossz mentés vagy törlés visszafordíthatatlan, verziózás nincs.",
+   "suggestion": "Napi automatikus másolat (utolsó 30 nap) és egy „Mentés letöltése” gomb az adminban."
+  },
+  {
+   "id": "X5",
+   "prio": "fontos",
+   "title": "Google Places-kulcs",
+   "evidence": "A kulcs a beszélgetésben is elhangzott; a te („Ilona”) projektedben fut.",
+   "suggestion": "API-korlátozás csak Places API (New)-ra, napi kvóta-plafon a Cloud Console-ban; átadáskor új kulcs az ügyfél projektjében, a régi visszavonása."
+  },
+  {
+   "id": "X6",
+   "prio": "csiszolás",
+   "title": "Kiemelt esemény: dupla címke",
+   "evidence": "A szekció címe és a kártya címkéje ugyanaz („Kiemelt esemény”).",
+   "suggestion": "Szekciócím maradjon „Események”, a kártyán a címke jelölje a kiemelést."
+  },
+  {
+   "id": "X7",
+   "prio": "csiszolás",
+   "title": "Korábbi események listája korlát nélkül nő",
+   "evidence": "/esemenyek minden múltbeli eseményt listáz; évek múlva hosszú.",
+   "suggestion": "Évenként csoportosítva, az utolsó 2 év nyitva."
+  },
+  {
+   "id": "X8",
+   "prio": "csiszolás",
+   "title": "Sebességkorlát memóriában",
+   "evidence": "A 10–15 s-os IP-korlát egy Map-ben él; Netlify-függvényeknél példányonként külön, gyakorlatilag hatástalan.",
+   "suggestion": "A honeypot mellé egy könnyű ellenőrzés a tárban (utolsó beküldés ideje IP-hash szerint)."
+  },
+  {
+   "id": "X10",
+   "prio": "csiszolás",
+   "title": "LCP 3,1–3,8 s (Lighthouse mobil, lassított hálózat)",
+   "evidence": "Performance 89–94, az egyetlen gyenge pont mind a 4 lapon a largest-contentful-paint (a hero/fejléc képe).",
+   "suggestion": "A fejlécképek mobilra kisebb forrásból (sizes + 1200 px-es felső határ), a hero-kép fetchPriority mellé preload; cél 2,5 s alatt."
+  },
+  {
+   "id": "X11",
+   "prio": "csiszolás",
+   "title": "Címsor-sorrend az eseménynaptárban",
+   "evidence": "Lighthouse accessibility 98 a /esemenyek lapon: heading-order (H1 után H3, H2 nélkül).",
+   "suggestion": "Az eseménykártyák címe H2 legyen ezen a lapon (a látvány marad)."
+  },
+  {
+   "id": "X12",
+   "prio": "csiszolás",
+   "title": "A 404-lap címe a főoldalé",
+   "evidence": "Az /ez-nem-letezik lap <title>-je mindhárom nyelven a főoldal címe; a keresők és a böngészőfül nem jelzi, hogy nincs ilyen oldal.",
+   "suggestion": "A 404-es lapnak saját címe: „Az oldal nem található · Gyűrűsi Ménes” (nyelvenként)."
+  },
+  {
+   "id": "X9",
+   "prio": "üzleti",
+   "title": "Az árlista és a megépült extrák",
+   "evidence": "Megépült, de az árlistán nem szereplő elemek: Google-térkép, Google-értékelések, túratérkép-grafika, képnagyító, jogi oldalak, új lábléc, forgatókönyves QA.",
+   "suggestion": "Döntsd el, mi „ajándék” és mi tétel — ha ajándék, az árlistán nevesítve mutasd meg (erősíti a prémium érzetet), ha tétel, egyeztesd előre."
+  }
+ ]
+}

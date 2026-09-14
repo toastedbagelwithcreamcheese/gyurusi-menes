@@ -76,3 +76,61 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   CHECK: git status --porcelain | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const l=s.split('\n').filter(x=>x.trim()&&!/GATES\.md$/.test(x));if(l.length){console.log('DIRTY',l.join(' | '));process.exit(1)}console.log('CLEAN_TREE')})"
   EXPECT: CLEAN_TREE
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=8cf979e8ed5c515aecd197784536d132b1aa9f4555c00da6fba4a83ae986d75f; output-bytes=11
+
+---
+
+# 5. kör — minden, ami ügyféladat nélkül megoldható (2026-09-14)
+
+Forrás: docs/review-2026-09-13/ (átnézés, 39 szempont + 12 saját lelet). Az ügyfél kérései (criteria.json C01–C15) változtathatatlanok. Kulcsok, jelszó, DNS, adószám az ügyféltől jön — ezeket helyi mockkal/szimulációval ellenőrizzük, élesben csak be kell állítani. Minden ellenőrző szkript csak akkor ír `PASS: <név>`-et, ha minden állítása teljesült.
+
+- [ ] G16: Adatbiztonság egyidejű íráskor: 30 egyidejű jelentkezés és 10 üzenet a fájl-driverrel ÉS helyi Netlify Blobs-szimulátorral mind eltárolódik; 10 párhuzamos admin-mentés a tartalomdokumentumon nem vész el (feltételes írás / újrapróbálás); a régi, dokumentumba ágyazott jelentkezések és üzenetek migrálódnak
+  CHECK: node scripts/checks/p1-data.mjs
+  EXPECT: PASS: p1-data
+
+- [ ] G17: Automatikus karbantartás: az esemény vége után 30 nappal a jelentkezések törlődnek (a frissebbek maradnak), 365 napnál régebbi üzenetek törlődnek; napi mentés készül (utolsó 30 megmarad), az admin letölthető mentést ad; a napi ütemezett függvény konfigurálva; a sebességkorlát tartós tárban él
+  CHECK: node scripts/checks/p1-maintenance.mjs
+  EXPECT: PASS: p1-maintenance
+
+- [ ] G18: Valós méretű feltöltés: legalább 8 MB-os JPEG a böngészőben méretezve sikeresen feltöltődik; HEIC-fájlra magyar nyelvű, teendőt mondó üzenet; 2,6 MB-os és 12 MB-os PDF darabolva feltöltődik és bájtra egyezően letölthető; 25 MB-os PDF-re pontos méret-üzenet; feltöltés közben folyamatjelző; az esemény- és aloldal-szerkesztőből is lehet új képet feltölteni
+  CHECK: node scripts/with-server.mjs node scripts/checks/p2-uploads.mjs
+  EXPECT: PASS: p2-uploads
+
+- [ ] G19: Admin-belépés: ADMIN_PASSWORD mellett az /admin lapjai a belépő oldalra visznek, az /api/admin/* 401-et ad; rossz jelszóra magyar hibaüzenet, sorozatos rossz próbára átmeneti tiltás; jó jelszóval belép, kilépés működik; jelszó nélkül az adminban figyelmeztető sáv; a nyilvános láblécben nincs admin-link
+  CHECK: node scripts/checks/p3-auth.mjs
+  EXPECT: PASS: p3-auth
+
+- [ ] G20: Admin-használhatóság: minden törlés kétlépcsős megerősítéssel; az angol/német mezők lenyithatók és a hiányuk jelölve (az eseménylistán is); a tartalom-lap szekciónként menthető; túraútvonalak felvehetők/szerkeszthetők/törölhetők képekkel, a publikált útvonal a Túrák lapon kártyaként nagyítható képekkel jelenik meg, útvonal nélkül az illusztráció semleges jelmagyarázattal; az admin kezdőlapján e-mail- és Google-állapotpanel próba-e-mail gombbal
+  CHECK: node scripts/with-server.mjs node scripts/checks/p3-admin-ux.mjs
+  EXPECT: PASS: p3-admin-ux
+
+- [ ] G21: E-mail szimulációval (helyi Resend-mock): kapcsolati üzenet az info@gyurusimenes.hu címre megy CONTACT_TO nélkül is, válaszcím a küldő; jelentkezésre értesítő a ménesnek és visszaigazolás a jelentkező nyelvén (hu, en, de); a szolgáltató hibájánál az adat megmarad és a látogató sikeres választ kap
+  CHECK: node scripts/checks/p5-mail.mjs
+  EXPECT: PASS: p5-mail
+
+- [ ] G22: Google-értékelések a Google szabályai szerint (helyi Places-mock): csak a blokk közelébe görgetve kér adatot; vélemény és értékelés sehol nem tárolódik (csak a place ID és egy napi számláló); „Google Maps” jelzés, szerzői avatar, név és profil-link; a napi plafon felett és kulcs nélkül nincs blokk és nincs hívás; a strukturált adatban nincs aggregateRating
+  CHECK: node scripts/checks/p5-reviews.mjs
+  EXPECT: PASS: p5-reviews
+
+- [ ] G23: SEO: minden nyilvános lap mindhárom nyelven egyedi, legfeljebb 60 karakteres title és 70–160 karakteres description, abszolút canonical, kölcsönös hreflang + x-default, pontosan egy H1, lapfüggő 1200×630-as OG-kép, lokalizált képleírások; a 404-es lap noindex és saját címet kap; a sitemap minden nyilvános URL-t tartalmaz nyelvi alternatívákkal; a régi WordPress-címek 301-gyel a megfelelő új lapra visznek
+  CHECK: node scripts/with-server.mjs node scripts/checks/p6-seo.mjs
+  EXPECT: PASS: p6-seo
+
+- [ ] G24: Strukturált adat és GEO: érvényes JSON-LD csak igazolt adatokkal (LocalBusiness + SportsActivityLocation, a tulajdonos Personként, WebSite, BreadcrumbList az aloldalakon, Event az eseménylapokon, ItemList a naptárban); a robots.txt engedi a keresőket és az AI-keresőket, tiltja az admint és az API-t; az /llms.txt és /llms-full.txt csak igazolt tényeket tartalmaz; saját favicon és apple-icon (nem a Next.js sablon ikonja)
+  CHECK: node scripts/with-server.mjs node scripts/checks/p6-geo.mjs
+  EXPECT: PASS: p6-geo
+
+- [ ] G25: Nyilvános javítások: a 320–1920 px közötti 7 szélességen, 3 nyelven, az összes nyilvános lapon nincs vízszintes és fejléc-túlcsordulás; mobilon minden önálló érintési cél legalább 44 px; ismeretlen böngészőnyelvre angol oldal; üres beszámoló-blokk nem látszik; az űrlapok alatt adatkezelési link; a seedben nincs kitalált tartalom (a példaesemények csak `npm run db:demo`-val kerülnek a helyi adatbázisba)
+  CHECK: node scripts/with-server.mjs node scripts/checks/p4-public.mjs
+  EXPECT: PASS: p4-public
+
+- [ ] G26: Teljes adatkezelési tájékoztató mindhárom nyelven: adatkezelő az impresszum mezőiből, adatkörönkénti cél és jogalap, megőrzési idők (egyeznek a G17 automatikus törlésével), érintetti jogok és NAIH-panaszjog, adatfeldolgozók (Netlify, Resend, Google)
+  CHECK: node scripts/checks/p4-privacy.mjs
+  EXPECT: PASS: p4-privacy
+
+- [ ] G27: Mobil sebesség: Lighthouse mobil (szimulált lassítás) a főoldalon, egy aloldalon, a naptárban és egy eseménylapon Performance legalább 95, LCP legfeljebb 2,5 s, TBT legfeljebb 100 ms, CLS legfeljebb 0,05; a nyilvános lapok gyorsítótárból (statikusan vagy ISR-rel) szolgálódnak ki; mobilon a GSAP nem töltődik le
+  CHECK: node scripts/with-server.mjs node scripts/checks/p7-speed.mjs
+  EXPECT: PASS: p7-speed
+
+- [ ] G28: Élő-szerű ellenőrzés Netlify draft deployon (valódi Blobs, CDN, függvénykorlátok): 20 egyidejű jelentkezés mind tárolva; 8 MB-os fotó és 12 MB-os PDF feltöltése és letöltése; admin-mentés után a nyilvános lap legfeljebb 15 s alatt frissül; gyorsítótár-találatnál TTFB legfeljebb 250 ms; Lighthouse mobil Performance legalább 95 a draft URL-en; a próbaadatok utána eltávolítva
+  CHECK: node scripts/checks/final-live.mjs
+  EXPECT: PASS: final-live
