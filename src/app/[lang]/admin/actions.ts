@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { writeSite, uid, isPageKey, type Event, type L } from "@/lib/store";
+import * as records from "@/lib/records";
 import { putFile, deleteFile, fileUrl } from "@/lib/files";
 
 /** Minden nyelvi lap újraépül; az admin lapok is. */
@@ -39,8 +40,12 @@ export async function saveEvent(fd: FormData) {
 }
 export async function deleteEvent(fd: FormData) {
   const id = s(fd, "id");
-  try { await writeSite((site) => { site.events = site.events.filter((e) => e.id !== id); site.registrations = site.registrations.filter((r) => r.eventId !== id); }); }
-  catch (e) { back(`/admin/esemenyek/${id}`, { hiba: `A törlés nem sikerült: ${errMsg(e)}` }); }
+  /* Előbb az esemény, utána a jelentkezései: ha a második bukik, a maradék a Jelentkezések lapon „törölt esemény”
+     alatt látszik, és a karbantartás 30 nap után törli — fordított sorrendben egy hiba az eseményt hagyná jelentkezők nélkül. */
+  try {
+    await writeSite((site) => { site.events = site.events.filter((e) => e.id !== id); });
+    await records.deleteRegistrationsForEvent(id);
+  } catch (e) { back(`/admin/esemenyek/${id}`, { hiba: `A törlés nem sikerült: ${errMsg(e)}` }); }
   refresh(); back("/admin/esemenyek", { ok: "Esemény törölve, a jelentkezéseivel együtt." });
 }
 export async function toggleEvent(fd: FormData) {
@@ -54,10 +59,10 @@ export async function setFeatured(fd: FormData) {
   refresh();
 }
 
-/* ---------- Jelentkezések ---------- */
+/* ---------- Jelentkezések (saját kulcsokon: src/lib/records.ts) ---------- */
 export async function deleteRegistration(fd: FormData) {
   const id = s(fd, "id");
-  await writeSite((site) => { site.registrations = site.registrations.filter((r) => r.id !== id); });
+  await records.deleteRegistration(id);
   revalidatePath("/[lang]/admin/jelentkezesek", "page"); revalidatePath("/admin/jelentkezesek");
 }
 
@@ -172,13 +177,14 @@ export async function saveLegal(fd: FormData) {
 }
 
 /* ---------- Üzenetek ---------- */
+/** A kívánt állapotot kapja (read=1/0), nem fordít — egy dupla kattintás sem jelöli vissza. */
 export async function markRead(fd: FormData) {
   const id = s(fd, "id");
-  await writeSite((site) => { const m = site.messages.find((x) => x.id === id); if (m) m.read = !m.read; });
+  await records.setMessageRead(id, s(fd, "read") !== "0");
   revalidatePath("/admin/uzenetek");
 }
 export async function deleteMessage(fd: FormData) {
   const id = s(fd, "id");
-  await writeSite((site) => { site.messages = site.messages.filter((x) => x.id !== id); });
+  await records.deleteMessage(id);
   revalidatePath("/admin/uzenetek");
 }

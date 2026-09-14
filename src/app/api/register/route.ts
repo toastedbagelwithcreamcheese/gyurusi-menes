@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server";
 import { isLang, type Lang } from "@/content/types";
 import { getDict } from "@/lib/i18n";
-import { readSite, writeSite, uid, isPast, formatRange, t } from "@/lib/store";
+import { readSite, isPast, formatRange, t } from "@/lib/store";
+import { addRegistration } from "@/lib/records";
+import { limitByIp } from "@/lib/ratelimit";
 import { sendRegistrationMail, sendRegistrationConfirmation } from "@/lib/mail";
-
-const last = new Map<string, number>();
 
 /** Jelentkezés egy eseményre — igényfelmérés: tárolás + értesítés az info@ címre (+ visszaigazolás, ha van e-mail). */
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "local";
-  const now = Date.now();
   let body: Record<string, string>;
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 }); }
   const lang: Lang = isLang(body.lang) ? body.lang : "hu";
   const d = getDict(lang).reg;
   if (body.website) return NextResponse.json({ ok: true });
-  if (now - (last.get(ip) ?? 0) < 10_000) return NextResponse.json({ ok: false, error: d.errRate }, { status: 429 });
 
   const name = (body.name ?? "").trim(), phone = (body.phone ?? "").trim(), email = (body.email ?? "").trim(), note = (body.note ?? "").trim();
   const count = Number.parseInt(body.count ?? "", 10);
@@ -29,10 +26,11 @@ export async function POST(req: Request) {
   const ev = site.events.find((e) => e.id === body.eventId && e.published);
   if (!ev || !ev.registration || isPast(ev)) return NextResponse.json({ ok: false, error: d.closed }, { status: 400 });
 
-  last.set(ip, now);
+  /* Tartós sebességkorlát (IP-hash, 10 s) — Netlify-on a függvénypéldányok között is él. */
+  if (!(await limitByIp(req, "register", 10_000)).ok) return NextResponse.json({ ok: false, error: d.errRate }, { status: 429 });
   let stored = false;
   try {
-    await writeSite((s) => { s.registrations.unshift({ id: uid(), eventId: ev.id, name, phone, email: email || undefined, count, note: note || undefined, receivedAt: new Date().toISOString() }); });
+    await addRegistration({ eventId: ev.id, name, phone, email: email || undefined, count, note: note || undefined });
     stored = true;
   } catch (e) { console.warn("[register] nem tudtam menteni:", e instanceof Error ? e.message : e); }
   const when = formatRange(ev, "hu");

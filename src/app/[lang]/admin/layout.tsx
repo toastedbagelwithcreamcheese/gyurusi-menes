@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { readSite, upcoming } from "@/lib/store";
+import { listMessages, listRegistrations } from "@/lib/records";
 import { AdminNav } from "./AdminNav";
 import { Flash } from "./Flash";
 import "./admin.css";
@@ -8,10 +9,10 @@ export const metadata: Metadata = { title: "Admin", robots: { index: false, foll
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const site = await readSite();
-  const unread = site.messages.filter((m) => !m.read).length;
+  const [site, messages, registrations] = await Promise.all([readSite(), listMessages(), listRegistrations()]);
+  const unread = messages.filter((m) => !m.read).length;
   const openIds = new Set(upcoming(site.events).map((e) => e.id));
-  const regs = site.registrations.filter((r) => openIds.has(r.eventId)).length;
+  const regs = registrations.filter((r) => openIds.has(r.eventId)).length;
   return (
     <div className="adm">
       <AdminNav unread={unread} regs={regs} />

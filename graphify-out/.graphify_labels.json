@@ -5,7 +5,7 @@
   "3": "actions.ts",
   "4": "devDependencies",
   "5": "Gyűrűsi Ménes — online kutatási jelentés",
-  "6": "SubPage.tsx",
+  "6": "[lang]/page.tsx",
   "7": "prep-images.mjs",
   "8": "Gyűrűsi Ménes — fotóelemzés (187 kép, 2026-08-22/23, Gyűrűs, GPS 46.888N 16.990E)",
   "9": "Gyűrűsi Ménes — design rendszer",
@@ -30,5 +30,16 @@
   "28": "sharp-linux.mjs",
   "29": "with-server.mjs",
   "30": "db-reset.mjs",
-  "31": "langPath"
+  "31": "langPath",
+  "32": "records.ts",
+  "33": "p1-maintenance.mjs",
+  "34": "proxy.ts",
+  "35": "[slug]/page.tsx",
+  "36": "qa-flow.mjs",
+  "37": "[lang]/layout.tsx",
+  "38": "google-reviews.ts",
+  "39": "P1 — Adatréteg és megbízhatóság (G16, G17) — bizonyítékok",
+  "40": "Gyűrűsi Ménes — átnézés a megbízó szempontjai szerint (2026-09-13)",
+  "41": "HeroIntro.tsx",
+  "42": "r9-google-policy.md"
 }

@@ -20,6 +20,13 @@ const fail = (m) => { console.error("FAIL:", m); process.exit(1); };
 const exe = process.env.PW_CHROME ?? path.join(os.homedir(), "Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing");
 const readDb = async () => JSON.parse(await fs.readFile(DB, "utf8"));
 const writeDb = async (d) => fs.writeFile(DB, JSON.stringify(d, null, 2));
+/** A jelentkezések és üzenetek rekordonként külön fájlban: data/registrations/<id>.json, data/messages/<id>.json — legújabb elöl. */
+const readRecords = async (kind) => {
+  const dir = path.join(ROOT, "data", kind);
+  const names = (await fs.readdir(dir).catch(() => [])).filter((n) => n.endsWith(".json"));
+  const items = await Promise.all(names.map(async (n) => JSON.parse(await fs.readFile(path.join(dir, n), "utf8"))));
+  return items.sort((a, b) => b.receivedAt.localeCompare(a.receivedAt));
+};
 
 spawnSync("node", [path.join(ROOT, "scripts/db-reset.mjs")], { stdio: "ignore" });
 const browser = await chromium.launch({ executablePath: exe, headless: true });
@@ -40,7 +47,7 @@ try {
   await page.click(`${f} button`); t = await alertText(); if (!/e-mail/.test(t)) fail("rossz e-mail: nem az e-mail-hiba jött: " + t);
   await page.fill(`${f} [name="email"]`, "teszt@example.com"); await page.click(`${f} button`);
   await page.waitForSelector('[role="status"]', { timeout: 15000 });
-  const msgs = (await readDb()).messages; if (!msgs.some((m) => m.email === "teszt@example.com" && /turak/.test(m.page ?? ""))) fail("az üzenet nem került a tárba az oldal-hivatkozással");
+  const msgs = await readRecords("messages"); if (!msgs.some((m) => m.email === "teszt@example.com" && /turak/.test(m.page ?? ""))) fail("az üzenet nem került a tárba az oldal-hivatkozással");
   console.log("A) kapcsolati űrlap OK (hibák mezőre mutatnak, siker tárolva, oldal:", msgs[0].page, ")");
   await go("/en/turak"); await page.click(`${f} button`); t = await alertText(); if (!/name/i.test(t)) fail("angol oldalon nem angol a hiba: " + t);
   console.log("A2) angol hibaüzenet OK:", t.slice(0, 50));
@@ -59,7 +66,7 @@ try {
   await page.fill(`${r} #r-phone`, "+36 30 111 2222"); await page.fill(`${r} #r-count`, "0"); await page.click(`${r} button`);
   t = await alertText(); if (!/1 és 99/.test(t)) fail("rossz létszám: nem a létszám-hiba jött: " + t);
   await page.fill(`${r} #r-count`, "4"); await page.click(`${r} button`); await page.waitForSelector('[role="status"]', { timeout: 15000 });
-  const regs = (await readDb()).registrations; if (!regs.some((x) => x.name === "Teszt Elek" && x.count === 4)) fail("a jelentkezés nem került a tárba");
+  const regs = await readRecords("registrations"); if (!regs.some((x) => x.name === "Teszt Elek" && x.count === 4)) fail("a jelentkezés nem került a tárba");
   console.log("B) jelentkezés OK (2 hiba mezőre mutat, siker tárolva, 4 fő)");
   /* Más IP-ről, különben a 10 mp-es sebességkorlát üzenete jönne (az is helyes, csak nem ezt mérjük). */
   const closed = await ctx.request.post(`${BASE}/api/register`, { headers: { "x-forwarded-for": "203.0.113.7" }, data: { eventId: "lovasnapok-2026", name: "Teszt Elek", phone: "+36 30 111 2222", count: "2", lang: "hu" } });

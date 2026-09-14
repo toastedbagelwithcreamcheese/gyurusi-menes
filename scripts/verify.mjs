@@ -169,11 +169,16 @@ if (which === "http") {
   const r2 = await get("/api/register", J({ eventId: "lovasnapok-2026", name: "Teszt Elek", phone: "+36 30 123 4567", count: "2", lang: "de" }, { "x-forwarded-for": "8.8.8.8" }));
   if (r2.status !== 400 || !(await r2.json()).error.includes("keine Anmeldung")) fail(`lezárult eseményre jelentkezés → ${r2.status} (német hibaüzenet várt)`);
   if (!BASE.includes("localhost")) { console.log("PASS: http"); process.exit(0); }
-  const site = await readJson("data/site.json");
-  if (!site.messages.some((m) => m.email === "teszt@example.com")) fail("az üzenet nem került a tárba");
-  /* A tesztüzenet ne maradjon a tartalomban (a git-fa tiszta marad a kapu után). */
-  site.messages = site.messages.filter((m) => m.email !== "teszt@example.com");
-  await fs.writeFile(path.join(ROOT, "data/site.json"), JSON.stringify(site, null, 2));
+  /* Az üzenetek rekordonként külön fájlban élnek: data/messages/<id>.json (a szerver DATA_DIR-je alatt, ha az be van állítva). */
+  const msgDir = path.join(process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, "data"), "messages");
+  const testMsgs = [];
+  for (const f of (await fs.readdir(msgDir).catch(() => [])).filter((n) => n.endsWith(".json"))) {
+    const m = JSON.parse(await fs.readFile(path.join(msgDir, f), "utf8"));
+    if (m.email === "teszt@example.com") testMsgs.push(f);
+  }
+  if (!testMsgs.length) fail("az üzenet nem került a tárba (data/messages)");
+  /* A tesztüzenet ne maradjon a helyi adatbázisban. */
+  for (const f of testMsgs) await fs.rm(path.join(msgDir, f), { force: true });
   console.log("PASS: http");
 }
 

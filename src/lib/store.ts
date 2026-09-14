@@ -11,6 +11,8 @@ import type { Lang } from "@/content/types";
  *     a Blobs viszont a Netlify ingyenes csomag része, nem kell külön adatbázis.
  * Első futáskor a Blobs a beépített site.json-ból kapja a magját. Ha a Blobs valamiért
  * nem elérhető (pl. build-lépés), a beépített tartalom jön — az oldal sosem marad üresen.
+ * A jelentkezések és üzenetek rekordonként külön kulcson élnek (records.ts); karbantartás és mentés: maintenance.ts.
+ * Relatív importok és csak típus-import az aliasokból: a Netlify-függvény (netlify/functions/) a Next nélkül is betölti.
  */
 
 /** Nyelvesített szöveg. Mindhárom nyelv kötelező; a `t()` a magyarra esik vissza, ha üres. */
@@ -44,31 +46,78 @@ export type SiteContent = {
   intro: { eyebrow: L; title: L; lead: L; body: L };
   pages: Record<PageKey, Page>;
   events: Event[];
-  registrations: Registration[];
+  /* A jelentkezések és az üzenetek NEM itt élnek, hanem rekordonként külön kulcson (src/lib/records.ts). */
   reports: Report[];
   uploads: Upload[];
-  messages: Message[];
   legal: Legal;
 };
 
-const FILE = path.join(process.cwd(), "data/site.json");
+/** A helyi (fájl-driveres) adatkönyvtár: alapból data/. A DATA_DIR a tesztek elszigeteléséhez állítható. */
+export const dataDir = () => (process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(process.cwd(), "data"));
+const siteFile = () => path.join(dataDir(), "site.json");
 const KEY = "site";
 
 export function blobsAvailable(): boolean {
-  return !!(process.env.NETLIFY_BLOBS_CONTEXT || (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_TOKEN) || process.env.NETLIFY === "true");
+  return !!(process.env.NETLIFY_BLOBS_CONTEXT || (globalThis as { netlifyBlobsContext?: unknown }).netlifyBlobsContext
+    || (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_TOKEN) || process.env.NETLIFY === "true");
 }
 const store = () => getStore({ name: "site", consistency: "strong" });
 
-async function readLocal(): Promise<SiteContent> {
-  try { return withDefaults(JSON.parse(await fs.readFile(FILE, "utf8")) as Partial<SiteContent>); }
-  catch { return structuredClone(seedJson as unknown as SiteContent); }
+/* ---------- Közös segédek az írásokhoz (a records, a maintenance és a ratelimit is ezeket használja) ---------- */
+
+/** Folyamatszintű egyke. A globalThis-en él, mert a Next útvonal-csomagonként külön példányt fordíthat egy modulból. */
+export function processGlobal<T>(name: string, init: () => T): T {
+  const g = globalThis as unknown as Record<symbol, T | undefined>;
+  const k = Symbol.for(`gyurusi-menes.${name}`);
+  return (g[k] ??= init());
+}
+
+/** Folyamaton belüli sor névenként: az azonos nevű műveletek egymás után futnak. */
+export function withLock<T>(name: string, fn: () => Promise<T>): Promise<T> {
+  const locks = processGlobal("locks", () => new Map<string, Promise<void>>());
+  const run = (locks.get(name) ?? Promise.resolve()).then(fn);
+  const tail = run.then(() => undefined, () => undefined);
+  locks.set(name, tail);
+  void tail.then(() => { if (locks.get(name) === tail) locks.delete(name); });
+  return run;
+}
+
+/**
+ * Atomi fájlírás: egyedi ideiglenes név (folyamat + véletlen), majd átnevezés — olvasó sosem lát félkész fájlt,
+ * és két író sem írja ugyanazt az ideiglenes fájlt (a régi, közös site.json.tmp név adatot vesztett).
+ * `exclusive`: csak akkor ír, ha a cél még nem létezik (kemény link) — ilyenkor `false`, ha már foglalt.
+ */
+export async function writeFileAtomic(file: string, data: string, opts: { exclusive?: boolean } = {}): Promise<boolean> {
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const tmp = `${file}.${process.pid}.${crypto.randomUUID()}.tmp`;
+  await fs.writeFile(tmp, data);
+  try {
+    if (!opts.exclusive) { await fs.rename(tmp, file); return true; }
+    try { await fs.link(tmp, file); return true; }
+    catch (e) { if ((e as NodeJS.ErrnoException).code === "EEXIST") return false; throw e; }
+  } finally {
+    await fs.rm(tmp, { force: true });
+  }
+}
+
+/** Véletlen, növekvő várakozás két ütköző írási kísérlet között — hogy a versenyzők ne ugyanakkor próbálják újra. */
+export const retryPause = (attempt: number) => new Promise<void>((r) => setTimeout(r, 10 + Math.random() * Math.min(1200, 40 * 2 ** attempt)));
+
+/** `strict`: íráshoz olvasunk — egy létező, de olvashatatlan fájlt ne írjon felül a mag. */
+async function readLocal(strict = false): Promise<SiteContent> {
+  const seed = () => structuredClone(seedJson as unknown as SiteContent);
+  let raw: string;
+  try { raw = await fs.readFile(siteFile(), "utf8"); }
+  catch (e) { if (!strict || (e as NodeJS.ErrnoException).code === "ENOENT") return seed(); throw e; }
+  try { return withDefaults(JSON.parse(raw) as Partial<SiteContent>); }
+  catch (e) { if (strict) throw new Error(`A helyi tartalomfájl nem olvasható (${siteFile()}): ${e instanceof Error ? e.message : e}`); return seed(); }
 }
 
 /** Régebbi tárolt tartalom kiegészítése a mag új kulcsaival (pl. `legal`), hogy egy új mező soha ne döntsön el egy lapot. */
 function withDefaults(data: Partial<SiteContent>): SiteContent {
   const seed = seedJson as unknown as SiteContent;
   const out = { ...structuredClone(seed), ...data } as SiteContent;
-  for (const k of ["events", "registrations", "reports", "uploads", "messages"] as const) if (!Array.isArray(out[k])) out[k] = [];
+  for (const k of ["events", "reports", "uploads"] as const) if (!Array.isArray(out[k])) out[k] = [];
   if (!out.legal?.imprint || !out.legal?.privacy) out.legal = structuredClone(seed.legal);
   if (!out.owner) out.owner = structuredClone(seed.owner);
   for (const k of PAGE_KEYS) if (!out.pages?.[k]) out.pages = { ...structuredClone(seed.pages), ...(out.pages ?? {}) };
@@ -81,7 +130,8 @@ export async function readSite(): Promise<SiteContent> {
       const data = (await store().get(KEY, { type: "json" })) as Partial<SiteContent> | null;
       if (data) return withDefaults(data);
       const seed = structuredClone(seedJson as unknown as SiteContent);
-      try { await store().setJSON(KEY, seed); } catch { /* build-lépésben nincs írás — nem baj */ }
+      /* Csak ha közben senki nem írt bele: egy párhuzamos első mentést a mag nem írhat felül. */
+      try { await store().setJSON(KEY, seed, { onlyIfNew: true }); } catch { /* build-lépésben nincs írás — nem baj */ }
       return seed;
     } catch (e) {
       console.warn("[store] Blobs nem elérhető, beépített tartalom:", e instanceof Error ? e.message : e);
@@ -91,14 +141,34 @@ export async function readSite(): Promise<SiteContent> {
   return readLocal();
 }
 
+const WRITE_TRIES = 10;
+
+/**
+ * A tartalomdokumentum módosítása — ütközésbiztosan, mert admin-mentés, karbantartás és migráció egyszerre is futhat:
+ *   · Blobs-on: olvasás ETag-gel, majd feltételes írás (onlyIfMatch; ha még nincs dokumentum, onlyIfNew). Ha közben
+ *     más írt, újraolvas és újra alkalmazza a módosítást — legfeljebb 10 kísérlet, véletlen várakozással.
+ *   · helyben: folyamaton belüli sor + egyedi ideiglenes fájl + atomi átnevezés.
+ * A `mutate` ezért TÖBBSZÖR is lefuthat: csak a kapott dokumentumot módosítsa, mellékhatás nélkül.
+ */
 export async function writeSite(mutate: (s: SiteContent) => void | Promise<void>): Promise<SiteContent> {
-  const site = await readSite();
-  await mutate(site);
-  if (blobsAvailable()) { await store().setJSON(KEY, site); return site; }
-  const tmp = FILE + ".tmp";
-  await fs.writeFile(tmp, JSON.stringify(site, null, 2));
-  await fs.rename(tmp, FILE);
-  return site;
+  if (blobsAvailable()) return withLock("site", async () => {
+    for (let attempt = 0; ; attempt++) {
+      const cur = await store().getWithMetadata(KEY, { type: "json" });
+      const site = cur?.data ? withDefaults(cur.data as Partial<SiteContent>) : structuredClone(seedJson as unknown as SiteContent);
+      await mutate(site);
+      /* ETag nélkül (csak a helyi Blobs-szimulátor ilyen) nincs mihez feltételt kötni — ott egy folyamat fut, a sor véd. */
+      const cond = !cur ? { onlyIfNew: true } : cur.etag ? { onlyIfMatch: cur.etag } : {};
+      if ((await store().setJSON(KEY, site, cond)).modified) return site;
+      if (attempt + 1 >= WRITE_TRIES) throw new Error("A tartalmat közben más is módosította, és többszöri próbálkozásra sem sikerült menteni. Töltsd újra a lapot, és mentsd újra.");
+      await retryPause(attempt);
+    }
+  });
+  return withLock("files", async () => {
+    const site = await readLocal(true);
+    await mutate(site);
+    await writeFileAtomic(siteFile(), JSON.stringify(site, null, 2));
+    return site;
+  });
 }
 
 export const uid = () => Math.random().toString(36).slice(2, 10);

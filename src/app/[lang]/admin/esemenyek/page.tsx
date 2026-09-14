@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { Thumb } from "../ImagePicker";
 import { readSite, formatRange, isPast, t } from "@/lib/store";
+import { listRegistrations } from "@/lib/records";
 import { resolveImage } from "@/lib/images";
 import { toggleEvent, setFeatured } from "../actions";
 
 export default async function EventsAdmin() {
-  const site = await readSite();
+  const [site, registrations] = await Promise.all([readSite(), listRegistrations()]);
   const events = [...site.events].sort((a, b) => b.date.localeCompare(a.date));
-  const regs = (id: string) => site.registrations.filter((r) => r.eventId === id).reduce((a, r) => a + r.count, 0);
+  const regs = (id: string) => registrations.filter((r) => r.eventId === id).reduce((a, r) => a + r.count, 0);
   return (
     <>
       <div className="adm-head"><div><h1>Események</h1><p>Lovas napok, versenyek, bemutatók. Egy esemény lehet kiemelt: az jelenik meg nagyban a főoldalon.</p></div>

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { readSite, upcoming, formatRange, t } from "@/lib/store";
+import { listMessages, listRegistrations } from "@/lib/records";
 
 export default async function AdminHome() {
-  const site = await readSite();
+  const [site, messages, registrations] = await Promise.all([readSite(), listMessages(), listRegistrations()]);
   const next = upcoming(site.events);
-  const unread = site.messages.filter((m) => !m.read).length;
+  const unread = messages.filter((m) => !m.read).length;
   const openIds = new Set(next.map((e) => e.id));
-  const regs = site.registrations.filter((r) => openIds.has(r.eventId));
+  const regs = registrations.filter((r) => openIds.has(r.eventId));
   const persons = regs.reduce((a, r) => a + r.count, 0);
   return (
     <>
@@ -35,8 +36,11 @@ export default async function AdminHome() {
           <Link href="/admin/oldalak" className="btn btn-outline btn-sm">Aloldalak szövegei</Link>
           <Link href="/admin/beszamolok" className="btn btn-outline btn-sm">Beszámoló feltöltése</Link>
           <Link href="/admin/kepek" className="btn btn-outline btn-sm">Kép feltöltése</Link>
+          {/* API-letöltés, nem lap: sima <a>, hogy a böngésző fájlként mentse. */}
+          <a href="/api/admin/backup" className="btn btn-outline btn-sm" download data-backup-download>Mentés letöltése</a>
           <Link href="/" className="btn btn-ghost btn-sm" target="_blank">Oldal megnyitása ↗</Link>
         </div>
+        <p className="hint">A mentés egy fájlban tartalmaz mindent: szövegeket, eseményeket, jelentkezéseket és üzeneteket. Automatikus mentés is készül naponta; az utolsó 30 megmarad.</p>
       </div>
     </>
   );
