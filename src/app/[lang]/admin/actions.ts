@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { writeSite, uid, isPageKey, type Event, type L } from "@/lib/store";
 import * as records from "@/lib/records";
-import { putFile, deleteFile, fileUrl } from "@/lib/files";
+import { deleteFile } from "@/lib/files";
 
 /** Minden nyelvi lap újraépül; az admin lapok is. */
 function refresh() { revalidatePath("/", "layout"); revalidatePath("/[lang]", "layout"); }
@@ -107,29 +107,9 @@ export async function setHeroImage(fd: FormData) {
   refresh(); back("/admin/kepek", { ok: "Nyitókép beállítva." });
 }
 
-/* ---------- Képek (feltöltés → webp → fájltár) ---------- */
-export async function uploadImage(fd: FormData) {
-  const file = fd.get("file"); const alt = s(fd, "alt");
-  if (!(file instanceof File) || file.size === 0) back("/admin/kepek", { hiba: "Nem választottál fájlt." });
-  if (!file.type.startsWith("image/")) back("/admin/kepek", { hiba: `Ez nem képfájl (${file.type || file.name}). JPG, PNG vagy WebP tölthető fel.` });
-  if (file.size > 25 * 1024 * 1024) back("/admin/kepek", { hiba: `A fájl túl nagy (${(file.size / 1024 / 1024).toFixed(1)} MB) — legfeljebb 25 MB lehet.` });
-  const id = "u-" + uid(); const key = `${id}.webp`;
-  try {
-  /* A sharp csak itt, feltöltéskor töltődik be — az admin lapjai ne függjenek a natív modultól. */
-  const sharp = (await import("sharp")).default;
-  const src = sharp(Buffer.from(await file.arrayBuffer())).rotate().resize({ width: 2000, height: 2000, fit: "inside", withoutEnlargement: true });
-  const webp = await src.clone().webp({ quality: 78 }).toBuffer();
-  const meta = await sharp(webp).metadata();
-  const tiny = await sharp(webp).resize(16).blur(1).webp({ quality: 40 }).toBuffer();
-  const { dominant } = await sharp(webp).stats();
-  await putFile(key, webp);
-  await writeSite((site) => {
-    site.uploads.unshift({ id, src: fileUrl(key), width: meta.width ?? 0, height: meta.height ?? 0, alt: alt || file.name,
-      blur: `data:image/webp;base64,${tiny.toString("base64")}`, color: `rgb(${dominant.r},${dominant.g},${dominant.b})`, uploadedAt: new Date().toISOString() });
-  });
-  } catch (e) { back("/admin/kepek", { hiba: `A feltöltés nem sikerült: ${errMsg(e)}` }); }
-  refresh(); back("/admin/kepek", { ok: `Kép feltöltve (${file.name}).` });
-}
+/* ---------- Képek ----------
+   A feltöltés NEM szerver-akció (annak törzse legfeljebb 1 MB): a böngésző kicsinyít (ImageUpload.tsx), a szerver
+   a POST /api/admin/upload-image route handlerben dolgozza fel. Itt csak a kis metaadat-műveletek maradtak. */
 export async function deleteUpload(fd: FormData) {
   const id = s(fd, "id");
   try { await writeSite(async (site) => { site.uploads = site.uploads.filter((u) => u.id !== id); }); await deleteFile(`${id}.webp`); }
@@ -137,21 +117,9 @@ export async function deleteUpload(fd: FormData) {
   refresh(); back("/admin/kepek", { ok: "Kép törölve." });
 }
 
-/* ---------- Egyesületi beszámolók (PDF) ---------- */
-export async function uploadReport(fd: FormData) {
-  const file = fd.get("file"); const title = s(fd, "title"); const date = s(fd, "date") || new Date().toISOString().slice(0, 10);
-  const P = "/admin/beszamolok";
-  if (!(file instanceof File) || file.size === 0) back(P, { hiba: "Nem választottál fájlt." });
-  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) back(P, { hiba: `Csak PDF tölthető fel — ez ${file.type || "más típusú"} fájl (${file.name}).` });
-  if (file.size > 10 * 1024 * 1024) back(P, { hiba: `A PDF túl nagy (${(file.size / 1024 / 1024).toFixed(1)} MB) — legfeljebb 10 MB lehet.` });
-  if (!title) back(P, { hiba: "Adj címet a beszámolónak (pl. „Éves beszámoló 2025”)." });
-  const id = "r-" + uid(); const key = `${id}.pdf`;
-  try {
-    await putFile(key, Buffer.from(await file.arrayBuffer()));
-    await writeSite((site) => { site.reports.unshift({ id, title, year: Number(date.slice(0, 4)), date, file: key, size: file.size, published: b(fd, "published") }); });
-  } catch (e) { back(P, { hiba: `A feltöltés nem sikerült: ${errMsg(e)}` }); }
-  refresh(); back(P, { ok: `„${title}” feltöltve.` });
-}
+/* ---------- Egyesületi beszámolók (PDF) ----------
+   A feltöltés darabolva megy route handlereken (ReportUpload.tsx → /api/admin/upload-chunk, /upload-complete);
+   itt a közzététel és a törlés maradt. */
 export async function toggleReport(fd: FormData) {
   const id = s(fd, "id");
   await writeSite((site) => { const r = site.reports.find((x) => x.id === id); if (r) r.published = !r.published; });

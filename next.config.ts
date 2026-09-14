@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./data/seed.json"],
     "/[lang]/admin/**": ["./node_modules/@img/sharp-linux-x64/**", "./node_modules/@img/sharp-libvips-linux-x64/**"],
+    /* A képfeltöltés route handlere is sharp-ot tölt be (a Linux-binárisok: scripts/sharp-linux.mjs). */
+    "/api/admin/upload-image": ["./node_modules/@img/sharp-linux-x64/**", "./node_modules/@img/sharp-libvips-linux-x64/**"],
   },
 };
 

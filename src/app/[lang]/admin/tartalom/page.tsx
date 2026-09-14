@@ -1,5 +1,5 @@
 import { readSite } from "@/lib/store";
-import { allImages } from "@/lib/images";
+import { pickerImages } from "@/lib/images";
 import { ImagePicker } from "../ImagePicker";
 import { LField } from "../LField";
 import { saveContent } from "../actions";
@@ -7,7 +7,7 @@ import { saveContent } from "../actions";
 export default async function ContentAdmin() {
   const site = await readSite();
   const { intro, hero, contact, owner } = site;
-  const images = allImages(site);
+  const images = pickerImages(site);
   return (
     <>
       <div className="adm-head"><div><h1>Főoldal és kapcsolat</h1><p>Nyitókép és főcím, a tulajdonos adatai, a bemutatkozás és az elérhetőségek — mindhárom nyelven.</p></div></div>

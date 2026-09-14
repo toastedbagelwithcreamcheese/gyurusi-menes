@@ -16,3 +16,8 @@ export function allImages(site: Pick<SiteContent, "uploads">): Array<{ id: strin
   const uploads = site.uploads.map((u: Upload) => ({ id: u.id, src: u.src, width: u.width, height: u.height, alt: u.alt, blur: u.blur, color: u.color }));
   return [...uploads, ...curated];
 }
+
+/** A képválasztónak (kliens-komponens) csak ennyi kell — az elmosott előnézetek ne utazzanak minden választóba. */
+export function pickerImages(site: Pick<SiteContent, "uploads">): Array<{ id: string; src: string; alt: string }> {
+  return allImages(site).map(({ id, src, alt }) => ({ id, src, alt }));
+}

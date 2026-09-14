@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { readSite, isPageKey, t } from "@/lib/store";
-import { allImages } from "@/lib/images";
+import { pickerImages } from "@/lib/images";
 import { ImagePicker } from "../../ImagePicker";
 import { LField } from "../../LField";
 import { savePage } from "../../actions";
@@ -9,7 +9,7 @@ import { savePage } from "../../actions";
 export default async function PageEdit({ params }: { params: Promise<{ key: string }> }) {
   const { key } = await params;
   if (!isPageKey(key)) notFound();
-  const site = await readSite(); const p = site.pages[key]; const images = allImages(site);
+  const site = await readSite(); const p = site.pages[key]; const images = pickerImages(site);
   return (
     <>
       <div className="adm-head"><div><h1>{t(p.title, "hu")}</h1><p>/{key} — cím, bevezető, szöveg, legfeljebb három kép és az oldal saját kapcsolata.</p></div></div>

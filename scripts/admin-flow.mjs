@@ -95,8 +95,9 @@ try {
   const sharp = (await import("sharp")).default;
   const png = await sharp({ create: { width: 900, height: 600, channels: 3, background: { r: 122, g: 96, b: 62 } } }).png().toBuffer();
   const tmpPng = path.join(os.tmpdir(), "gate-kep.png"); await fs.writeFile(tmpPng, png);
-  await go("/admin/kepek"); await page.setInputFiles("#file", tmpPng); await page.fill("#alt", "Gate teszt kép");
-  await page.click('button:has-text("Feltöltés")'); await page.waitForSelector('[data-image-tile^="u-"]', { timeout: 30000 });
+  /* A feltöltő kliens-komponens (ImageUpload): a böngésző WebP-be kódolja, a /api/admin/upload-image fogadja, siker után a rács frissül. */
+  await go("/admin/kepek"); await page.setInputFiles("[data-image-upload] [data-upload-file]", tmpPng); await page.fill("[data-image-upload] [data-upload-alt]", "Gate teszt kép");
+  await page.click("[data-image-upload] [data-upload-submit]"); await page.waitForSelector('[data-image-tile^="u-"]', { timeout: 30000 });
   const upId = await page.locator('[data-image-tile^="u-"]').first().getAttribute("data-image-tile");
   const raw = await ctx.request.get(`${BASE}/files/${upId}.webp`); if (!raw.ok() || !(raw.headers()["content-type"] ?? "").includes("image/webp")) fail(`a feltöltött kép nem jön a /files alól: ${raw.status()}`);
   await page.hover(`[data-image-tile="${upId}"]`); await page.click(`[data-image-tile="${upId}"] button:has-text("Nyitókép")`); await page.waitForSelector(`[data-image-tile="${upId}"] .tag.hero`, { timeout: 15000 });

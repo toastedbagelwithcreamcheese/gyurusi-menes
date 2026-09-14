@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { readSite } from "@/lib/store";
-import { allImages } from "@/lib/images";
+import { pickerImages } from "@/lib/images";
 import { ImagePicker } from "../../ImagePicker";
 import { LField } from "../../LField";
 import { saveEvent, deleteEvent } from "../../actions";
@@ -25,7 +25,7 @@ export default async function EventEdit({ params }: { params: Promise<{ id: stri
         <div className="field"><label htmlFor="location">Helyszín</label><input id="location" name="location" className="input" defaultValue={ev?.location} placeholder="Gyűrűsi Ménes, Gyűrűs" /></div>
         <LField name="summary" label="Rövid leírás (ez jelenik meg a listában és a főoldalon)" value={ev?.summary} textarea rows={2} required />
         <LField name="body" label="Részletek (opcionális)" value={ev?.body} textarea rows={8} hint="Üres sor = új bekezdés." />
-        <div className="field"><label>Kép</label><ImagePicker name="image" images={allImages(site)} value={ev?.image} /></div>
+        <div className="field"><label>Kép</label><ImagePicker name="image" images={pickerImages(site)} value={ev?.image} /></div>
         <label className="check"><input type="checkbox" name="published" defaultChecked={ev?.published ?? true} />Közzététel az oldalon</label>
         <label className="check"><input type="checkbox" name="featured" defaultChecked={ev?.featured ?? false} />Kiemelt esemény (nagyban a főoldalon — egyszerre csak egy lehet)</label>
         <label className="check"><input type="checkbox" name="registration" defaultChecked={ev?.registration ?? false} />Jelentkezés nyitva (igényfelmérés: név, telefon, létszám — csak itt, az adminban látszik)</label>

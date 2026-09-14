@@ -5,6 +5,7 @@ import { blobsAvailable, dataDir, readSite, withLock, writeFileAtomic } from "./
 import type { Message, Registration, SiteContent } from "./store";
 import { deleteMessage, deleteRegistration, listMessages, listRegistrations } from "./records";
 import { pruneRateLimits } from "./ratelimit";
+import { pruneStaleChunks } from "./chunks";
 
 /**
  * Karbantartás — az adatkezelési tájékoztató megőrzési ígéreteinek kódja, és a mentés:
@@ -12,7 +13,8 @@ import { pruneRateLimits } from "./ratelimit";
  *   · a 365 napnál régebbi üzenetek törlése;
  *   · napi mentés a „backups” tárba (helyben data/backups/) YYYY-MM-DD.json néven — tartalomdokumentum
  *     + minden jelentkezés és üzenet —, az utolsó 30 marad meg;
- *   · lejárt sebességkorlát-bejegyzések törlése.
+ *   · lejárt sebességkorlát-bejegyzések törlése;
+ *   · a 24 óránál régebben kezdett, félbemaradt darabolt feltöltések (PDF) törlése (chunks.ts).
  * Futás: napi ütemezett Netlify-függvény (netlify/functions/daily-maintenance.mts); alkalmanként az admin
  * Jelentkezések és Üzenetek lapjának betöltése (óránként legfeljebb egyszer); kézzel a POST /api/admin/maintenance.
  * Relatív importok, next/* nélkül: a Netlify-függvény a Next nélkül tölti be.
@@ -37,7 +39,7 @@ export const budapestDay = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZ
 export type Backup = { format: "gyurusi-menes-backup"; version: 1; createdAt: string; site: SiteContent; registrations: Registration[]; messages: Message[] };
 export type MaintenanceReport = {
   at: string; registrationsDeleted: number; messagesDeleted: number;
-  backup: { name: string; created: boolean }; backupsDeleted: number; rateLimitsPruned: number; ms: number;
+  backup: { name: string; created: boolean }; backupsDeleted: number; rateLimitsPruned: number; chunkUploadsDeleted: number; ms: number;
 };
 
 /** A teljes mentés: tartalomdokumentum + minden jelentkezés és üzenet (a letöltés és a napi mentés is ez). */
@@ -129,7 +131,10 @@ export async function runMaintenance(now = new Date(), opts: { claimed?: boolean
   let rateLimitsPruned = 0;
   try { rateLimitsPruned = await pruneRateLimits(now.getTime()); }
   catch (e) { console.warn("[maintenance] a sebességkorlát-takarítás nem sikerült:", e instanceof Error ? e.message : e); }
-  return { at: now.toISOString(), registrationsDeleted, messagesDeleted, backup, backupsDeleted, rateLimitsPruned, ms: Date.now() - t0 };
+  let chunkUploadsDeleted = 0;
+  try { chunkUploadsDeleted = await pruneStaleChunks(now); }
+  catch (e) { console.warn("[maintenance] a félbemaradt feltöltések takarítása nem sikerült:", e instanceof Error ? e.message : e); }
+  return { at: now.toISOString(), registrationsDeleted, messagesDeleted, backup, backupsDeleted, rateLimitsPruned, chunkUploadsDeleted, ms: Date.now() - t0 };
 }
 
 /** Alkalmi futás az admin lapjairól: óránként legfeljebb egyszer, és a hibája sosem dönti el a lapot. */

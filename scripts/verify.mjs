@@ -80,6 +80,12 @@ if (which === "css-motion") {
   for (const c of required) if (!css.includes(c)) fail(`hiányzó osztály a globals.css-ből: ${c}`);
   for (const gone of [".lb ", ".gal ", ".marquee"]) if (css.includes(gone)) fail(`ott maradt a kivett blokk: ${gone}`);
   console.log(`${required.length} kötelező osztály megvan, a galéria/marquee CSS ki`);
+  /* Az admin stíluslapja ugyanígy: a feltöltők (P2) és a Flash-sáv osztályai a fájl végén állnak — egy csonkítás itt is látszódjon. */
+  const adminCss = await fs.readFile(path.join(ROOT, "src/app/[lang]/admin/admin.css"), "utf8");
+  if (/transition:\s*all\b/.test(adminCss)) fail("transition: all az admin.css-ben");
+  const adminRequired = [".adm-nav", ".picker", ".lfield", ".reg-table", ".flash-err", ".upl-progress", ".upl-note", ".picker-upload"];
+  for (const c of adminRequired) if (!adminCss.includes(c)) fail(`hiányzó osztály az admin.css-ből: ${c}`);
+  console.log(`admin.css: ${adminRequired.length} kötelező osztály megvan`);
   console.log("PASS: css-motion");
 }
 

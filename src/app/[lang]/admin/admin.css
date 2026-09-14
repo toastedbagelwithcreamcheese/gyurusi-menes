@@ -105,3 +105,16 @@
 .flash-ok { background: #e3efe4; color: #1f4a2c; border: 1px solid #b9d5bf; }
 .flash-err { background: #fbeeee; color: #8a2424; border: 1px solid #ecc5c5; }
 .flash button { border: 0; background: transparent; font-size: 1.3rem; line-height: 1; cursor: pointer; color: inherit; padding: 2px 6px; }
+
+/* 5. kör, P2: feltöltők (ImageUpload, ReportUpload) — folyamatjelző, visszajelzés; „Új kép feltöltése” a képválasztó alatt */
+.upl { display: grid; gap: 14px; }
+.upl-live:empty { display: none; }
+.upl-progress { display: grid; gap: 6px; }
+.upl-progress-label { display: flex; justify-content: space-between; gap: 12px; font-size: 0.88rem; }
+.upl-progress-label b { font-variant-numeric: tabular-nums; }
+.upl-progress progress { width: 100%; height: 10px; accent-color: var(--color-forest); }
+.upl-note { margin-bottom: 0; }
+.upl-note span { white-space: pre-line; }
+.picker-upload { margin-top: 10px; border: 1px dashed var(--color-line); border-radius: 10px; padding: 10px 14px; }
+.picker-upload > summary { cursor: pointer; font-weight: 600; color: var(--color-forest); padding: 4px 0; }
+.picker-upload[open] > summary { margin-bottom: 12px; }

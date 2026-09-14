@@ -3,7 +3,8 @@
  *  A) kapcsolati űrlap: üres → mezőre mutató hiba; rossz e-mail → hiba; jó → visszaigazolás; /en-en angol hiba
  *  B) jelentkezés: rossz létszám → hiba; jó → visszaigazolás; lezárt esemény → lezárt üzenet
  *  C) sok esemény: +5 közelgő az adatbázisban → rács, egyetlen kiemelt; nincs esemény → „nincs kitűzött” szöveg
- *  D) admin: PDF helyett .txt → részletes hiba a Flash-sávban; mentés → „mentve” visszajelzés; hiányzó cím → hiba
+ *  D) admin: PDF helyett .txt → részletes hiba a Flash-sáv stílusában, már a böngészőben (feltöltési kérés nélkül, kontroll-PDF-fel);
+ *     mentés → „mentve” visszajelzés; hiányzó cím → hiba
  * A végén a helyi DB visszaáll (db:reset). QA_FLOW_OK a siker jele.
  */
 import { chromium } from "playwright-core";
@@ -89,12 +90,20 @@ try {
   console.log("C2) nincs esemény: mindkét lap a magyarázó szöveget adja");
   spawnSync("node", [path.join(ROOT, "scripts/db-reset.mjs")], { stdio: "ignore" });
 
-  /* D) admin visszajelzések */
+  /* D) admin visszajelzések — a nem-PDF fájlt már a böngésző utasítja el (ReportUpload), feltöltési kérés nélkül */
   const txt = path.join(os.tmpdir(), "qa-nem-pdf.txt"); await fs.writeFile(txt, "ez nem pdf");
+  const uploadReqs = []; const onUploadReq = (rq) => { if (rq.url().includes("/api/admin/upload-")) uploadReqs.push(rq.url()); };
+  page.on("request", onUploadReq);
   await go("/admin/beszamolok"); await page.setInputFiles("#file", txt); await page.fill("#title", "QA hibás fájl"); await page.click('button:has-text("Feltöltés")');
-  await page.waitForSelector('[data-flash="err"]', { timeout: 15000 }); t = await page.locator('[data-flash="err"]').innerText(); if (!/Csak PDF/.test(t)) fail("nem-PDF: nem a részletes hiba jött: " + t);
-  console.log("D) admin: nem-PDF hibája OK →", t.replace(/\s+/g, " ").slice(0, 80));
-  await go("/admin/beszamolok"); await page.setInputFiles("#file", txt); await page.fill("#title", ""); await page.click('button:has-text("Feltöltés")').catch(() => {});
+  await page.waitForSelector('[data-flash="err"]', { timeout: 15000 }); t = await page.locator('[data-flash="err"]').innerText();
+  if (!/Csak PDF/.test(t) || !t.includes("qa-nem-pdf.txt")) fail("nem-PDF: nem a részletes hiba jött: " + t);
+  await page.waitForTimeout(400); if (uploadReqs.length) fail("nem-PDF: mégis indult feltöltési kérés: " + uploadReqs.join(", "));
+  /* Kontroll: ugyanez a figyelő egy kis, valódi PDF feltöltésénél látja a kéréseket — a „nincs kérés” állítás tehát el tud bukni. */
+  const okPdf = path.join(os.tmpdir(), "qa-kontroll.pdf"); await fs.writeFile(okPdf, "%PDF-1.4\n%%EOF\n");
+  await page.setInputFiles("#file", okPdf); await page.fill("#title", "QA kontroll PDF"); await page.click('button:has-text("Feltöltés")');
+  await page.waitForSelector('[data-upload-status="ok"]', { timeout: 20000 }); page.off("request", onUploadReq);
+  if (uploadReqs.length < 2) fail(`kontroll: a figyelő nem látta a PDF feltöltési kéréseit (${uploadReqs.length})`);
+  console.log(`D) admin: nem-PDF hibája OK — a böngészőben, kérés nélkül (kontroll-PDF: ${uploadReqs.length} kérés) →`, t.replace(/\s+/g, " ").slice(0, 80));
   await go("/admin/oldalak/turak"); await page.click('button:has-text("Mentés")'); await page.waitForSelector('[data-flash="ok"]', { timeout: 15000 });
   t = await page.locator('[data-flash="ok"]').innerText(); if (!/mentve/i.test(t)) fail("mentés: nincs „mentve” visszajelzés: " + t);
   console.log("D2) admin: mentés visszajelzése OK →", t.trim());
