@@ -2,7 +2,8 @@ import type { Dictionary } from "./types";
 
 export const de: Dictionary = {
   lang: "de", name: "Deutsch", locale: "de-DE", ogLocale: "de_DE",
-  meta: { title: "Gyűrűsi Ménes – Huzulen-, Gidran- und Shagya-Araber-Gestüt in Zala, Ungarn", titleTemplate: "%s · Gyűrűsi Ménes", description: "Das Gestüt von József Vörös in den Hügeln von Zala: Huzulen, Gidran und Shagya-Araber, Reitunterricht, Ausritte, Kinderlager und die Reitertage von Gyűrűs." },
+  meta: { title: "Gyűrűsi Ménes – Huzulen-, Gidran- und Shagya-Araber-Gestüt", titleTemplate: "%s · Gyűrűsi Ménes", description: "Das Gestüt von József Vörös in den Hügeln von Zala: Huzulen, Gidran und Shagya-Araber, Reitunterricht, Ausritte, Kinderlager und die Reitertage von Gyűrűs." },
+  seo: { place: "Gyűrűsi Ménes, Gyűrűs, Komitat Zala, Ungarn.", events: "Veranstaltungskalender des Gestüts Gyűrűsi Ménes: Huzulenpfad-Wettbewerbe, Ausritte, Kinderlager und die Reitertage von Gyűrűs — kommende und frühere Termine.", privacy: "Datenschutzhinweise zur Website des Gyűrűsi Ménes: wie die im Kontaktformular und bei Veranstaltungsanmeldungen angegebenen Daten verarbeitet werden.", imprint: "Impressum der Website des Gyűrűsi Ménes: Betreiber, Vertreter, Adresse, Kontaktdaten und Hosting-Anbieter.", notFound: "Seite nicht gefunden · Gyűrűsi Ménes", llms: { facts: "Fakten", pages: "Seiten", breeds: "Rassen", texts: "Seitentexte", full: "Volltext der Seiten in allen drei Sprachen" } },
   nav: { huculosveny: "Huzulenpfad", turak: "Ausritte", oktatas: "Reitunterricht", taborok: "Reitlager", egyesulet: "Verein", esemenyek: "Veranstaltungen", kapcsolat: "Kontakt", menuOpen: "Menü öffnen", menuClose: "Menü schließen", call: "Anrufen", home: "Gyűrűsi Ménes – Startseite", mainMenu: "Hauptmenü", mobileMenu: "Mobiles Menü", place: "Gyűrűs, Zala" },
   lang_: { label: "Sprache" },
   hero: { note: "Gyűrűs, Komitat Zala, Ungarn", ctaPrimary: "Veranstaltungen", ctaSecondary: "Kontakt", scroll: "Scrollen" },

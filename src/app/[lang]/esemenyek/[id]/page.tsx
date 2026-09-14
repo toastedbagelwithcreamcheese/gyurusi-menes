@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLang, LANGS } from "@/content/types";
 import { getDict } from "@/lib/i18n";
-import { alternatesFor, langPath } from "@/lib/paths";
+import { langPath } from "@/lib/paths";
+import { ldFor, ldHtml, metadataFor } from "@/lib/seo";
 import { readSite, formatRange, formatDate, isPast, t } from "@/lib/store";
 import { resolveImage } from "@/lib/images";
 import { SubPage } from "@/components/site/SubPage";
@@ -16,10 +17,7 @@ export async function generateStaticParams() { const s = await readSite(); retur
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { lang, id } = await params; if (!isLang(lang)) return {};
-  const s = await readSite(); const e = s.events.find((x) => x.id === id && x.published); if (!e) return {};
-  const im = resolveImage(e.image, s);
-  return { title: t(e.title, lang), description: t(e.summary, lang), alternates: { canonical: langPath(lang, `/esemenyek/${id}`), languages: alternatesFor(`/esemenyek/${id}`) },
-    openGraph: { title: t(e.title, lang), description: t(e.summary, lang), images: im ? [{ url: im.src, width: im.width, height: im.height, alt: im.alt }] : undefined } };
+  return metadataFor(await readSite(), lang, `/esemenyek/${id}`);
 }
 
 export default async function EventPage({ params }: P) {
@@ -37,12 +35,16 @@ export default async function EventPage({ params }: P) {
       <Reveal delay={100}><RegistrationForm d={d.reg} eventId={e.id} lang={lang} /></Reveal>
     </section>
   ) : e.registration && over ? <p className="note" style={{ marginTop: 24 }}>{d.reg.closed}</p> : null;
+  const ld = ldFor(site, lang, `/esemenyek/${id}`);
   return (
+    <>
+    {ld && <script type="application/ld+json" dangerouslySetInnerHTML={ldHtml(ld)} />}
     <SubPage site={site} lang={lang} d={d} rest={`/esemenyek/${id}`} eyebrow={over ? d.events.pastEvent : d.events.upcomingEvent} title={t(e.title, lang)} meta={when} image={resolveImage(e.image, site)}
       facts={[{ k: d.events.when, v: <>{when}{e.time ? <><br />{e.time}</> : null}</> }, { k: d.events.where, v: e.location ?? "Gyűrűsi Ménes, Gyűrűs" }, { k: d.events.address, v: site.contact.address }]}
       related={others} relatedTitle={d.events.more} back={{ href: langPath(lang, "/esemenyek"), label: d.events.back }} after={after}>
       <p className="lead">{t(e.summary, lang)}</p>
       {e.body && <Paragraphs text={t(e.body, lang)} />}
     </SubPage>
+    </>
   );
 }

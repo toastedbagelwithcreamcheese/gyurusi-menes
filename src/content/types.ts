@@ -18,6 +18,8 @@ export interface Dictionary {
   locale: string;      // Intl: hu-HU / en-GB / de-DE
   ogLocale: string;    // hu_HU / en_GB / de_DE
   meta: { title: string; titleTemplate: string; description: string };
+  /** Keresőknek és AI-keresőknek: meta-leírások, a 404-es lap címe, az llms.txt címkéi (a többi SEO-szöveg a tartalomból jön). */
+  seo: { place: string; events: string; privacy: string; imprint: string; notFound: string; llms: { facts: string; pages: string; breeds: string; texts: string; full: string } };
   nav: { huculosveny: string; turak: string; oktatas: string; taborok: string; egyesulet: string; esemenyek: string; kapcsolat: string; menuOpen: string; menuClose: string; call: string; home: string; mainMenu: string; mobileMenu: string; place: string };
   lang_: { label: string };
   hero: { note: string; ctaPrimary: string; ctaSecondary: string; scroll: string };

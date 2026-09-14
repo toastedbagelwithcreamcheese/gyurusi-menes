@@ -60,7 +60,7 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next|api|files|images|uploads|fonts|favicon\\.ico|robots\\.txt|sitemap\\.xml|opengraph-image|icon|apple-icon|.*\\.(?:png|jpg|jpeg|webp|svg|ico|woff2?|txt|xml)$).*)",
+    "/((?!_next|api|files|og/|images|uploads|fonts|favicon\\.ico|robots\\.txt|sitemap\\.xml|opengraph-image|icon|apple-icon|.*\\.(?:png|jpg|jpeg|webp|svg|ico|woff2?|txt|xml)$).*)",
     /* Az admin MINDIG a proxyn megy át — kiterjesztéstől és nyelvi előtagtól függetlenül. Az első minta a „.png”-re stb. végződő
        címeket kihagyja, és a `/admin/esemenyek/x.png` (vagy `/en/admin/…`) különben egy admin-lapot — és a szerver-akcióit — érné el. */
     "/admin",
