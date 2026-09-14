@@ -52,7 +52,7 @@ const TITLE2 = `${MARK} — módosítva, törlendő (${RUN})`;
 const REPORT = `${MARK} beszámoló (${RUN})`;
 const PHOTO_ALT = `${MARK} fotó (${RUN})`;
 const N_REG = 20;
-const LIMITS = { refreshMs: 15_000, ttfbMs: 250, perf: 95 };
+const LIMITS = { refreshMs: 15_000, refreshObserveMs: 60_000, ttfbMs: 250, perf: 95 };
 const CONTROL = process.env.FINAL_LIVE_CONTROL ?? "";
 const problems = [];
 const bad = (m) => { problems.push(m); console.log(`  ✗ ${m}`); };
@@ -184,7 +184,8 @@ try {
   log(`0) fixture-ök: JPEG ${(jpegBytes / MB).toFixed(1)} MB (4000×3000), PDF ${(pdf.length / MB).toFixed(1)} MB`);
 
   browser = await chromium.launch({ executablePath: PW_CHROME, headless: true });
-  ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "hu-HU" });
+  /* x-nf-debug-logging: a Netlify Next-runtime ezekre a kérésekre (pl. az admin-mentés szerver-akciójára) debug szinten naplóz — a purge is látszik a függvénynaplóban. */
+  ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "hu-HU", extraHTTPHeaders: { "x-nf-debug-logging": "1" } });
   page = await ctx.newPage();
   const pageErrors = [];
   page.on("pageerror", (e) => pageErrors.push(String(e)));
@@ -306,13 +307,19 @@ try {
     await page.fill("#title\\.hu", TITLE2);
     await Promise.all([page.waitForURL(/\/admin\/esemenyek(\?|$)/, { timeout: 60_000 }), page.click('button:has-text("Mentés")')]);
     const tSaved = Date.now();
-    let seen = null, lastInfo = "";
-    while (Date.now() - tSaved <= LIMITS.refreshMs) {
-      const r = await pub(evPath); const html = await r.text(); lastInfo = `HTTP ${r.status}, ${cacheInfo(r)}`;
-      if (r.status === 200 && html.includes(TITLE2)) { seen = Date.now() - tSaved; break; }
+    /* Diagnosztika: minden állapotváltás naplózva (CDN-rétegek, age), és a 15 s-os határ után még legfeljebb 60 s-ig figyel, hogy kiderüljön,
+       lassú volt-e a purge, vagy el sem jutott a lapig. A határ nem változik: ami 15 s-nál később jelenik meg, az is FAIL. */
+    let seen = null, lastInfo = "", sig = "";
+    while (Date.now() - tSaved <= LIMITS.refreshObserveMs) {
+      const r = await pub(evPath, { "x-nf-debug-logging": "1" }); const html = await r.text(); lastInfo = `HTTP ${r.status}, ${cacheInfo(r)}`;
+      const fresh = r.status === 200 && html.includes(TITLE2);
+      const desc = `${fresh ? "új cím" : html.includes(TITLE) ? "régi cím" : `HTTP ${r.status}`} | ${r.headers.get("cache-status") ?? "–"} | durable: ${r.headers.get("debug-x-nf-durable-cache-result") ?? "–"}`;
+      const key = desc.replace(/ttl=-?\d+/g, "");
+      if (key !== sig) { log(`   5) +${((Date.now() - tSaved) / 1000).toFixed(1)} s: ${desc} | age ${r.headers.get("age") ?? "–"}`); sig = key; }
+      if (fresh) { seen = Date.now() - tSaved; break; }
       await sleep(500);
     }
-    if (seen === null) bad(`5) admin-mentés után ${LIMITS.refreshMs / 1000} s alatt sem jelent meg az új cím a nyilvános lapon (utolsó: ${lastInfo})`);
+    if (seen === null || seen > LIMITS.refreshMs) bad(`5) admin-mentés után ${LIMITS.refreshMs / 1000} s alatt sem jelent meg az új cím a nyilvános lapon (${seen === null ? `${LIMITS.refreshObserveMs / 1000} s alatt sem; utolsó: ${lastInfo}` : `csak ${seen} ms után`})`);
     log(`5) admin-mentés → az új cím ${seen === null ? "NEM jelent meg" : `${seen} ms`} alatt a nyilvános lapon (${lastInfo})`);
   }
 

@@ -57,3 +57,37 @@ Az 1. futás G13-a az éles oldalon (régi kód) létrehozta a próbaeseményt, 
 - a nyitókép `aranyfeny-sorfal` (előtte `dron-naplemente-v`).
 
 A 2. futás G13-a a régi admin kétlépcsős törlés nélküli felületén már a kezdeti takarításnál megállt, új adatot nem hozott létre (utána ugyanez a három tétel látszott). A közös tárhoz szándékosan nem nyúltam: a takarítás a fő munkamenet feladata (lásd a visszatérési objektum lépéseit).
+
+## 6. Élesítés — fő munkamenet (2026-09-14 este)
+
+Sorrend a megbízó „Teljes” döntése szerint: push → draft deploy → élő próbák (G28) → az élő tár takarítása → production deploy → éles admin-próba (G13).
+Admin: a megbízó döntésére a Netlify-on `ADMIN_PASSWORD=admin` minden kontextusban (tesztidőszak, csak tesztadat — éles adat előtt cserélendő).
+
+- **Push:** `67aaf1f..8b29532`.
+- **Draft deploy:** `6aa827572f76fedd7cd2a642` (`.netlify/draft-url.txt`): `/` 200, `/api/admin/backup` 401, `/admin` 307, `/llms.txt` 200. `warm-images`: 80/80 képváltozat 200.
+- **G28 (final-live) a drafton, két teljes futás:**
+
+| Futás | 3) 20 egyidejű jelentkezés | 4) 9,2 MB fotó / 12 MB PDF | 5) admin-mentés → nyilvános lap | 6) TTFB `/`, `/turak` | 7) Lighthouse mobil `/` (3 futás) | 8) takarítás |
+|---|---|---|---|---|---|---|
+| mu1hmjg5 | 20/20 tárolva, admin-lista 20 | 342 KB WebP / letöltve, SHA-256 egyezik | **FAIL**: 15 s alatt a régi cím (Edge hit) | 46 / 47 ms | 92 · 98 · 97 | nincs maradék |
+| mu1icf7i | 20/20 | 337 KB WebP / SHA-256 egyezik | **FAIL**: 60 s alatt sem | 43 / 49 ms | 92 · 96 · 96 | nincs maradék |
+
+- **Az 5) lépés diagnózisa** (a 2. futás állapotnaplója): a mentés után +0,5 s-nál a régi címet a `"Netlify Durable"; hit` adta (`debug-x-nf-durable-cache-result: …hit_inventory&fresh_gendb…`), utána az edge ezt tárolta újra. A mentés előtti első kérés egy stale durable objektumot tárolt újra (`"Netlify Durable"; fwd=stale; … stored`); a mentés purge-e az edge-et elérte, ezt a durable objektumot nem. **Máshogy nem reprodukálható:**
+  - 5 no-op mentés egymás után: 0,5–1,8 s;
+  - 3 címmódosítás keep-alive kapcsolaton: 0,5–2,6 s;
+  - route handler / szerver-akció purge-kombinációk: 1–6 s;
+  - 5 további final-live-szerű futás Lighthouse nélkül: 0,55–1,06 s;
+  - tartalom-alapú lánc új kapcsolatokon (a durable utat kényszerítve): 4 mentés × 15 kérés, 0 régi cím.
+
+  Összesen 8 teljes futásból 2 bukott. A `@netlify/plugin-nextjs` 5.15.13 a legfrissebb, a kiadási jegyzetekben és az issue-k közt nincs ilyen hiba. Mérési csapda: az `age` a Next render-idejét követi, nem a CDN-tárolásét, ezért purge-hatást csak tartalommal lehet igazolni.
+- **`scripts/checks/final-live.mjs`:** az 5) lépés állapotváltásonként naplóz (cache-status, durable-eredmény, age), és a 15 s után 60 s-ig figyel. Ez diagnosztika, a 15 s-os határ nem változott. A Playwright-kontextus `x-nf-debug-logging` fejlécet küld.
+- **Az élő tár takarítása** (draft admin, közös Blobs-tár, 5. pont):
+  - törölve a `y1s5qff4` tesztesemény (a 3 fős jelentkezésével) és az `r-57uloy75` beszámoló;
+  - a nyitókép visszaállítva: `dron-naplemente-v`;
+  - az impresszum tárhelye: „Netlify, Inc. — 101 2nd Street, San Francisco, CA 94105, USA”;
+  - a két példaesemény már nem volt a tárban.
+
+  Ellenőrzés a mentés-API-val: PASS. Mellékmérés: a draftról indított mentés a draft főoldalát 2,9 s alatt frissítette.
+- **Production deploy** `6aa834dcf9910964657328e9`: 11 útvonal smoke rendben (200 / 401 / 307), a főoldalon nincs tesztesemény, az impresszumban az új cím.
+- **G13 élesben:** `ADMIN_FLOW_OK`. A tár pillanatképe előtte és utána: csak az `updatedAt` változott. A 4b lépés megjegyzése szerint egy törölt feltöltött kép a `/files` alatt a CDN-ből legfeljebb 1 óráig még elérhető (a tárból törölve).
+- **Régi Google-cache:** `netlify blobs:delete cache google-reviews-hu|en|de` → a `cache` tár üres.
