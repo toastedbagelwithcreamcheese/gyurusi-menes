@@ -42,3 +42,43 @@ Szerveres (egymás után, mindegyik előtt `npm run db:reset`; a naplók sha256-
 | G24 | `node scripts/with-server.mjs node scripts/checks/p6-geo.mjs` | PASS: p6-geo (b9a954249f2d39b3) — 15 lap × 3 nyelv, 45 JSON-LD blokk; llms.txt 12 968 / llms-full.txt 39 731 karakter |
 
 A p5-* szkriptek maguk buildelnek (tiszta környezettel); utánuk normál `npm run build` futott, a `.next` tehát a szokásos build. A futtatás végén `npm run db:reset`.
+
+## Második egyesítési kör (2026-09-14 délután) — a P5/P6 újrafuttatási ágak, main a4cb24e-ről
+
+Az ágak kódja már az előző körben bekerült (a1c552a, 05df47d). Ebben a körben mindkét ágon csak egy-egy újrafuttatási commit volt új:
+
+| Ág | Új commit | Tartalom | Egyesítés |
+|---|---|---|---|
+| `feat/p5-integraciok` | 19e6020 | `docs/gates/P5.md` + `_p5-harness.mjs` `cleanEnv` (a main-en bájtra azonos formában már megvolt) | `git merge --no-ff` → 1784228, ütközés nélkül; ténylegesen csak a P5.md változott |
+| `feat/p6-seo-geo` | 6051277 | `docs/gates/p6.md` újraellenőrzési szakasz | `git merge --no-ff` → ad32594, ütközés nélkül |
+
+Ütközés nem volt. A két oldal szándékának megmaradását a kódban is ellenőriztem: az `/api/contact` és `/api/register` a P1 `addMessage`/`addRegistration` + `limitByIp` hívásait és a P5 `send*Mail` függvényeit használja; a főoldal `metadataFor`/`ldFor` (P6) mellett `reviewsEnabled() && <Reviews>` (P5); a `[slug]` lap a Túrákon `TrailRoutes`/`RouteMap` (P3) és `metadataFor`/`ldFor` (P6).
+
+### Integrációs javítás
+
+- **`src/lib/mail.ts`** — az előző egyesítéskor a fájl első két sora (`/**` + „E-mail küldés Resend REST API-val…”) megduplázódott. Lefordult, mert a belső `/**` a megjegyzés része volt, de hibás. A két duplikált sor törölve. Ütközésjelölő (`<<<<<<<`, `=======`, `>>>>>>>`) a `src`, `scripts`, `docs` alatt nincs.
+
+### Futtatott ellenőrzések (a javított `mail.ts`-sel, HEAD ad32594 + a javítás)
+
+Statikus: `npx tsc --noEmit` → TSC_OK · `npm run lint` → exit 0 · `npm run build` → exit 0 (`ƒ /api/reviews`, `ƒ /og/[lang]/[[...path]]`, `○ /llms.txt`, `○ /llms-full.txt`, `ƒ /api/admin/upload-*`) · `node scripts/verify.mjs css-motion | i18n | content-no-fabrication | images | no-gallery` → mind PASS.
+
+Szerveres, egymás után, mindegyik előtt `npm run db:reset` (napló sha256-előtag, futásidő):
+
+| Kapu | Parancs | Eredmény |
+|---|---|---|
+| G9 | `node scripts/with-server.mjs node scripts/verify.mjs http` | PASS: http (f22234ef9287cfa8, 1 s) |
+| G10 | `node scripts/with-server.mjs node scripts/admin-flow.mjs` | ADMIN_FLOW_OK (85119116f8d6d7f7, 12 s) |
+| G15 | `node scripts/with-server.mjs node scripts/qa-flow.mjs` | QA_FLOW_OK (79d108c255c06778, 12 s) |
+| G16 | `node scripts/checks/p1-data.mjs` | PASS: p1-data (a22e782c65e54896, 63 s; Blobs: 12 feltételes írás, 2 ütközés újrapróbálva, kontroll: feltétel nélkül 1/10 marad) |
+| G17 | `node scripts/checks/p1-maintenance.mjs` | PASS: p1-maintenance (76caa0e46985a00a, 2 s) |
+| G18 | `node scripts/with-server.mjs node scripts/checks/p2-uploads.mjs` | PASS: p2-uploads (b9a9b84f7411ae0e, 20 s) |
+| G19 | `node scripts/checks/p3-auth.mjs` | PASS: p3-auth (da0d800b2e0c5c7f — azonos a P3-as naplóval) |
+| G20 | `node scripts/with-server.mjs node scripts/checks/p3-admin-ux.mjs` | PASS: p3-admin-ux (2a50b7a4efa10736, 33 s) |
+| G21 | `node scripts/checks/p5-mail.mjs` | PASS: p5-mail (5c2ab8ae3f61712e; info@ címzett CONTACT_TO nélkül, hu/en/de visszaigazolás, 500 és elérhetetlen szolgáltató mellett tárolva) |
+| G22 | `node scripts/checks/p5-reviews.mjs` | PASS: p5-reviews (07a71c9575cedf72, 72 s) |
+| G23 | `node scripts/with-server.mjs node scripts/checks/p6-seo.mjs` | **FAIL — 1 hiba** (cd0864d9cbdad4b3 — bájtra azonos a P6 ágon mért naplóval): 66 képleírás en/de lapon magyar. Ez a P4 feladata; más állítás nem bukik. |
+| G24 | `node scripts/with-server.mjs node scripts/checks/p6-geo.mjs` | PASS: p6-geo (b9a954249f2d39b3) |
+
+A p5-* szkriptek maguk buildelnek tiszta környezettel, ezért utánuk (a p6 előtt) normál `npm run build` futott (exit 0). A végén `npm run db:reset`; a 3012-es porton nincs listener.
+
+Takarítás az egyesítés után: `git worktree remove` a `gyurusi-menes-wt-p5` és `gyurusi-menes-wt-p6` mappára (csak gitignore-olt fájlok voltak bennük: data/site.json, tsconfig.tsbuildinfo, node_modules, .next), majd `git branch -d feat/p5-integraciok feat/p6-seo-geo`.

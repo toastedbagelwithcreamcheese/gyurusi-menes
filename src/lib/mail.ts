@@ -1,7 +1,5 @@
 /**
  * E-mail küldés Resend REST API-val (nincs SDK-függőség).
-/**
- * E-mail küldés Resend REST API-val (nincs SDK-függőség).
  * RESEND_API_KEY nélkül nem küld, csak jelzi — az üzenet és a jelentkezés ilyenkor is megmarad
  * az adminban, így semmi nem vész el.
  *  · címzett: CONTACT_TO, ha nincs, az igazolt info@gyurusimenes.hu (docs/verified-facts.json);
