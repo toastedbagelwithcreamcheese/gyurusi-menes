@@ -7,7 +7,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
 - [x] G1: A projekt hibátlanul buildel
   CHECK: npm run build
   EXPECT: Compiled successfully
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=35398c3c67c315a57e8fb7f85a29ff031ccf248e9ec96b9ab9e55761d7b1b997; output-bytes=1914
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=778ca279c2b6176137ebd828a8ed2652555ac082e0611e352be7a1734407d9a8; output-bytes=1913
 
 - [x] G2: TypeScript hibamentes
   CHECK: npx tsc --noEmit && echo TSC_OK
@@ -27,7 +27,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
 - [x] G5: A tartalom (mindhárom nyelven: a mag, a szótárak, az llms.txt statikus szövege, a levélsablonok és az adatkezelési sablon, megjegyzések nélkül) nem tartalmaz kitalált tényt; a tulajdonos telefonszáma üresen marad, amíg nem kapjuk meg
   CHECK: node scripts/verify.mjs content-no-fabrication
   EXPECT: PASS: content-no-fabrication
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=79259f423b0252201cdb155872f88fec117c121dba3e8b2e09dbbf7d381a0b7f; output-bytes=29
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=b33501e8cdece3539182806e4f46f13287a137549eca6c416e43dbcdd25ddedf; output-bytes=270
 
 - [x] G6: Minden L-mező (hu/en/de) kitöltött a tartalomban, az en/de szótár kulcsai azonosak a hu szótáréval
   CHECK: node scripts/verify.mjs i18n
@@ -52,16 +52,17 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
 - [x] G10: Admin végigpróbálva Playwrighttal (fájl-driver): esemény létrehozás kiemeltként + jelentkezés nyitva → a főoldalon kiemelt blokkban jelenik meg; nyilvános jelentkezés → megjelenik az /admin/jelentkezesek listában a létszámmal; PDF-beszámoló feltöltés → megjelenik az /egyesulet lapon; hero-kép csere adminból → a főoldal új képet ad; takarítás után a tartalom visszaáll
   CHECK: node scripts/with-server.mjs node scripts/admin-flow.mjs
   EXPECT: ADMIN_FLOW_OK
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=e472d3bb6ecf20e8e2bbc307602f7e93ddca62c4c721caf4af933698a3693a10; output-bytes=322
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=78bdab7c4065b3ff729074204dc94426b958e5943947b9865f66ec8ed004c487; output-bytes=322
 
 - [x] G11: Lighthouse mobil Performance ≥ 85 és Accessibility ≥ 95 a főoldalon (production build)
   CHECK: node scripts/with-server.mjs node scripts/verify.mjs lighthouse
   EXPECT: PASS: lighthouse
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=60180bcc1bfc2d7e8ba895cfd7f2333f09efd1880f840ddac1b3bd79b4354b64; output-bytes=63
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=c4a56801482d45249f10504f77f9eacb20d7ef47a99aa7a038f96ae42725b2d5; output-bytes=690
 
-- [ ] G12: Vizuális review desktop és mobil nézetben (Playwright-képek, scripts/shots.mjs): főoldal, egy aloldal, események, esemény-részletek jelentkezési űrlappal, admin; nincs vízszintes görgetés, a nyelvváltó a fejlécben mindkét nézetben elérhető, konzol hibamentes
+- [x] G12: Vizuális review desktop és mobil nézetben (Playwright-képek, scripts/shots.mjs): főoldal, egy aloldal, események, esemény-részletek jelentkezési űrlappal, admin; nincs vízszintes görgetés, a nyelvváltó a fejlécben mindkét nézetben elérhető, konzol hibamentes
   CHECK: node scripts/with-server.mjs node scripts/shots.mjs
   EXPECT: PASS: shots
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=01e8ae3d5d30bfab6d6b6fd7eb90bd1874d5880941e1c8df3e4bd7179da17c8c; output-bytes=865
 
 - [ ] G13: Élesben (Netlify, Blobs-driver): deploy után /, /en, /de, /egyesulet 200; admin-flow ugyanezt a kört a Blobs ellen végigfutja (esemény létrehozás → látszik → törlés), bizonyítva, hogy a tartalom Netlify-on is megmarad
   CHECK: BASE_URL=https://gyurusi-menes-demo.netlify.app node scripts/admin-flow.mjs
@@ -92,37 +93,37 @@ Forrás: docs/review-2026-09-13/ (átnézés, 39 szempont + 12 saját lelet). Az
 - [x] G17: Automatikus karbantartás: az esemény vége után 30 nappal a jelentkezések törlődnek (a frissebbek maradnak), 365 napnál régebbi üzenetek törlődnek; napi mentés készül (utolsó 30 megmarad), az admin letölthető mentést ad; a napi ütemezett függvény konfigurálva; a sebességkorlát tartós tárban él
   CHECK: node scripts/checks/p1-maintenance.mjs
   EXPECT: PASS: p1-maintenance
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=943535af2780b49c62a0cc028d136656753f2e8d57d06bdf0ccf63eacf433621; output-bytes=1490
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=85ed7d79cb359d2f25e7904c24ca5ab872eee18c83333e9eb277e7e6e266cb32; output-bytes=1490
 
 - [x] G18: Valós méretű feltöltés: legalább 8 MB-os JPEG a böngészőben méretezve sikeresen feltöltődik; HEIC-fájlra magyar nyelvű, teendőt mondó üzenet; 2,6 MB-os és 12 MB-os PDF darabolva feltöltődik és bájtra egyezően letölthető; 25 MB-os PDF-re pontos méret-üzenet; feltöltés közben folyamatjelző; az esemény- és aloldal-szerkesztőből is lehet új képet feltölteni
   CHECK: node scripts/with-server.mjs node scripts/checks/p2-uploads.mjs
   EXPECT: PASS: p2-uploads
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=8a6638f2db2e5fa3fd30b675e2ea5ab4f3fdf66b0e20bd7048c5445759bff8ee; output-bytes=2074
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=bfdd8cb35432de6aeb2405bace60b7b5f6b7db22026eae5a8ebeb3a51f027a43; output-bytes=2074
 
 - [x] G19: Admin-belépés: ADMIN_PASSWORD mellett az /admin lapjai a belépő oldalra visznek, az /api/admin/* 401-et ad; rossz jelszóra magyar hibaüzenet, sorozatos rossz próbára átmeneti tiltás; jó jelszóval belép, kilépés működik; jelszó nélkül az adminban figyelmeztető sáv; a nyilvános láblécben nincs admin-link
   CHECK: node scripts/checks/p3-auth.mjs
   EXPECT: PASS: p3-auth
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=da0d800b2e0c5c7ff01249f7d4b2c2d8592c7bc64d370d6bcf30e9574a237ea5; output-bytes=2322
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=ed794f9c89a8edc6b63188e8a277362159208af121bf8fa5f0d11f491ac306f5; output-bytes=2762
 
 - [x] G20: Admin-használhatóság: minden törlés kétlépcsős megerősítéssel; az angol/német mezők lenyithatók és a hiányuk jelölve (az eseménylistán is); a tartalom-lap szekciónként menthető; túraútvonalak felvehetők/szerkeszthetők/törölhetők képekkel, a publikált útvonal a Túrák lapon kártyaként nagyítható képekkel jelenik meg, útvonal nélkül az illusztráció semleges jelmagyarázattal; az admin kezdőlapján e-mail- és Google-állapotpanel próba-e-mail gombbal
   CHECK: node scripts/with-server.mjs node scripts/checks/p3-admin-ux.mjs
   EXPECT: PASS: p3-admin-ux
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=f25aff62a1a554f4dac5eafdafbc83538ac6e61516ce35a62f91b6bdcf3bc7d1; output-bytes=1986
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=4b7272f7bf5ec9a7d0d2579d4d9312cee817e9a62cbbb135add0abb8b1cfb0b0; output-bytes=1986
 
 - [x] G21: E-mail szimulációval (helyi Resend-mock): kapcsolati üzenet az info@gyurusimenes.hu címre megy CONTACT_TO nélkül is, válaszcím a küldő; jelentkezésre értesítő a ménesnek és visszaigazolás a jelentkező nyelvén (hu, en, de); a szolgáltató hibájánál az adat megmarad és a látogató sikeres választ kap
   CHECK: node scripts/checks/p5-mail.mjs
   EXPECT: PASS: p5-mail
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=0e7e4f587a25a385acd4468e9107c2c56b228734f67e196874212701ac0744d0; output-bytes=866
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=12bd539ca9898a288934a29b415dcc0dcb8b31984593db1dd5439c289dc392d7; output-bytes=1164
 
 - [x] G22: Google-értékelések a Google szabályai szerint (helyi Places-mock): csak a blokk közelébe görgetve kér adatot; vélemény és értékelés sehol nem tárolódik (csak a place ID és egy napi számláló); „Google Maps” jelzés, szerzői avatar, név és profil-link; a napi plafon felett és kulcs nélkül nincs blokk és nincs hívás; a strukturált adatban nincs aggregateRating
   CHECK: node scripts/checks/p5-reviews.mjs
   EXPECT: PASS: p5-reviews
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=2e55293369b28be70e4d1a0f617a1e874e675ad8714654a5f404d40bf5290fc5; output-bytes=1216
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=6cec50b47bcc9964d39f98f756e1e7d726722c4653a519697f01ffdf21b36272; output-bytes=1348
 
 - [x] G23: SEO: minden nyilvános lap mindhárom nyelven egyedi, legfeljebb 60 karakteres title és 70–160 karakteres description, abszolút canonical, kölcsönös hreflang + x-default, pontosan egy H1, lapfüggő 1200×630-as OG-kép, lokalizált képleírások; a 404-es lap noindex és saját címet kap; a sitemap minden nyilvános URL-t tartalmaz nyelvi alternatívákkal; a régi WordPress-címek 301-gyel a megfelelő új lapra visznek
   CHECK: node scripts/with-server.mjs node scripts/checks/p6-seo.mjs
   EXPECT: PASS: p6-seo
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=d6abef383070f48e4bf9ae762971f50445e5b65ca6bacc690ca49a3890c25364; output-bytes=117
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=1583edee906fc9b7393d7485ba8f063b5964e54dc92b98786e8e5752ea2389b3; output-bytes=618
 
 - [x] G24: Strukturált adat és GEO: érvényes JSON-LD csak igazolt adatokkal (LocalBusiness + SportsActivityLocation, a tulajdonos Personként, WebSite, BreadcrumbList az aloldalakon, Event az eseménylapokon, ItemList a naptárban); a robots.txt engedi a keresőket és az AI-keresőket, tiltja az admint és az API-t; az /llms.txt és /llms-full.txt csak igazolt tényeket tartalmaz; saját favicon és apple-icon (nem a Next.js sablon ikonja)
   CHECK: node scripts/with-server.mjs node scripts/checks/p6-geo.mjs
@@ -132,7 +133,7 @@ Forrás: docs/review-2026-09-13/ (átnézés, 39 szempont + 12 saját lelet). Az
 - [x] G25: Nyilvános javítások: a 320–1920 px közötti 7 szélességen, 3 nyelven, az összes nyilvános lapon nincs vízszintes és fejléc-túlcsordulás; mobilon minden önálló érintési cél legalább 44 px; ismeretlen böngészőnyelvre angol oldal; üres beszámoló-blokk nem látszik; az űrlapok alatt adatkezelési link; a seedben nincs kitalált tartalom (a példaesemények csak `npm run db:demo`-val kerülnek a helyi adatbázisba)
   CHECK: node scripts/with-server.mjs node scripts/checks/p4-public.mjs
   EXPECT: PASS: p4-public
-  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=ff785b6496abd5ea895fe0fc533c916bbfb0d9f8dd7ef5c1d9e608ccc75a6c33; output-bytes=1450
+  EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=ed3bbc5aa8cb2626ba3b8bb4784ab932105c1040cb6d193b648e125720722fe9; output-bytes=1450
 
 - [x] G26: Teljes adatkezelési tájékoztató mindhárom nyelven: adatkezelő az impresszum mezőiből, adatkörönkénti cél és jogalap, megőrzési idők (egyeznek a G17 automatikus törlésével), érintetti jogok és NAIH-panaszjog, adatfeldolgozók (Netlify, Resend, Google)
   CHECK: node scripts/checks/p4-privacy.mjs
