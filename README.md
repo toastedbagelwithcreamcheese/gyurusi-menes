@@ -8,7 +8,7 @@ npm install
 cp .env.example .env.local   # élesben az ADMIN_PASSWORD kötelező
 npm run dev                  # http://localhost:3000
 ```
-Admin: `/admin`. Ha az `ADMIN_PASSWORD` be van állítva, a `/admin/belepes` lapon kell belépni (az `ADMIN_USER` nem kötelező; ha megadod, felhasználónév is kell). Nélküle az admin nyitott (demó), és minden admin-lap tetején figyelmeztető sáv áll. Részletek: „Admin: belépés és használat” lent.
+Admin: `/admin`. Ha az `ADMIN_PASSWORD` be van állítva, a `/admin/belepes` lapon kell belépni (az `ADMIN_USER` nem kötelező; ha megadod, felhasználónév is kell). Nélküle `npm run dev` alatt nyitott; production buildben (Netlify, `npm start`) **zárva** — a belépő oldal kiírja, mit kell beállítani —, kivéve ha `ADMIN_OPEN_DEMO=1` (tudatosan jelszó nélküli bemutató, figyelmeztető sávval). Részletek: „Admin: belépés és használat” lent.
 
 ## Mi hol van
 - `data/seed.json` (mag) + helyben `data/site.json` — a szerkeszthető tartalomdokumentum (nyitókép, tulajdonos, bemutatkozás, aloldalak, események, beszámolók, feltöltések, jogi szövegek). Az admin ezt írja; a jelentkezések és az üzenetek külön élnek (lásd „Adatszerkezet, karbantartás, mentés”).
@@ -24,11 +24,19 @@ npm run lint && npx tsc --noEmit && npm run build
 node scripts/verify.mjs images
 node scripts/verify.mjs content-no-fabrication
 node scripts/verify.mjs css-motion
+node scripts/with-server.mjs node scripts/verify.mjs lighthouse   # G11: főoldal + minden nyilvános lap akadálymentessége (≥ 95, színkontraszt)
+node scripts/with-server.mjs node scripts/shots.mjs              # G12: képek + vízszintes görgetés, konzolhiba, nyelvváltó (asztal és mobil)
 ADMIN_USER=… ADMIN_PASSWORD=… BASE_URL=http://localhost:3000 node scripts/verify.mjs http   # futó szerver mellett
 ```
 
 ## Élesítés
 Netlify (`netlify.toml`, `@netlify/plugin-nextjs`). A tartalomtár Netlify-on automatikusan a Netlify Blobs (a függvények fájlrendszere csak olvasható), helyben és saját VPS-en (`npm run build && npm start`) a `data/` könyvtár. A napi karbantartást a `netlify/functions/daily-maintenance.mts` ütemezett függvény végzi — ezt a Netlify a deployjal együtt magától ütemezi, beállítás nem kell hozzá.
+
+Élesítés előtt a Netlify környezeti változói (Site configuration → Environment variables; módosítás után új deploy kell):
+- `ADMIN_PASSWORD` — **kötelező**: nélküle az új kód adminja zárva marad. Tudatosan jelszó nélküli bemutatóhoz `ADMIN_OPEN_DEMO=1` (élesítéskor töröld).
+- `NEXT_PUBLIC_SITE_URL` — a DNS-átállás után `https://gyurusimenes.hu`; build-idejű (lásd „Éles cím” lent).
+- `RESEND_API_KEY` (+ a Resend DNS-rekordjai), `GOOGLE_PLACES_KEY` (+ napi keret) — ha kellenek; lásd „Integrációk”.
+- **A régi Huculösvény-aldomain** (`huculosveny.gyurusimenes.hu`, ma a WordPress-oldal): a `next.config.ts` host-feltételes szabálya minden címét — a régi PDF-címeket is — 301-gyel a `https://gyurusimenes.hu/huculosveny` lapra küldi. Élesítéskor az aldomaint domain aliasként a Netlify-oldalhoz kell adni (Domain management), és a DNS-ben a Netlify-ra irányítani; addig a szabály nem kap kérést. Teszt: a p6-seo Host-fejléces kéréssel (kontroll: más hoszton nincs átirányítás).
 
 ## Ami szándékosan nincs benne
 Árak, nyitvatartás, hektár- és lólétszám-adatok, díjak — a kutatás szerint nem igazoltak vagy ellentmondóak; egyeztetés után az adminban pótolhatók.
@@ -58,7 +66,7 @@ Két driver, egy felület (`src/lib/store.ts`, `src/lib/records.ts`): helyben f�
   - a 24 óránál régebben kezdett, félbemaradt PDF-feltöltések darabjai is törlődnek (`src/lib/chunks.ts`).
 - **Mikor fut:** naponta a `netlify/functions/daily-maintenance.mts` ütemezett függvényből (`@daily` = 00:00 UTC); alkalmanként az admin *Jelentkezések* és *Üzenetek* lapjának betöltésekor (óránként legfeljebb egyszer); kézzel a `POST /api/admin/maintenance` hívással.
 - **Mentés letöltése:** az admin kezdőlapján a „Mentés letöltése” gomb (`GET /api/admin/backup`) egy JSON-fájlt ad, ugyanazzal a szerkezettel, mint a napi mentés: `site` (a tartalomdokumentum), `registrations`, `messages`.
-- **Az admin-API védelme:** minden `/api/admin/*` útvonal a `src/lib/admin-auth.ts` `requireAdmin()`-ját hívja (a proxy matchere az `/api`-t nem látja): belépési süti vagy Basic Auth nélkül 401 JSON. Az `/admin` lapokat a proxy ugyanezzel az ellenőrzéssel védi (a belépő oldalra irányít), az admin szerver-akciók pedig maguk is (`guard()`).
+- **Az admin-API védelme:** minden `/api/admin/*` útvonal a `src/lib/admin-auth.ts` `requireAdmin()`-ját hívja (a proxy matchere az `/api`-t nem látja): belépési süti vagy Basic Auth nélkül 401 JSON (jelszó nélküli éles futásban 503, a teendővel). Az `/admin` lapokat a proxy ugyanezzel az ellenőrzéssel védi (a belépő oldalra irányít), az admin szerver-akciók pedig maguk is (`guard()`).
 - **Sebességkorlát** (`src/lib/ratelimit.ts`): kapcsolati űrlap 15 s, jelentkezés 10 s IP-nként; a kulcs `sha256(só + IP)` első 24 hex jele, nyers IP nem tárolódik. A só a `RATELIMIT_SALT` környezeti változó, ha nincs, egy egyszer sorsolt, a „ratelimit” tárban őrzött érték. Általános forma: `hit(kulcs, ablakMs, max)`.
 - **Tesztek:** a `DATA_DIR` környezeti változó a helyi adatkönyvtárat máshová teszi (a kapuk elszigetelt könyvtárban futnak). `node scripts/checks/p1-data.mjs` (G16: egyidejű írás mindkét driveren, migráció) és `node scripts/checks/p1-maintenance.mjs` (G17: karbantartás, mentés, ütemezett függvény, tartós sebességkorlát) — előtte `npm run build`. A Blobs-részt a `@netlify/blobs` helyi szimulátora futtatja (`scripts/checks/_p1-harness.mjs`).
 
@@ -98,9 +106,11 @@ Amit az adminban helyben felviszel, az csak a gépeden van. Ha valamit a magba a
 ## Nyilvános lapok: nyelv, adatkezelés, mobil
 
 - **Nyelvválasztás** (`src/lib/negotiate.ts` `preferredLang`, `src/proxy.ts`): a süti dönt; ha nincs, az `Accept-Language` első támogatott nyelve (hu/en/de); ha a böngésző csak más nyelvet kér (pl. pl, sk, cs, fr, it), **angol**; üres vagy `*` fejlécre és robotnak magyar.
-- **Képleírások** nyelvenként: `src/content/photos.json` `alt` / `alt_en` / `alt_de` (forrás: `scripts/images.config.mjs`); `resolveImage(id, site, lang)`, `<Photo lang>`. A feltöltött képek leírása egynyelvű (amit a feltöltő megad).
+- **Képleírások** nyelvenként: `src/content/photos.json` `alt` / `alt_en` / `alt_de` (forrás: `scripts/images.config.mjs`); `resolveImage(id, site, lang)`, `<Photo lang>`. A feltöltött képeké háromnyelvű (`Upload.alt: { hu, en, de }`): a feltöltőben a magyar kötelező (nélküle a szerver is 400-zal utasítja el), az angol és a német a „Fordítások” alatt, utólag a Képek lap „Feltöltött képek leírása” részében, hiányjelzéssel; hiányzó fordításnál a magyar jelenik meg. A fájlnév sosem lesz leírás: a régi, egynyelvű tárolt leírást a `store.ts` olvasáskor alakítja át, a fájlnévnek látszót (pl. `IMG_1234.jpg`) üresre.
 - **Adatkezelési tájékoztató** (`src/lib/privacy.ts`): a `legal.privacy` szöveg sablon — `## ` = alcím, `- ` = felsorolás; `{{controller}}` = az impresszum kitöltött mezői, `{{contactEmail}}`, és `{{registrationDays}}` / `{{messageDays}}` / `{{backupDays}}` a `src/lib/maintenance.ts` állandóiból, így a számok mindig azok, amelyekkel a karbantartás töröl. A külső adatok (NAIH, Netlify, Resend, Google) forrása: `docs/RESEARCH.md` 15. pont. Az `/admin/jogi` lap jogi átnézést javasol.
 - **Mobil és fejléc:** a 900–1240 px-es sávban a nyelvkódok lenyílóba kerülnek (`LangMenu`); mobilon minden önálló érintési cél legalább 44 px; a főoldali bemutatkozás törzsszövege „Tovább olvasom” lenyitással; a korábbi események évenként (a legutóbbi két év nyitva); az Egyesület beszámoló-blokkja csak közzétett beszámolóval jelenik meg; mindkét űrlap alatt link az adatkezelési tájékoztatóra.
+- **Színkontraszt:** a korábbi események sora színnel halványul, nem átlátszósággal (a 0,78-as opacity a dátumot és a meta-sort 3,39:1-re vitte). A G11 (`verify.mjs lighthouse`) minden nyilvános lapon, egy korábbi és egy közelgő próbaeseménnyel méri az akadálymentességet.
+- **Sitemap `lastmod`:** a valódi módosítás napja — a `writeSite` minden tartalmi mentéskor `updatedAt`-ot ír a dokumentumba, az esemény mentése az eseménybe is; az eseménylapoké az eseményé, a többi lapé a dokumentumé. Amíg nem volt mentés (a mag), nincs `lastmod` (a generálás napja nem módosítási idő). A régi rekordok áthelyezése nem számít módosításnak (`writeSite(..., { touch: false })`).
 - **Tesztek:** `node scripts/with-server.mjs node scripts/checks/p4-public.mjs` (G25: 11 lap × 3 nyelv × 7 szélesség túlcsordulás, fejléc, érintési célok, nyelvválasztás, űrlapok, seed) és `node scripts/checks/p4-privacy.mjs` (G26: saját szerverrel; kötelező részek, impresszumból kitöltött adatkezelő, a megőrzési számok a kód állandóiból) — előtte `npm run build`.
 
 ## Admin: belépés és használat
@@ -108,13 +118,13 @@ Amit az adminban helyben felviszel, az csak a gépeden van. Ha valamit a magba a
 - **Belépés** (`src/lib/admin-auth.ts` — a védelem egyetlen helye): ha az `ADMIN_PASSWORD` be van állítva, az `/admin` lapok a `/admin/belepes` oldalra visznek (`?next=` a kért lappal), az `/api/admin/*` 401 JSON-t ad. Belépés után `gm_admin` süti: HMAC-SHA256-tal aláírt (Web Crypto, így a proxyban is ellenőrizhető), 30 napos, HttpOnly, Secure, SameSite=Lax. Az aláíró kulcs a jelszóból (+ `ADMIN_USER`, + az opcionális `ADMIN_SESSION_SECRET`) származik, ezért jelszócsere után minden korábbi belépés érvénytelen. A süti állapotmentes: a „Kilépés” a böngészőből törli, de egy korábban lemásolt süti a lejáratáig érvényes maradna — ilyenkor a jelszó (vagy az `ADMIN_SESSION_SECRET`) cseréje segít. A Basic Auth fejléc (szkriptekhez) továbbra is elfogadott.
 - **Rossz jelszó:** magyar hibaüzenet a hátralévő próbák számával; 5 sikertelen próba 15 percen belül → 15 perc tiltás IP-nként (a P1 tartós korlátjával: `hit`, `peek`, `resetHits`). A tiltás alatt a helyes jelszó sem enged be; az üzenet megmondja, hány perc múlva lehet újra.
 - **Proxy és szerver-akciók:** a proxy matchere az admin címeit kiterjesztéstől és nyelvi előtagtól függetlenül lefedi (korábban a `.png`/`.txt`/`.xml`-végű admin-címek kimaradtak, és egy admin szerver-akció így a proxy megkerülésével is elérhető volt). Ezen felül minden admin szerver-akció első sora `await guard()`.
-- **Jelszó nélkül** (demó) az admin nyitott, és minden admin-lap tetején figyelmeztető sáv áll. A nyilvános láblécben nincs admin-link.
+- **Jelszó nélkül** production buildben (Netlify, saját szerver, `npm start`) az admin **zárva** (fail-closed): az `/admin` lapjai a belépő oldalra visznek, ami űrlap helyett kiírja, hogy az `ADMIN_PASSWORD`-öt kell beállítani (bemutatóhoz az `ADMIN_OPEN_DEMO=1`-et), az `/api/admin/*` 503-at ad, senki sem léphet be, és egy admin szerver-akció sem fut le. Nyitott — minden admin-lap tetején figyelmeztető sávval — csak `npm run dev` alatt vagy `ADMIN_OPEN_DEMO=1` mellett; a helyi kapuk szerverindítói (`scripts/with-server.mjs`, `_p1-harness.mjs`, `_p5-harness.mjs`) ezt kérik. A kérés Host fejlécéből szándékosan nem döntünk (azt a kliens írja). A nyilvános láblécben nincs admin-link.
 - **Kétlépcsős törlés** (`(panel)/ConfirmButton.tsx`): az első kattintás „Biztosan törlöd? Igen, törlöm / Mégse”, 6 s után visszaáll; natív `confirm()` nincs. Esemény, jelentkezés, üzenet, kép, beszámoló, útvonal.
 - **Fordítások:** az `LField`-ben a magyar mező elöl, az angol és a német a lenyitható „Fordítások (angol, német)” részben; a címke mutatja a hiányt („Hiányzik: EN, DE” / „Kész”). Az esemény- és az útvonal-listán jelvény, ha egy közzétett elem angol vagy német szövege hiányzik (`src/lib/translations.ts`).
 - **Főoldal és kapcsolat:** négy külön mentett rész (Nyitókép · Tulajdonos · Bemutatkozás · Kapcsolat), felül ugró-fülekkel; a `saveHero`, `saveOwner`, `saveIntro`, `saveContact` akció csak a saját részét írja.
 - **Túraútvonalak:** a tartalomdokumentum `routes` tömbje — `{ id, name, summary, mapImage?, photos (legfeljebb 4), published, order }` —, a magban üres (útvonalat nem találunk ki). Admin: `/admin/utvonalak` (sorrend, közzététel) és `/admin/utvonalak/[id]` (képválasztó, több képes fotóválasztó, a P2 feltöltője). A Túrák lapon a közzétett útvonalak kártyaként jelennek meg, nagyítható képekkel; ha nincs ilyen, az illusztrált térkép marad, a jelmagyarázatban csak a körök neveivel.
-- **Állapotpanel** az admin kezdőlapján: e-mail (`RESEND_API_KEY`, `CONTACT_TO` — alapértelmezés: `info@gyurusimenes.hu` —, `CONTACT_FROM`), Google (`GOOGLE_PLACES_KEY`, `GOOGLE_PLACE_ID`), admin (`ADMIN_PASSWORD`, `ADMIN_USER`). Kulcsot és jelszót nem mutat, csak azt, hogy be van-e állítva. A „Próba e-mail küldése” a `src/lib/mail.ts` küldőjével megy a valódi címzettnek.
-- **Tesztek:** `node scripts/checks/p3-auth.mjs` (G19; maga indítja a szervereket) és `node scripts/with-server.mjs node scripts/checks/p3-admin-ux.mjs` (G20; a próba e-mail sikerét helyi Resend-mockkal méri, a `RESEND_API_URL` változón át) — előtte `npm run build`.
+- **Állapotpanel** az admin kezdőlapján: e-mail (`RESEND_API_KEY`, `CONTACT_TO` — alapértelmezés: `info@gyurusimenes.hu` —, `CONTACT_FROM`), Google (`GOOGLE_PLACES_KEY`, `GOOGLE_PLACE_ID`), admin (`ADMIN_PASSWORD`, `ADMIN_USER`, `ADMIN_OPEN_DEMO`). Kulcsot és jelszót nem mutat, csak azt, hogy be van-e állítva. A „Próba e-mail küldése” a `src/lib/mail.ts` küldőjével megy a valódi címzettnek.
+- **Tesztek:** `node scripts/checks/p3-auth.mjs` (G19; maga indítja a szervereket: jelszóval, felhasználónévvel, nyitott bemutatóként és zártan) és `node scripts/with-server.mjs node scripts/checks/p3-admin-ux.mjs` (G20; a próba e-mail sikerét helyi Resend-mockkal méri, a `RESEND_API_URL` változón át) — előtte `npm run build`.
 
 ## Integrációk (környezeti változók) és helyi szimuláció
 
@@ -130,13 +140,32 @@ Kulcs nélkül minden integráció csendben kikapcsol — az oldal és az admin 
 | `GOOGLE_PLACE_ID` | a cégprofil azonosítója | nincs → egyszeri keresés, az azonosító eltárolva |
 | `GOOGLE_REVIEWS_DAILY_CAP` | napi betöltési keret (felette 429, a blokk eltűnik) | `30` |
 | `GOOGLE_PLACES_API_BASE` | a Places címe (helyi mockhoz) | `https://places.googleapis.com` |
+| `RESEND_API_URL` | a teljes küldési végpont (helyi mockhoz, a `RESEND_API_BASE` helyett) | `<RESEND_API_BASE>/emails` |
+| `NEXT_PUBLIC_SITE_URL` | az éles cím (canonical, hreflang, OG, sitemap, robots) — **build-idejű** | Netlify `URL`, helyben `http://localhost:3000` |
+| `ADMIN_OPEN_DEMO` | `1`: jelszó nélküli, nyitott bemutató-admin | nincs → jelszó nélkül zárva |
+| `RATELIMIT_SALT` | az IP-hash sója | egyszer sorsolt, a tárban őrzött érték |
 
 A Google szabályai szerint a vélemény és az értékelés **nem tárolható** (se Blobs, se ISR): a főoldal csak egy üres vázat ad, a böngésző a blokk közelében (600 px) kéri a `GET /api/reviews`-t, ami élőben kérdez (`Cache-Control: no-store`). Tárolva csak a place ID és a napi számláló van (Blobs „google”, helyben `data/google/`). A `GOOGLE_PLACES_KEY` a build idején is legyen beállítva (a váz a lap renderelésekor dől el).
+
+### Google-értékelések: keret és költség
+- **Mi számít hívásnak:** minden kiszolgált blokk-betöltés (a látogató a blokk közelébe görget) egy élő Place Details (New) kérés a `rating,userRatingCount,googleMapsUri,reviews` mezőkkel. A legmagasabb érintett SKU a `reviews` miatt a **Place Details Enterprise + Atmosphere** ([mezők és SKU-k](https://developers.google.com/maps/documentation/places/web-service/data-fields)). A hely azonosítójának egyszeri keresése (Text Search, csak `places.id`) a **Text Search Essentials (IDs Only)** SKU: ingyenes, korlátlan.
+- **Ár** ([Google Maps Platform árlista](https://developers.google.com/maps/billing-and-pricing/pricing), lekérve 2026-09-14): Place Details Enterprise + Atmosphere — havonta **1000 hívás ingyenes**, felette **25,00 USD / 1000 hívás** (0–100 000-es sáv). Az ingyenes keret SKU-nként, a számlázási fiókra havonta él.
+- **Napi keret** (`GOOGLE_REVIEWS_DAILY_CAP`, alap **30**; a nap Europe/Budapest szerint): havonta legfeljebb 31 × 30 = **930 hívás**, az ingyenes 1000 alatt → **0 USD**, ha ugyanazon a számlázási fiókon más nem használja ezt a SKU-t. Általában a havi legnagyobb költség ≈ max(0; 31 × keret − 1000) × 0,025 USD — pl. keret 50: 1550 hívás → 550 × 0,025 = **13,75 USD**; keret 100: 3100 hívás → **52,50 USD**.
+- **A keret felett** aznap az `/api/reviews` 429-et ad, és a blokk minden látogatónál eltűnik (másnap visszajön). A számláló a Blobs „google” tárában (helyben `data/google/daily-calls.json`) él, vélemény nélkül.
+- **IP-korlát:** egy IP-cím 24 óra alatt legfeljebb **5** élő betöltést kap (`src/app/api/reviews/route.ts`, tartós IP-hash a „ratelimit” tárban); a 6. kérés 429, Google-hívás nélkül. Így egy ismételgető robot nem éli fel reggel a közös napi keretet (a p5-reviews A6 lépése méri, kontrollal). Ára: egy NAT mögötti sok látogató (pl. egy iroda) egymás keretét is fogyasztja — egy kis oldalnál ez elfogadható.
+- Költségvédelemként a Google Cloud Console-ban a Places API (New) napi kvótája is a keret közelébe állítható.
+
+### Éles cím: `NEXT_PUBLIC_SITE_URL`
+- **Mire kell:** ebből épül minden abszolút cím — canonical, hreflang, `og:url`, `og:image`, a `sitemap.xml` címei, a `robots.txt` `Sitemap:` sora, a JSON-LD és az `llms.txt` hivatkozásai (`src/lib/seo.ts` `SITE_URL`).
+- **Build-idejű:** a `NEXT_PUBLIC_` előtag miatt a Next a buildbe égeti; a futó szerver környezete már nem számít. Netlify-on a módosítás után **új deploy** kell (addig a régi cím marad), helyben új `npm run build`.
+- **Ha nincs beállítva:** Netlify-on a Netlify saját `URL` változója — az oldal elsődleges címe (ma `https://gyurusi-menes-demo.netlify.app`; draft deployon is ez, nem a draft saját címe) —, helyben `http://localhost:3000`.
+- **A DNS-átállás után:** a Netlify production környezetében `NEXT_PUBLIC_SITE_URL=https://gyurusimenes.hu` (perjel nélkül), majd új deploy. Ha a Netlify-on a `gyurusimenes.hu` lesz az elsődleges domain, a tartalék (`URL`) is azt adná — a kifejezett beállítás mégis biztosabb.
+- **Teszt:** a p6-seo (G23) külön könyvtárba (`NEXT_DIST_DIR=.next-seo`) `NEXT_PUBLIC_SITE_URL=https://gyurusimenes.hu`-val buildel, a szervert a változó **nélkül** indítja (tehát a beégetett értéket méri), és ellenőrzi a canonical, hreflang, `og:url`, `og:image`, sitemap és `robots.txt` címét; kontroll: a fő build canonical-ja más domain. Utána a `.next-seo` törlődik, a `tsconfig.json` és a `next-env.d.ts` visszaáll.
 
 ```bash
 node scripts/mock-resend.mjs --port 4010   # RESEND_API_KEY=teszt RESEND_API_BASE=http://127.0.0.1:4010
 node scripts/mock-places.mjs --port 4020   # GOOGLE_PLACES_KEY=teszt GOOGLE_PLACES_API_BASE=http://127.0.0.1:4020 GOOGLE_PLACE_ID=p5-mock-place-id
-node scripts/checks/p5-mail.mjs            # G21 (saját build + next start a 3041-es porton)
+node scripts/checks/p5-mail.mjs            # G21 (saját build + next start a 3041-es porton; egyedi CONTACT_TO/CONTACT_FROM is)
 node scripts/checks/p5-reviews.mjs         # G22 (két build: kulccsal és nélküle; Blobs-szimulátorral is)
 ```
 
@@ -151,7 +180,7 @@ node scripts/checks/p5-reviews.mjs         # G22 (két build: kulccsal és nélk
 - **Képek előmelegítése deploy után:** `BASE_URL=https://gyurusi-menes-demo.netlify.app node scripts/warm-images.mjs` — a lapok előtöltött képeit 640 / 750 / 828 / 1080 / 1200 px szélességben, AVIF- és WebP-Accept-fejléccel előre lekéri, hogy a Netlify képszolgáltatásának első (lassú) átalakítását ne a látogató várja ki. Változók: `WIDTHS`, `PATHS`, `CONCURRENCY`, `REPEAT=1` (második kör: gyorsítótárból jön-e).
 - **Teszt:** `node scripts/with-server.mjs node scripts/checks/p7-speed.mjs` (G27) — build-kimenet, második kérésre HIT (10 lap × 3 nyelv), egy előtöltött LCP-kép, nincs blur-SVG, warm-images, mobilon nincs GSAP (1440 px-en van), JS nélkül is látszik a hajtás feletti tartalom, Lighthouse 13 mobil a főoldalon, a Túrák lapon, a naptárban és egy eseménylapon (Performance ≥ 95, LCP ≤ 2,5 s, TBT ≤ 100 ms, CLS ≤ 0,05; ha kell, 3 futás mediánja), végül admin-mentés után azonnal friss lap. Előtte `npm run build`.
 - **Böngésző-gyorsítótár:** a `next.config.ts` `expireTime` = 3600 (Netlify-on kívül): e nélkül a Next `stale-while-revalidate=31532400`-at küld az ISR-lapokra, a böngésző a korábban látott nyilvános lapot és RSC-előtöltést elavultan a saját gyorsítótárából adta (admin-mentés után is), a háttérben újrakért kérések pedig a Chromiumban beragadtak (6 kapcsolat → a kliens-oldali navigáció megállt; a G10/G15/G20 így bukott). Netlify-on (`NETLIFY=true` a buildben) marad az alapérték: ott a plugin a böngészőnek `public, max-age=0, must-revalidate`-et ad, a CDN-nek 1 éves SWR-t.
-- **Ismert korlát (G27):** a helyi Lighthouse-mérés LCP-je versenyhelyzet: ha az LCP-festés visszajelzését a React-chunk ~13 ms-os futása megelőzi, a Lantern a teljes JS-t (~150 KB) az LCP feltételének számolja (≈ 2,9–3,2 s); ha nem, ≈ 2,3–2,5 s. Részletek és mérések: `docs/gates/P7.md`, „Folytatás” szakasz.
+- **Ismert korlát (G27):** a helyi Lighthouse-mérés LCP-je versenyhelyzet: ha az LCP-festés visszajelzését a React-chunk ~13 ms-os futása megelőzi, a Lantern a teljes JS-t (~150 KB) az LCP feltételének számolja (≈ 2,9–3,2 s); ha nem, ≈ 2,3–2,5 s. Részletek és mérések: `docs/gates/P7.md`, „Folytatás” szakasz. A javítókörben (2026-09-14) újramérve, laponként 3 futás mediánja: `/` 2,98 s · `/turak` 2,48 s · `/esemenyek` 2,99 s · eseménylap 2,91 s · `/en` 2,57 s · `/de/turak` 2,48 s (Performance 95–98, TBT 0, CLS 0). Kipróbálva és elvetve: `experimental.inlineCss` (2,91–3,13 s, Performance 94) és a betű-előtöltés kikapcsolása (FCP 0,90 → 1,66 s, Performance 88–96). A G27 LCP-feltétele helyben nem teljesül; a küszöb változatlan.
 
 ## Élő-szerű ellenőrzés (G28, Netlify draft deploy)
 

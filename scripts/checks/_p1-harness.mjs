@@ -60,10 +60,12 @@ const killPort = (port) => spawnSync("sh", ["-c", `lsof -ti tcp:${port} -sTCP:LI
 export async function startNext({ port, env = {}, label = "next" }) {
   if (port === OWN_PORT) killPort(port);
   const base = { ...process.env };
-  for (const k of ["NETLIFY_BLOBS_CONTEXT", "NETLIFY_SITE_ID", "NETLIFY_TOKEN", "NETLIFY", "DATA_DIR", "ADMIN_USER", "ADMIN_PASSWORD", "RESEND_API_KEY", "GOOGLE_PLACES_KEY", "RATELIMIT_SALT"]) delete base[k];
+  for (const k of ["NETLIFY_BLOBS_CONTEXT", "NETLIFY_SITE_ID", "NETLIFY_TOKEN", "NETLIFY", "DATA_DIR", "ADMIN_USER", "ADMIN_PASSWORD", "ADMIN_OPEN_DEMO", "RESEND_API_KEY", "GOOGLE_PLACES_KEY", "RATELIMIT_SALT"]) delete base[k];
   const logs = [];
+  /* Jelszó nélkül a production build admin-ja zárva (fail-closed); a próbák a nyitott demót kifejezetten kérik — a zárt eset
+     próbája `env: { ADMIN_OPEN_DEMO: "" }`-vel indít (p3-auth D). */
   const child = spawn(process.execPath, [path.join(ROOT, "node_modules/next/dist/bin/next"), "start", "-p", String(port)], {
-    cwd: ROOT, env: { ...base, PORT: String(port), ...env }, detached: true, stdio: ["ignore", "pipe", "pipe"],
+    cwd: ROOT, env: { ...base, ADMIN_OPEN_DEMO: "1", PORT: String(port), ...env }, detached: true, stdio: ["ignore", "pipe", "pipe"],
   });
   child.stdout.on("data", (d) => logs.push(String(d))); child.stderr.on("data", (d) => logs.push(String(d)));
   let exitCode = null; const exited = new Promise((r) => child.on("exit", (c) => { exitCode = c ?? -1; r(); }));
@@ -81,7 +83,10 @@ export async function startNext({ port, env = {}, label = "next" }) {
   {
     const pass = env.ADMIN_PASSWORD, auth = pass ? { authorization: `Basic ${Buffer.from(`${env.ADMIN_USER ?? ""}:${pass}`).toString("base64")}` } : {};
     const rv = await fetch(`${url}/api/admin/revalidate`, { method: "POST", headers: auth }).catch((e) => ({ ok: false, status: String(e) }));
-    if (!rv.ok) fail(`${label}: a nyilvános lapok érvénytelenítése induláskor nem sikerült (${rv.status})`);
+    /* Jelszó és ADMIN_OPEN_DEMO nélkül az admin-API szándékosan zárva (503, p3-auth D): ott érvényteleníteni sem lehet — az a próba
+       nyilvános lapokból csak az admin-link hiányát nézi, ami a gyorsítótártól független. */
+    const locked = !pass && (env.ADMIN_OPEN_DEMO ?? "1") !== "1";
+    if (!rv.ok && !(locked && rv.status === 503)) fail(`${label}: a nyilvános lapok érvénytelenítése induláskor nem sikerült (${rv.status})`);
   }
   let stopped = false;
   return {

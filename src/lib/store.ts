@@ -30,6 +30,8 @@ export type Page = { key: PageKey; title: L; lead: L; body: L; images: string[];
 export type Event = {
   id: string; title: L; date: string; endDate?: string; time?: string; location?: string;
   summary: L; body?: L; image?: string; published: boolean; featured: boolean; registration: boolean;
+  /** Az esemény utolsó mentése (ISO) — az eseménylap sitemap lastmod-ja. */
+  updatedAt?: string;
 };
 /**
  * Túraútvonal a Túrák lapon (az ügyfél útvonal-képeket és útvonalon készült képeket ígért): név, rövid leírás,
@@ -41,7 +43,8 @@ export const ROUTE_PHOTOS_MAX = 4;
 export const sortRoutes = (routes: TrailRoute[]) => [...routes].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 export type Registration = { id: string; eventId: string; name: string; phone: string; email?: string; count: number; note?: string; receivedAt: string };
 export type Report = { id: string; title: string; year: number; date: string; file: string; size: number; published: boolean };
-export type Upload = { id: string; src: string; width: number; height: number; alt: string; blur?: string; color?: string; uploadedAt: string };
+/** Feltöltött kép. Az `alt` háromnyelvű leírás (a magyar kötelező, a fájlnév sosem az); a régi, egynyelvű tárolt érték olvasáskor alakul át. */
+export type Upload = { id: string; src: string; width: number; height: number; alt: L; blur?: string; color?: string; uploadedAt: string };
 export type Message = { id: string; name: string; email: string; phone?: string; message: string; page?: string; receivedAt: string; read: boolean };
 export type Imprint = { operator: string; person: string; address: string; email: string; phone: string; taxId: string; regNo: string; hosting: string };
 export type Legal = { imprint: Imprint; privacy: L };
@@ -60,6 +63,8 @@ export type SiteContent = {
   reports: Report[];
   uploads: Upload[];
   legal: Legal;
+  /** Az utolsó tartalmi mentés ideje (ISO) — a writeSite állítja; a sitemap lastmod-ja ebből jön. A magban nincs. */
+  updatedAt?: string;
 };
 
 /** A helyi (fájl-driveres) adatkönyvtár: alapból data/. A DATA_DIR a tesztek elszigeteléséhez állítható. */
@@ -131,8 +136,23 @@ function withDefaults(data: Partial<SiteContent>): SiteContent {
   if (!out.legal?.imprint || !out.legal?.privacy) out.legal = structuredClone(seed.legal);
   if (!out.owner) out.owner = structuredClone(seed.owner);
   for (const k of PAGE_KEYS) if (!out.pages?.[k]) out.pages = { ...structuredClone(seed.pages), ...(out.pages ?? {}) };
+  out.uploads = out.uploads.map(normalizeUpload);
   migrateLegacyContent(out, seed);
   return out;
+}
+
+/** Fájlnévnek látszó leírás („IMG_1234.jpg”) — a korábbi feltöltő üres leírásnál ezt tette alt-szövegnek. */
+const FILE_NAME_RE = /^[^\s/\\]+\.(jpe?g|png|webp|heic|heif|gif|avif|tiff?|bmp)$/i;
+
+/** A régi, egynyelvű (sztring) képleírás → háromnyelvű; a fájlnév nem leírás, az üres marad. */
+function normalizeUpload(u: Upload): Upload {
+  const raw = u.alt as unknown;
+  if (raw && typeof raw === "object") {
+    const l = raw as Partial<L>;
+    return { ...u, alt: { hu: String(l.hu ?? ""), en: String(l.en ?? ""), de: String(l.de ?? "") } };
+  }
+  const s = typeof raw === "string" ? raw.trim() : "";
+  return { ...u, alt: { hu: FILE_NAME_RE.test(s) || s === "kép" ? "" : s, en: "", de: "" } };
 }
 
 /* A korábbi magból (2026-08/09) a már feltöltött tárakba (Netlify Blobs, helyi site.json) került, azóta hibásnak talált tartalom.
@@ -181,13 +201,15 @@ const WRITE_TRIES = 10;
  *     más írt, újraolvas és újra alkalmazza a módosítást — legfeljebb 10 kísérlet, véletlen várakozással.
  *   · helyben: folyamaton belüli sor + egyedi ideiglenes fájl + atomi átnevezés.
  * A `mutate` ezért TÖBBSZÖR is lefuthat: csak a kapott dokumentumot módosítsa, mellékhatás nélkül.
+ * Minden mentés beírja az `updatedAt`-ot (a sitemap lastmod-ja); a nem tartalmi írás (pl. a régi rekordok áthelyezése) `touch: false`-szal kéri, hogy ne.
  */
-export async function writeSite(mutate: (s: SiteContent) => void | Promise<void>): Promise<SiteContent> {
+export async function writeSite(mutate: (s: SiteContent) => void | Promise<void>, opts: { touch?: boolean } = {}): Promise<SiteContent> {
+  const apply = async (site: SiteContent) => { await mutate(site); if (opts.touch !== false) site.updatedAt = new Date().toISOString(); };
   if (blobsAvailable()) return withLock("site", async () => {
     for (let attempt = 0; ; attempt++) {
       const cur = await store().getWithMetadata(KEY, { type: "json" });
       const site = cur?.data ? withDefaults(cur.data as Partial<SiteContent>) : structuredClone(seedJson as unknown as SiteContent);
-      await mutate(site);
+      await apply(site);
       /* ETag nélkül (csak a helyi Blobs-szimulátor ilyen) nincs mihez feltételt kötni — ott egy folyamat fut, a sor véd. */
       const cond = !cur ? { onlyIfNew: true } : cur.etag ? { onlyIfMatch: cur.etag } : {};
       if ((await store().setJSON(KEY, site, cond)).modified) return site;
@@ -197,7 +219,7 @@ export async function writeSite(mutate: (s: SiteContent) => void | Promise<void>
   });
   return withLock("files", async () => {
     const site = await readLocal(true);
-    await mutate(site);
+    await apply(site);
     await writeFileAtomic(siteFile(), JSON.stringify(site, null, 2));
     return site;
   });

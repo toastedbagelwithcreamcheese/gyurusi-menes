@@ -60,10 +60,15 @@ function StatusPanel() {
         <h3>Admin-jelszó <span className={`pill ${locked ? "pill-on" : "pill-warn"}`} data-status-value={locked ? "on" : "off"}>{locked ? "Védett" : "Jelszó nélkül nyílik"}</span></h3>
         <EnvRow name="ADMIN_PASSWORD">{locked
           ? "Az admin csak belépés után nyílik. A belépés az adott eszközön 30 napig megmarad; 5 rossz jelszó után 15 percre letiltja a belépést."
-          : "Az admin jelszó nélkül nyílik — bárki megnyithatja, aki ismeri a címét. Élesítés előtt kötelező beállítani."}</EnvRow>
+          : "Az admin most jelszó nélkül nyílik, mert helyi demóként fut (next dev vagy ADMIN_OPEN_DEMO=1). Élesben jelszó nélkül zárva marad: senki sem léphet be, amíg be nem állítod."}</EnvRow>
         <EnvRow name="ADMIN_USER">{adminUserRequired()
           ? "A belépéshez a jelszó mellett felhasználónév is kell."
           : "Nem kötelező. Ha beállítod, a belépéskor a jelszó mellé ezt a felhasználónevet is meg kell adni."}</EnvRow>
+        <EnvRow name="ADMIN_OPEN_DEMO">{locked
+          ? "Jelszó mellett hatástalan — élesben ne legyen beállítva."
+          : process.env.ADMIN_OPEN_DEMO === "1"
+            ? "Értéke 1: jelszó nélkül nyitott bemutató. Élesítéskor töröld, és állítsd be az ADMIN_PASSWORD-öt — jelszó és ADMIN_OPEN_DEMO nélkül az admin zárva marad."
+            : "Nincs beállítva: ez helyi fejlesztői futás (next dev). Élesben jelszó nélkül az admin zárva marad, amíg az ADMIN_PASSWORD-öt (vagy bemutatóhoz az ADMIN_OPEN_DEMO=1-et) be nem állítod."}</EnvRow>
       </div>
     </section>
   );

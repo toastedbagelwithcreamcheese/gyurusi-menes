@@ -146,6 +146,8 @@ try {
   const beforeHeic = count("image");
   assert(beforeHeic === 1, `kontroll: a kérésfigyelő ${beforeHeic} képfeltöltést látott (1 várt)`);
   await up.locator("[data-upload-file]").setInputFiles({ name: "IMG_0412.HEIC", mimeType: "image/heic", buffer: heic });
+  /* A magyar leírás kötelező (javítókör): kitöltve, hogy a HEIC-hiba jöjjön, ne a hiányzó leírásé. */
+  await up.locator("[data-upload-alt]").fill("P2 HEIC-próba");
   await up.locator("[data-upload-submit]").click();
   const heicErr = up.locator('[data-upload-status="err"]');
   await heicErr.waitFor({ timeout: 20_000 });

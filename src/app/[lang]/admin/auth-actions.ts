@@ -2,7 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { LOGIN_PATH, SESSION_COOKIE, SESSION_DAYS, adminProtected, adminUserRequired, createSessionToken, credentialsMatch, safeNext, secureCookieFor } from "@/lib/admin-auth";
+import { LOCKED_MESSAGE, LOGIN_PATH, SESSION_COOKIE, SESSION_DAYS, adminOpen, adminProtected, adminUserRequired, createSessionToken, credentialsMatch, safeNext, secureCookieFor } from "@/lib/admin-auth";
 import { hit, ipKey, peek, resetHits } from "@/lib/ratelimit";
 
 /*
@@ -21,7 +21,8 @@ const lockedMessage = (ms: number) =>
 
 export async function login(_prev: LoginState, fd: FormData): Promise<LoginState> {
   const next = safeNext(String(fd.get("next") ?? ""));
-  if (!adminProtected()) redirect(next);
+  if (adminOpen()) redirect(next);
+  if (!adminProtected()) return { error: LOCKED_MESSAGE, locked: true };
   const h = await headers();
   const user = String(fd.get("user") ?? "").trim();
   const pass = String(fd.get("password") ?? "");

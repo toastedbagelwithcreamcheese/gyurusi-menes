@@ -1,9 +1,11 @@
 import { readSite } from "@/lib/store";
 import { allImages } from "@/lib/images";
+import { missingTranslations, trLabel } from "@/lib/translations";
 import { Thumb } from "../ImagePicker";
 import { ImageUpload } from "../ImageUpload";
 import { ConfirmButton } from "../ConfirmButton";
-import { deleteUpload, setHeroImage } from "../actions";
+import { LField } from "../LField";
+import { deleteUpload, saveUploadAlt, setHeroImage } from "../actions";
 
 export default async function ImagesAdmin() {
   const site = await readSite();
@@ -29,6 +31,24 @@ export default async function ImagesAdmin() {
             </div>
           </div>); })}</div>
       </div>
+      {/* A feltöltött képek leírása háromnyelvű: ez a kép alt-szövege a magyar, az angol és a német oldalon. A beépített fotók
+          leírása a kódban van (src/content/photos.json), azok itt nem szerkeszthetők. */}
+      {site.uploads.length > 0 && (
+        <div className="card">
+          <h2>Feltöltött képek leírása</h2>
+          <p className="hint" style={{ marginTop: -8, marginBottom: 16 }}>Ezt olvassa fel a képernyőolvasó, és ezt látják a keresők — mindhárom nyelven. Ha az angol vagy a német üres, ott a magyar leírás jelenik meg.</p>
+          {site.uploads.map((u) => { const miss = missingTranslations(u.alt); return (
+            <form key={u.id} id={`kep-${u.id}`} action={saveUploadAlt} className="form upl-alt" data-upload-alt-form={u.id} style={{ display: "grid", gridTemplateColumns: "96px minmax(0, 1fr)", gap: 16, alignItems: "start", paddingBlock: 12, borderTop: "1px solid var(--color-line)" }}>
+              <Thumb src={u.src} alt={u.alt.hu} className="" />
+              <div>
+                <input type="hidden" name="id" value={u.id} />
+                {miss.length > 0 && <span className="pill pill-tr" data-missing-translation={miss.join(",")}>Fordítás hiányzik: {trLabel(miss)}</span>}
+                <LField name="alt" label="Leírás (mi látható a képen)" value={u.alt} required />
+                <div className="actions"><button type="submit" className="btn btn-outline btn-sm" data-upload-alt-save={u.id}>Leírás mentése</button></div>
+              </div>
+            </form>); })}
+        </div>
+      )}
     </>
   );
 }

@@ -153,7 +153,8 @@ async function deleteUpload(id) {
 const leftovers = (b) => ({
   events: (b.site.events ?? []).filter((e) => (e.title?.hu ?? "").includes(MARK)).map((e) => e.id),
   reports: (b.site.reports ?? []).filter((r) => (r.title ?? "").includes(MARK)).map((r) => r.id),
-  uploads: (b.site.uploads ?? []).filter((u) => (u.alt ?? "").includes(MARK)).map((u) => u.id),
+  /* A képleírás a P-javítókör óta háromnyelvű ({ hu, en, de }); a régi, sztring formát is felismeri. */
+  uploads: (b.site.uploads ?? []).filter((u) => JSON.stringify(u.alt ?? "").includes(MARK)).map((u) => u.id),
   registrations: (b.registrations ?? []).filter((r) => (r.name ?? "").startsWith("FINAL-LIVE ")).map((r) => r.id),
 });
 
@@ -163,6 +164,8 @@ try {
   /* ---------- előfeltételek ---------- */
   const probe = await fetch(`${BASE}/api/admin/backup`, { redirect: "manual" });
   const protectedAdmin = probe.status === 401;
+  /* 503: jelszó nélküli éles futás — az admin zárva (src/lib/admin-auth.ts, fail-closed), belépni sem lehet. */
+  if (probe.status === 503) throw new Error("a célon az admin zárva, mert az ADMIN_PASSWORD nincs beállítva (503): állítsd be a draft/deploy-preview környezetben is, és deployolj újra");
   if (!protectedAdmin && probe.status !== 200) throw new Error(`a /api/admin/backup hitelesítés nélkül HTTP ${probe.status} (401 vagy 200 várt)`);
   if (!protectedAdmin) throw new Error("a célon az admin jelszó nélkül nyitott (nincs ADMIN_PASSWORD): a 20 egyidejű jelentkezést az IP-nkénti sebességkorlát 429-cel fogná meg — csak belépett admin kivétel. Futtasd jelszavas példány ellen.");
   if (!creds) throw new Error("a cél jelszavas adminú (401), de nincs ADMIN_PASSWORD (és ha kell, ADMIN_USER) a környezetben");

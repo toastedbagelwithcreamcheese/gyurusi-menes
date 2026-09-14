@@ -32,6 +32,7 @@ export async function saveEvent(fd: FormData) {
     id, title: lf(fd, "title"), date: s(fd, "date"), endDate: s(fd, "endDate") || undefined, time: s(fd, "time") || undefined,
     location: s(fd, "location") || undefined, summary: lf(fd, "summary"), image: s(fd, "image") || undefined,
     published: b(fd, "published"), featured: b(fd, "featured"), registration: b(fd, "registration"),
+    updatedAt: new Date().toISOString(), // az eseménylap sitemap lastmod-ja
   };
   const body = lf(fd, "body"); if (body.hu || body.en || body.de) ev.body = body;
   const formPath = s(fd, "id") ? `/admin/esemenyek/${id}` : "/admin/esemenyek/uj";
@@ -62,7 +63,7 @@ export async function deleteEvent(fd: FormData) {
 export async function toggleEvent(fd: FormData) {
   await guard();
   const id = s(fd, "id");
-  await writeSite((site) => { const e = site.events.find((x) => x.id === id); if (e) e.published = !e.published; });
+  await writeSite((site) => { const e = site.events.find((x) => x.id === id); if (e) { e.published = !e.published; e.updatedAt = new Date().toISOString(); } });
   refresh();
 }
 export async function setFeatured(fd: FormData) {
@@ -206,6 +207,18 @@ export async function deleteUpload(fd: FormData) {
   try { await writeSite(async (site) => { site.uploads = site.uploads.filter((u) => u.id !== id); }); await deleteFile(`${id}.webp`); }
   catch (e) { back("/admin/kepek", { hiba: `A törlés nem sikerült: ${errMsg(e)}` }); }
   refresh(); back("/admin/kepek", { ok: "Kép törölve." });
+}
+/** Egy feltöltött kép háromnyelvű leírása (alt). A magyar kötelező; a fájlnév nem lehet leírás. */
+export async function saveUploadAlt(fd: FormData) {
+  await guard();
+  const id = s(fd, "id"), alt = lf(fd, "alt");
+  const at = `#kep-${id}`;
+  if (!alt.hu) back("/admin/kepek", { hiba: "A kép magyar leírása kötelező — ezt olvassa fel a képernyőolvasó, és ezt látják a keresők." }, at);
+  let found = false;
+  try { await writeSite((site) => { const u = site.uploads.find((x) => x.id === id); found = !!u; if (u) u.alt = alt; }); }
+  catch (e) { back("/admin/kepek", { hiba: `A leírás mentése nem sikerült: ${errMsg(e)}` }, at); }
+  if (!found) back("/admin/kepek", { hiba: "Ez a kép már nincs meg (közben törölték?). Töltsd újra a lapot." });
+  refresh(); back("/admin/kepek", { ok: `„${alt.hu}” leírás mentve.` }, at);
 }
 
 /* ---------- Egyesületi beszámolók (PDF) ----------

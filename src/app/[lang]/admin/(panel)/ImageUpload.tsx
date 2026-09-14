@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IMAGE_CLIENT_EDGE, IMAGE_MAX_BYTES, IMAGE_TARGET_BYTES, formatMB, imageTooLargeMessage } from "@/lib/upload-limits";
+import { missingTranslations, trLabel } from "@/lib/translations";
 import { UploadError, UploadStatusView, messageOf, sendXhr, type UploadStatus } from "./upload-client";
 
 export type UploadedImage = { id: string; src: string; alt: string; width: number; height: number };
@@ -20,25 +21,29 @@ export function ImageUpload({ onUploaded }: { onUploaded?: (img: UploadedImage) 
   const fileRef = useRef<HTMLInputElement>(null);
   const altRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<UploadStatus>({ kind: "idle" });
+  /* A leírás háromnyelvű: a magyar kötelező, az angol és a német a „Fordítások” alatt (a hiányt a címke mutatja, mint az LField-ben). */
+  const [alt, setAlt] = useState({ hu: "", en: "", de: "" });
   const busy = status.kind === "work";
+  const miss = missingTranslations(alt);
 
   async function start() {
     if (busy) return;
     const file = fileRef.current?.files?.[0];
     if (!file) { setStatus({ kind: "err", text: "Nem választottál képet. Kattints a „Fájl kiválasztása” gombra, és válassz egy fotót." }); return; }
-    const alt = altRef.current?.value.trim() ?? "";
+    const texts = { hu: alt.hu.trim(), en: alt.en.trim(), de: alt.de.trim() };
+    if (!texts.hu) { setStatus({ kind: "err", text: "Írj egy rövid magyar leírást a képhez (mi látható rajta) — ezt olvassa fel a képernyőolvasó, és ezt látják a keresők." }); altRef.current?.focus(); return; }
     try {
       setStatus({ kind: "work", label: `A kép előkészítése (${file.name}, ${formatMB(file.size)})…`, pct: null });
       const blob = await prepareImage(file);
       const label = `Feltöltés: ${formatMB(blob.size)}`;
       setStatus({ kind: "work", label, pct: 0 });
-      const res = await sendXhr(`/api/admin/upload-image?${new URLSearchParams({ alt, name: file.name })}`, blob, blob.type, (loaded, total) =>
+      const res = await sendXhr(`/api/admin/upload-image?${new URLSearchParams({ alt: texts.hu, alt_en: texts.en, alt_de: texts.de, name: file.name })}`, blob, blob.type, (loaded, total) =>
         setStatus({ kind: "work", label, pct: Math.min(99, Math.floor((loaded / total) * 100)) }));
       if (!res.ok) throw new UploadError(res.error);
       const image = res.image as UploadedImage;
       setStatus({ kind: "ok", text: res.message, id: image.id });
       if (fileRef.current) fileRef.current.value = "";
-      if (altRef.current) altRef.current.value = "";
+      setAlt({ hu: "", en: "", de: "" });
       onUploaded?.(image);
       router.refresh();
     } catch (e) {
@@ -54,11 +59,28 @@ export function ImageUpload({ onUploaded }: { onUploaded?: (img: UploadedImage) 
           <input id={`${uid}-file`} ref={fileRef} type="file" accept="image/*,.heic,.heif" className="input" disabled={busy} data-upload-file />
         </div>
         <div className="field">
-          <label htmlFor={`${uid}-alt`}>Rövid leírás (mi van a képen)</label>
-          <input id={`${uid}-alt`} ref={altRef} className="input" placeholder="pl. Túraútvonal a Zalai-dombságban" disabled={busy} data-upload-alt
+          <label htmlFor={`${uid}-alt`}>Rövid leírás magyarul (kötelező: mi látható a képen)</label>
+          <input id={`${uid}-alt`} ref={altRef} className="input" placeholder="pl. Túraútvonal a Zalai-dombságban" disabled={busy} data-upload-alt lang="hu"
+            value={alt.hu} onChange={(e) => { const v = e.target.value; setAlt((a) => ({ ...a, hu: v })); }}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void start(); } }} />
         </div>
       </div>
+      <details className="lfield-tr" data-upload-translations>
+        <summary>
+          <span>Fordítások (angol, német)</span>
+          <span className={`tr-status tr-${!alt.hu.trim() && !alt.en.trim() && !alt.de.trim() ? "empty" : miss.length ? "missing" : "done"}`} data-tr-status>
+            {miss.length ? `Hiányzik: ${trLabel(miss)}` : alt.hu.trim() ? "Kész" : "Nincs szöveg"}
+          </span>
+        </summary>
+        {(["en", "de"] as const).map((l) => (
+          <div className="lfield-row" key={l}>
+            <label htmlFor={`${uid}-alt-${l}`} className="lfield-lang"><span>{l.toUpperCase()}</span><small>{l === "en" ? "angol" : "német"}</small></label>
+            <input id={`${uid}-alt-${l}`} className="input" lang={l} disabled={busy} {...{ [`data-upload-alt-${l}`]: "" }}
+              value={alt[l]} onChange={(e) => { const v = e.target.value; setAlt((a) => ({ ...a, [l]: v })); }} />
+          </div>
+        ))}
+        <p className="hint">Ha üresen marad, az angol, illetve a német oldalon a magyar leírás jelenik meg. Utólag a Képek lapon is pótolható.</p>
+      </details>
       <div className="actions">
         <button type="button" className="btn btn-primary" onClick={() => void start()} disabled={busy} data-upload-submit>{busy ? "Feltöltés folyamatban…" : "Feltöltés"}</button>
       </div>

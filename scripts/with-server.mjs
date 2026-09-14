@@ -9,7 +9,9 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = process.env.PORT ?? "3012";
 spawnSync("sh", ["-c", `lsof -ti tcp:${PORT} -sTCP:LISTEN | xargs kill -9 2>/dev/null`], { stdio: "ignore" });
-const srv = spawn("npx", ["next", "start", "-p", PORT], { cwd: ROOT, env: { ...process.env, PORT }, stdio: ["ignore", "ignore", "inherit"] });
+/* Jelszó nélkül a production build admin-ja zárva (src/lib/admin-auth.ts, fail-closed): a helyi kapuk a nyitott demót kifejezetten
+   kérik (ADMIN_OPEN_DEMO=1). Jelszavas próbánál (ADMIN_PASSWORD) ez hatástalan; ADMIN_OPEN_DEMO=0-val a zárt viselkedés is kipróbálható. */
+const srv = spawn("npx", ["next", "start", "-p", PORT], { cwd: ROOT, env: { ...process.env, ADMIN_OPEN_DEMO: process.env.ADMIN_OPEN_DEMO ?? "1", PORT }, stdio: ["ignore", "ignore", "inherit"] });
 const url = `http://localhost:${PORT}/`;
 for (let i = 0; i < 120; i++) { try { const r = await fetch(url, { redirect: "manual" }); if (r.status < 500) break; } catch { /* még indul */ } await new Promise((r) => setTimeout(r, 500)); }
 /* P7: a nyilvános lapok ISR-en futnak, és a Next a renderelt lapot a (közös) .next könyvtárba is kiírja — egy korábbi futás, más

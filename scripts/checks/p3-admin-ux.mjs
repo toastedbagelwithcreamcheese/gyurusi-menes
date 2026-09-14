@@ -67,7 +67,7 @@ async function seedFixtures() {
   await fs.mkdir(path.join(DATA, "files"), { recursive: true });
   const webp = await sharp({ create: { width: 800, height: 600, channels: 3, background: { r: 120, g: 90, b: 60 } } }).webp({ quality: 80 }).toBuffer();
   await fs.writeFile(path.join(DATA, "files/u-p3kep01.webp"), webp);
-  site.uploads = [{ id: "u-p3kep01", src: "/files/u-p3kep01.webp", width: 800, height: 600, alt: "P3 törlendő kép", uploadedAt: new Date().toISOString() }, ...site.uploads];
+  site.uploads = [{ id: "u-p3kep01", src: "/files/u-p3kep01.webp", width: 800, height: 600, alt: L("P3 törlendő kép", "P3 image to delete", "P3 zu löschendes Bild"), uploadedAt: new Date().toISOString() }, ...site.uploads];
   const pdf = Buffer.from("%PDF-1.4\n%P3 teszt\n%%EOF\n");
   await fs.writeFile(path.join(DATA, "files/r-p3besz01.pdf"), pdf);
   site.reports = [{ id: "p3-rep-1", title: "P3 törlendő beszámoló", year: 2026, date: dayOffset(-3), file: "r-p3besz01.pdf", size: pdf.length, published: true }, ...site.reports];
@@ -216,14 +216,16 @@ try {
   const after1 = await readSite();
   assert(after1.hero.title.hu === HERO, "C: a nyitókép főcíme nem mentődött");
   assert(after1.intro.title.hu === before.intro.title.hu, "C: a nyitókép mentése a bemutatkozás beírt (nem mentett) címét is elmentette");
-  for (const k of new Set([...Object.keys(before), ...Object.keys(after1)])) if (k !== "hero") assert(canon(after1[k]) === canon(before[k]), `C: a nyitókép mentése a(z) „${k}” részt is módosította`);
+  for (const k of new Set([...Object.keys(before), ...Object.keys(after1)])) if (k !== "hero" && k !== "updatedAt") assert(canon(after1[k]) === canon(before[k]), `C: a nyitókép mentése a(z) „${k}” részt is módosította`);
+  /* Az updatedAt a dokumentum módosítási ideje (a sitemap lastmod-ja) — minden mentés frissíti, nem tartalmi rész. */
+  assert(after1.updatedAt && after1.updatedAt !== before.updatedAt, `C: a nyitókép mentése nem frissítette az updatedAt-ot (${before.updatedAt} → ${after1.updatedAt})`);
   assert(/Nyitókép/.test(flash1), `C: a Flash-sáv: „${flash1}”`);
   if ((await page.inputValue("#intro\\.title\\.hu")) !== INTRO) await page.fill("#intro\\.title\\.hu", INTRO);
   await page.click('[data-section-save="bemutatkozas"]');
   await page.locator('[data-section="bemutatkozas"] [data-section-status="ok"]').waitFor({ timeout: 20_000 });
   const after2 = await readSite();
   assert(after2.intro.title.hu === INTRO && after2.hero.title.hu === HERO, "C: a bemutatkozás mentése után a két rész nem a várt");
-  for (const k of new Set([...Object.keys(after1), ...Object.keys(after2)])) if (k !== "intro") assert(canon(after2[k]) === canon(after1[k]), `C: a bemutatkozás mentése a(z) „${k}” részt is módosította`);
+  for (const k of new Set([...Object.keys(after1), ...Object.keys(after2)])) if (k !== "intro" && k !== "updatedAt") assert(canon(after2[k]) === canon(after1[k]), `C: a bemutatkozás mentése a(z) „${k}” részt is módosította`);
   const home = await getText(`${BASE}/`);
   assert(home.includes(HERO) && home.includes(INTRO), "C: a főoldal nem a mentett főcímet / bemutatkozás-címet adja");
   log(`  C: 4 fül (${tabs.map((x) => x[1]).join(" · ")}), részenként saját gomb; nyitókép mentése → csak a hero változott („${flash1}”), a beírt bemutatkozás-cím nem; bemutatkozás mentése → csak az intro; a főoldal mindkettőt mutatja`);

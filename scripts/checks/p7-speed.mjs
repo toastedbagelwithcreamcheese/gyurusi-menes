@@ -9,7 +9,7 @@
  *     nincs a gyorsítótárazhatók között; az isrFlushToDisk nincs kikapcsolva (az a kép-gyorsítótárat is vinné). Kontroll: /robots.txt a routes-ban.
  *  2) Gyorsítótár: 10 nyilvános lap × 3 nyelv — érvénytelenítés után az első kérés nem HIT, a második x-nextjs-cache: HIT, s-maxage-dzsel.
  *     Kontroll: az /admin nem HIT és no-store.
- *  3) Képek és HTML: a /turak, a /esemenyek és az eseménylap pontosan egy képet tölt elő (az LCP-képet), fetchpriority="high"-jal; a főoldal
+ *  3) Képek és HTML: a /turak, a /de/turak, a /esemenyek és az eseménylap pontosan egy képet tölt elő (az LCP-képet), fetchpriority="high"-jal; a főoldal (/, /en)
  *     egyet sem (a teljes képernyős hero-képet a Chrome háttérnek veszi, az LCP a címsor — a 6) lépés ezt a Lighthouse-szal ellenőrzi);
  *     a HTML-ben nincs a next/image SVG-szűrős blur-helyőrzője. Kontroll: a detektor a Next saját blur-SVG-jét megtalálja, a túratérkép
  *     saját (nyers) SVG-szűrőjét nem. A scripts/warm-images.mjs a helyi szerveren minden változatot 200-as képként adja.
@@ -19,7 +19,7 @@
  *     transzform és vágás) a főoldali hero-cím, -felirat és -gombok, a márkanév, az aloldali és az eseménylapi képfej címe, a naptár
  *     címe és kiemelt kártyája. Kontroll: letiltott kérés tényleg volt, és egy data-in="false" Reveal-elemet a mérő láthatatlannak jelez.
  *  6) Lighthouse 13 mobil (szimulált lassítás, telepített Google Chrome, Accept-Language: hu → a kanonikus magyar lap, átirányítás
- *     nélkül) a főoldalon, a /turak, a /esemenyek lapon és az eseménylapon: Performance ≥ 95, LCP ≤ 2,5 s, TBT ≤ 100 ms, CLS ≤ 0,05;
+ *     nélkül) a főoldalon, a /turak, a /esemenyek lapon, az eseménylapon, valamint egy angol (/en) és egy német (/de/turak) lapon: Performance ≥ 95, LCP ≤ 2,5 s, TBT ≤ 100 ms, CLS ≤ 0,05;
  *     ha az LCP-elem kép, a Lighthouse szerint előtöltött, magas prioritású és nem lusta. Egy futás; ha egy lap elbukik, 3 futás
  *     mediánja dönt (ezt kiírja).
  *  7) Frissülés: közvetlen DB-írás érvénytelenítés nélkül → a /turak még a régit adja (kontroll: a gyorsítótár valódi); admin-mentés
@@ -92,7 +92,9 @@ try {
   await revalidateSite(BASE);
   const EVENT = `/esemenyek/${ev.id}`;
   const PUBLIC = ["/", "/huculosveny", "/turak", "/oktatas", "/taborok", "/egyesulet", "/esemenyek", EVENT, "/adatkezeles", "/impresszum"];
-  const MEASURED = ["/", "/turak", "/esemenyek", EVENT];
+  /* Javítókör: egy angol és egy német lap is (a főoldal minden nyelven: nincs előtöltött kép, az LCP a címsor). */
+  const MEASURED = ["/", "/turak", "/esemenyek", EVENT, "/en", "/de/turak"];
+  const HOME = new Set(["/", "/en", "/de"]);
   console.log(`0) mért eseménylap: ${EVENT} (${ev.date})`);
 
   /* ---------- 1) build-kimenet ---------- */
@@ -144,7 +146,7 @@ try {
     for (const p of MEASURED) {
       const { html } = await get(url("", p));
       const pre = [...html.matchAll(/<link\b[^>]*\brel="preload"[^>]*>/gi)].map((x) => x[0]).filter((tag) => /\bas="image"/i.test(tag));
-      const want = p === "/" ? 0 : 1;
+      const want = HOME.has(p) ? 0 : 1;
       if (pre.length !== want) bad(`${p}: ${pre.length} előtöltött kép (${want} várt${want ? ": az LCP-kép" : " — a főoldal LCP-je a címsor"})`);
       else if (want && !/fetchpriority="high"/i.test(pre[0])) bad(`${p}: az előtöltött kép nem fetchpriority="high": ${pre[0].slice(0, 180)}`);
     }
@@ -152,7 +154,7 @@ try {
     const warm = await run(process.execPath, [path.join(ROOT, "scripts/warm-images.mjs")], { env: { ...process.env, BASE_URL: BASE, PATHS: MEASURED.join(",") }, timeout: 180_000 });
     const lastLine = (warm.stdout.trim().split("\n").pop() ?? "").trim();
     if (warm.status !== 0 || !lastLine.startsWith("OK: warm-images")) bad(`warm-images: kilépési kód ${warm.status} — ${(warm.stderr || lastLine).slice(0, 300)}`);
-    console.log(`3) képek: 3 lapon pontosan egy előtöltött kép fetchpriority="high"-jal, a főoldalon egy sem; ${PUBLIC.length * LANGS.length} lapon nincs blur-SVG (kontroll: a Next blur-SVG-jét jelzi, a térkép szűrőjét nem); ${lastLine}`);
+    console.log(`3) képek: ${MEASURED.filter((p) => !HOME.has(p)).length} lapon pontosan egy előtöltött kép fetchpriority="high"-jal, a főoldal(ak)on egy sem; ${PUBLIC.length * LANGS.length} lapon nincs blur-SVG (kontroll: a Next blur-SVG-jét jelzi, a térkép szűrőjét nem); ${lastLine}`);
   }
 
   browser = await chromium.launch({ executablePath: PW_CHROME, headless: true });
@@ -243,7 +245,7 @@ try {
       for (const x of runs) {
         if (x.final !== p) bad(`${p}: a Lighthouse ${x.final} címet mért (átirányítás?)`);
         if (x.lcpImg && x.discovery.length) bad(`${p}: az LCP-kép (${x.lcpEl}) a Lighthouse szerint nem jól betöltött: ${x.discovery.join(", ")}`);
-        if (p === "/" && !/h1/.test(x.lcpEl)) bad(`/: az LCP-elem ${x.lcpEl} (a hero-címsor várt — a hero-kép előtöltése nélkül ez lenne a lassú elem)`);
+        if (HOME.has(p) && !/h1/.test(x.lcpEl)) bad(`/: az LCP-elem ${x.lcpEl} (a hero-címsor várt — a hero-kép előtöltése nélkül ez lenne a lassú elem)`);
       }
       const label = runs.length === 1 ? "1 futás" : `medián, ${runs.length} futás (Performance ${runs.map((x) => x.perf).join(" / ")}, LCP ${runs.map((x) => fmtS(x.lcp)).join(" / ")})`;
       for (const f of fails(med)) bad(`${p} (${label}): ${f}`);

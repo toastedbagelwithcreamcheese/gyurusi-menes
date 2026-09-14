@@ -9,6 +9,8 @@ const LEGACY: Array<[string, string]> = [
 ];
 
 const nextConfig: NextConfig = {
+  /* Csak a kapuszkriptek állítják (scripts/checks/p6-seo.mjs: próba-build egy éles NEXT_PUBLIC_SITE_URL-lel, a fő .next érintése nélkül). */
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   images: { qualities: [55, 62, 70, 78], formats: ["image/avif", "image/webp"] },
   /* Böngésző-gyorsítótár (P7, Ellenőrzés): a Next az ISR-lapokra `s-maxage=3600, stale-while-revalidate=<expireTime − 3600>`-at küld.
      A böngésző az s-maxage-et figyelmen kívül hagyja, a stale-while-revalidate-et NEM: egy korábban látott nyilvános lapot és az RSC-
@@ -31,6 +33,10 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   async redirects() {
     return [
+      /* A régi Huculösvény-aldomain (huculosveny.gyurusimenes.hu, ma még a WordPress-oldal, docs/RESEARCH.md) → az új aloldal, 301.
+         Élesítéskor az aldomaint domain-aliasként a Netlify-oldalhoz kell adni (README, „Élesítés”); addig ez a szabály nem kap kérést.
+         Minden útvonal (a régi PDF-címek is) a /huculosveny lapra visz: a régi fájlok nem költöznek át. */
+      { source: "/:path*", has: [{ type: "host" as const, value: "huculosveny\\.gyurusimenes\\.hu" }], destination: "https://gyurusimenes.hu/huculosveny", statusCode: 301 },
       ...LEGACY.flatMap(([from, to]) => [from, `${from}/`].map((source) => ({ source, destination: to, statusCode: 301 }))),
       /* A mai lapok közül ezek a régi oldalon perjellel éltek. */
       { source: "/oktatas/", destination: "/oktatas", statusCode: 301 },

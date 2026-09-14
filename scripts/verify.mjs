@@ -36,16 +36,41 @@ if (which === "images") {
 if (which === "content-no-fabrication") {
   const site = await readJson("data/seed.json");
   const verified = await readJson("docs/verified-facts.json");
-  const text = JSON.stringify(site);
-  for (const pattern of verified.forbiddenPatterns) {
-    const m = text.match(new RegExp(pattern, "g"));
-    if (m) fail(`tiltott minta a tartalomban: ${pattern} → ${m.slice(0, 3).join(", ")}`);
+  /* A felület minden szövegforrása: a mag, a szótárak (src/content/*.ts), az llms.txt statikus szövege (src/lib/llms.ts), a
+     levélsablonok (src/lib/mail.ts) és az adatkezelési sablon (src/lib/privacy.ts) — megjegyzések nélkül: egy kódkomment nem kerül a
+     lapra, és ott a tiltott szó magyarázat is lehet. A megjegyzés-szűrő sztringeken (", ', `) belül nem vág. */
+  function stripComments(src) {
+    let out = "", q = null;
+    for (let i = 0; i < src.length; ) {
+      const c = src[i], n = src[i + 1];
+      if (q) { if (c === "\\") { out += c + (n ?? ""); i += 2; continue; } if (c === q) q = null; out += c; i++; continue; }
+      if (c === '"' || c === "'" || c === "`") { q = c; out += c; i++; continue; }
+      if (c === "/" && n === "*") { const e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; out += " "; continue; }
+      if (c === "/" && n === "/") { const e = src.indexOf("\n", i); i = e < 0 ? src.length : e; continue; }
+      out += c; i++;
+    }
+    return out;
   }
+  const scan = (text) => verified.forbiddenPatterns.flatMap((pat) => (text.match(new RegExp(pat, "g")) ?? []).map((m) => `${pat} → „${m.trim()}”`));
+  const dictFiles = (await fs.readdir(path.join(ROOT, "src/content"))).filter((f) => f.endsWith(".ts")).sort().map((f) => `src/content/${f}`);
+  const sources = [["data/seed.json", JSON.stringify(site)]];
+  for (const f of [...dictFiles, "src/lib/llms.ts", "src/lib/mail.ts", "src/lib/privacy.ts"]) sources.push([f, stripComments(await fs.readFile(path.join(ROOT, f), "utf8"))]);
+  /* Pozitív kontrollok: a kereső egy szótár-másolatba írt kitalált árat megtalál; a megjegyzésbe írt tiltott mintát nem; a
+     megjegyzés-szűrő egy sztringben álló URL „//”-jénél nem vág le szöveget. */
+  const huDict = sources.find(([f]) => f === "src/content/hu.ts")?.[1];
+  if (!huDict || huDict.length < 1000) fail("a src/content/hu.ts nem olvasható");
+  if (!scan(`${huDict}\nexport const proba = "Egy óra lovaglás 3 000 Ft";`).length) fail("kontroll: a szótár-másolatba írt „3 000 Ft” nem akadt fenn — a kereső hibás");
+  if (scan(stripComments('/* hektár */ const a = "rendben"; // 3 000 Ft\n')).length) fail("kontroll: a megjegyzésbe írt tiltott minta is fennakadt — a megjegyzés-szűrő hibás");
+  if (!scan(stripComments('const u = "https://pelda.hu/arak"; const p = "5000 Ft";')).length) fail("kontroll: a megjegyzés-szűrő a sztringben álló „//” után levágta a szöveget");
+  const hits = sources.flatMap(([f, text]) => scan(text).map((h) => `${f}: ${h}`));
+  if (hits.length) fail(`tiltott minta a tartalomban (${hits.length}): ${hits.slice(0, 6).join(" | ")}`);
+  const text = sources[0][1];
   for (const must of verified.mustContain) if (!text.includes(must)) fail(`hiányzó igazolt adat: ${must}`);
   /* A tulajdonos telefonszáma és e-mailje NEM igazolt adat: amíg az ügyféltől meg nem kapjuk, üresen kell állnia. */
   if (site.owner.phone && !verified.ownerPhone) fail(`a tulajdonos telefonszáma ki van töltve (${site.owner.phone}), de a docs/verified-facts.json nem igazolja (ownerPhone)`);
   if (site.owner.email && !verified.ownerEmail) fail(`a tulajdonos e-mailje ki van töltve, de nincs igazolva (ownerEmail)`);
   if (site.owner.name !== "Vörös József") fail("a tulajdonos neve nem Vörös József");
+  console.log(`${sources.length} szövegforrás (megjegyzések nélkül): ${sources.map(([f]) => f).join(", ")}; ${verified.forbiddenPatterns.length} tiltott minta, 0 találat; 3 kontroll rendben`);
   console.log("PASS: content-no-fabrication");
 }
 
@@ -199,16 +224,58 @@ if (which === "http") {
 }
 
 if (which === "lighthouse") {
-  const out = path.join(os.tmpdir(), "gyurusi-lighthouse.json");
+  /* G11: Lighthouse mobil a magyar főoldalon (Performance ≥ 85, Accessibility ≥ 95), és (javítókör) az akadálymentesség minden
+     nyilvános lapon, egy angol és egy német lappal: ≥ 95, és a színkontraszt-audit sehol nem bukhat. A korábbi események kontrasztja
+     csak múltbeli eseménnyel mérhető: a futás idejére egy közelgő (kiemelt, jelentkezéssel) és egy korábbi esemény kerül a helyi DB-be,
+     a végén az eredeti visszaáll. Accept-Language: hu — különben a Lighthouse en-US fejléce a gyökérről az /en-re irányítana. */
+  const { revalidateSite } = await import("./revalidate.mjs");
   const chrome = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-  const r = spawnSync("npx", ["--yes", "lighthouse@13", BASE + "/", "--output=json", `--output-path=${out}`, "--only-categories=performance,accessibility", "--form-factor=mobile", "--screenEmulation.mobile", "--throttling-method=simulate", "--quiet", `--chrome-flags=--headless=new --no-sandbox --disable-gpu`],
-    { cwd: ROOT, env: { ...process.env, CHROME_PATH: chrome }, stdio: ["ignore", "inherit", "inherit"], timeout: 300_000 });
-  if (r.status !== 0) fail(`lighthouse kilépési kód ${r.status}`);
-  const lh = JSON.parse(await fs.readFile(out, "utf8"));
-  const perf = Math.round(lh.categories.performance.score * 100), a11y = Math.round(lh.categories.accessibility.score * 100);
-  const lcp = lh.audits["largest-contentful-paint"]?.numericValue;
-  console.log(`Performance ${perf}, Accessibility ${a11y}, LCP ${lcp ? (lcp / 1000).toFixed(2) + " s" : "?"}`);
-  if (perf < 85) fail(`Performance ${perf} < 85`);
-  if (a11y < 95) fail(`Accessibility ${a11y} < 95`);
+  const DB = path.join(ROOT, "data/site.json");
+  const original = await fs.readFile(DB, "utf8").catch(() => null);
+  const site = JSON.parse(original ?? (await fs.readFile(path.join(ROOT, "data/seed.json"), "utf8")));
+  const day = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+  const L3 = (hu, en, de) => ({ hu, en, de });
+  const UP = "g11-kozelgo", PAST = "g11-korabbi";
+  const summary = L3("Akadálymentességi mérés.", "Accessibility check.", "Prüfung der Barrierefreiheit.");
+  site.events = [
+    { id: UP, title: L3("G11 közelgő próbaesemény", "G11 upcoming test event", "G11 kommende Testveranstaltung"), date: day(21), location: "Gyűrűsi Ménes", summary, image: "ket-lo-taj", published: true, featured: true, registration: true },
+    { id: PAST, title: L3("G11 korábbi próbaesemény", "G11 past test event", "G11 vergangene Testveranstaltung"), date: day(-45), location: "Gyűrűsi Ménes", summary, published: true, featured: false, registration: false },
+    ...(site.events ?? []).filter((e) => ![UP, PAST].includes(e.id)).map((e) => ({ ...e, featured: false })),
+  ];
+  const problems = [];
+  await fs.writeFile(DB, JSON.stringify(site, null, 2));
+  try {
+    await revalidateSite(BASE);
+    const esem = await (await fetch(`${BASE}/esemenyek`, { headers: { "accept-language": "hu" } })).text();
+    if (!esem.includes("data-past-events") || !esem.includes("G11 korábbi próbaesemény")) problems.push("kontroll: a /esemenyek lapon nincs korábbi-események blokk — a kontrasztmérés nem valódi");
+    const PAGES = ["/", "/huculosveny", "/turak", "/oktatas", "/taborok", "/egyesulet", "/esemenyek", `/esemenyek/${UP}`, `/esemenyek/${PAST}`, "/adatkezeles", "/impresszum", "/en", "/de/esemenyek"];
+    for (const p of PAGES) {
+      const home = p === "/";
+      const out = path.join(os.tmpdir(), `gyurusi-lighthouse${p.replace(/\W+/g, "-")}.json`);
+      const r = spawnSync("npx", ["--yes", "lighthouse@13", BASE + p, "--output=json", `--output-path=${out}`, `--only-categories=${home ? "performance,accessibility" : "accessibility"}`, "--form-factor=mobile", "--screenEmulation.mobile", "--throttling-method=simulate", "--quiet",
+        `--extra-headers=${JSON.stringify({ "Accept-Language": "hu-HU,hu;q=0.9" })}`, "--chrome-flags=--headless=new --no-sandbox --disable-gpu"],
+        { cwd: ROOT, env: { ...process.env, CHROME_PATH: chrome }, stdio: ["ignore", "ignore", "inherit"], timeout: 300_000 });
+      if (r.status !== 0) { problems.push(`${p}: lighthouse kilépési kód ${r.status}`); continue; }
+      const lh = JSON.parse(await fs.readFile(out, "utf8"));
+      const a11y = Math.round(lh.categories.accessibility.score * 100);
+      const final = new URL(lh.finalDisplayedUrl).pathname;
+      if (final !== p) problems.push(`${p}: a Lighthouse a(z) ${final} címet mérte (átirányítás?)`);
+      const contrast = lh.audits["color-contrast"];
+      const low = contrast?.score === 0 ? (contrast.details?.items ?? []).map((i) => i.node?.selector ?? "?") : [];
+      let line = `${p}: Accessibility ${a11y}`;
+      if (home) {
+        const perf = Math.round(lh.categories.performance.score * 100), lcp = lh.audits["largest-contentful-paint"]?.numericValue;
+        line = `${p}: Performance ${perf}, Accessibility ${a11y}, LCP ${lcp ? (lcp / 1000).toFixed(2) + " s" : "?"}`;
+        if (perf < 85) problems.push(`${p}: Performance ${perf} < 85`);
+      }
+      if (a11y < 95) problems.push(`${p}: Accessibility ${a11y} < 95 (bukott auditok: ${lh.categories.accessibility.auditRefs.filter((x) => lh.audits[x.id]?.score === 0).map((x) => x.id).join(", ")})`);
+      if (low.length) problems.push(`${p}: színkontraszt-hiba (${low.length}): ${low.slice(0, 4).join(" | ")}`);
+      console.log(line + (low.length ? `, kontraszthiba: ${low.length}` : ", kontraszt rendben"));
+    }
+  } finally {
+    if (original === null) await fs.rm(DB, { force: true }); else await fs.writeFile(DB, original);
+    for (let i = 0; i < 3; i++) { try { await revalidateSite(BASE); break; } catch { await new Promise((r) => setTimeout(r, 500)); } }
+  }
+  if (problems.length) fail(`${problems.length} hiba\n  - ${problems.join("\n  - ")}`);
   console.log("PASS: lighthouse");
 }

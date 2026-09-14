@@ -589,7 +589,9 @@ textarea.input { min-height: 8rem; resize: vertical; }
 .evc li a svg { width: 20px; height: 20px; color: var(--color-dust); transition: transform 240ms var(--ease-out); }
 .evc li a:hover svg { transform: translateX(4px); color: var(--color-ink); }
 .evc-reg { display: inline-block; margin-left: 8px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-forest); border: 1px solid var(--color-forest); padding: 1px 7px; border-radius: 3px; vertical-align: middle; }
-.evc.past li a { opacity: 0.78; }
+/* Korábbi események: halványabb címmel, de NEM átlátszósággal — a 0,78-as opacity a dátum és a meta-sor porszínét 3,39:1-re
+   világosította (Lighthouse color-contrast). A --color-dust és az --color-ink-soft a csontfehéren is ≥ 4,5:1. */
+.evc.past .evc-title, .evc.past .evc-date b { color: var(--color-ink-soft); }
 @media (max-width: 560px) { .evc li a { grid-template-columns: 72px minmax(0, 1fr); } .evc li a svg { display: none; } .evc-date b { font-size: 1.6rem; } }
 .ev-section { margin-top: clamp(32px, 5vw, 56px); }
 
@@ -1117,3 +1119,10 @@ img.rev-avatar { display: block; object-fit: cover; background: var(--color-bone
     content-visibility: auto; contain-intrinsic-size: auto 900px;
   }
 }
+
+/* Javítókör — akadálymentesség (Lighthouse, G11 minden nyilvános lapon):
+   · az aloldali kapcsolati doboz sötét (--color-forest-deep): a .link égkékje ott 2:1 volt — a doboz szövegszínét kapja, aláhúzva;
+   · a kép nélküli képfej vissza-linkje a szemöldök 0,8-as átlátszósága alatt még egyszer 0,8-at kapott (1,4:1 a környező szöveghez,
+     aláhúzás nélkül) — teljes átlátszóság és aláhúzás. */
+.sub-contact .sub-contact-mail { color: inherit; }
+.sub-hero-plain .eyebrow .sub-back { opacity: 1; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }

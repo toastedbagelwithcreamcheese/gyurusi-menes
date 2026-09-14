@@ -68,3 +68,6 @@ graphify-out.bak*/
 /data/google
 # a régi (szabályba ütköző) vélemény-gyorsítótár maradéka, ha egy régi futásból itt maradt
 /data/cache
+
+# a p6-seo éles domainű próba-buildje (NEXT_DIST_DIR, a futás végén törlődik)
+/.next-seo/

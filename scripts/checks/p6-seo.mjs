@@ -6,13 +6,24 @@
  *   · og:locale + og:locale:alternate, twitter:card · minden <img>-nek van alt-ja, és en/de lapon nem magyar
  *   · 404: HTTP 404, noindex, saját cím nyelvenként · sitemap: minden nyilvános URL, alternatívákkal és lastmod-dal
  *   · a régi WordPress-címek 301-gyel a helyes célra (záró perjellel és anélkül), a cél 200
+ *   · javítókör: feltöltött képek — leírás nélkül a feltöltés 400 és nem tárolódik; a háromnyelvű leírás a lap nyelvén jelenik meg
+ *     (hu/en/de nyitókép); a régi, fájlnévnek látszó egynyelvű leírás („IMG_1234.jpg”) sehol nem lesz alt
+ *   · sitemap lastmod = a valódi módosítás napja (dokumentum updatedAt, eseménylapon az eseményé); ha nincs ilyen, nincs lastmod
+ *   · a huculosveny.gyurusimenes.hu Host-fejlécű kérés minden címe 301 → https://gyurusimenes.hu/huculosveny (kontroll: más hoszton nem)
+ *   · éles domainű próba-build (NEXT_DIST_DIR=.next-seo, NEXT_PUBLIC_SITE_URL=https://gyurusimenes.hu), a változó NÉLKÜL indítva (a
+ *     beégetett értéket méri): canonical, hreflang, og:url, og:image, sitemap és robots.txt Sitemap-sor ezt a domaint adja
+ *     (kontroll: a fő build canonical-ja más domain). A tsconfig.json és a next-env.d.ts utána visszaáll, a .next-seo törlődik.
  * Használat: node scripts/with-server.mjs node scripts/checks/p6-seo.mjs  (SITE_URL megadásával a canonical eredetét is nézi)
  */
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { BASE, LANGS, ROOT, decode, get, imageSize, langPath, pathOf, publicPaths, report, stripScripts, tags } from "./p6-lib.mjs";
+import { spawn } from "node:child_process";
+import http from "node:http";
+import net from "node:net";
+import { BASE, BOT_UA, LANGS, ROOT, decode, get, imageSize, langPath, pathOf, publicPaths, report, stripScripts, tags } from "./p6-lib.mjs";
+import { revalidateSite } from "../revalidate.mjs";
 
 const problems = [];
 const bad = (m) => problems.push(m);
@@ -196,6 +207,10 @@ const smr = await get("/sitemap.xml");
 if (smr.status !== 200) bad(`/sitemap.xml → HTTP ${smr.status}`);
 else {
   const xml = await smr.text();
+  /* A lastmod a valódi módosítás napja (store.ts writeSite → updatedAt; eseménylapon az esemény saját updatedAt-ja); ha nincs ilyen, nincs lastmod. */
+  const dbDoc = JSON.parse(await fs.readFile(path.join(ROOT, "data/site.json"), "utf8").catch(() => fs.readFile(path.join(ROOT, "data/seed.json"), "utf8")));
+  const dayOf = (iso) => (iso && !Number.isNaN(Date.parse(iso)) ? iso.slice(0, 10) : undefined);
+  const lastModFor = (p) => dayOf(p.startsWith("/esemenyek/") ? (dbDoc.events ?? []).find((ev) => `/esemenyek/${ev.id}` === p)?.updatedAt ?? dbDoc.updatedAt : dbDoc.updatedAt);
   const entries = [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)].map((m) => ({
     loc: decode((m[1].match(/<loc>([^<]+)<\/loc>/) ?? [])[1] ?? ""),
     lastmod: (m[1].match(/<lastmod>([^<]+)<\/lastmod>/) ?? [])[1],
@@ -206,7 +221,8 @@ else {
     const want = langPath(l, p), e = byPath.get(pathOf(want));
     if (!e) { bad(`sitemap: hiányzik ${want}`); continue; }
     if (!/^https?:\/\//.test(e.loc)) bad(`sitemap: nem abszolút cím: ${e.loc}`);
-    if (!e.lastmod || Number.isNaN(Date.parse(e.lastmod))) bad(`sitemap: ${want} lastmod nélkül`);
+    const wantMod = lastModFor(p);
+    if (wantMod ? e.lastmod !== wantMod : e.lastmod !== undefined) bad(`sitemap: ${want} lastmod „${e.lastmod ?? "—"}” (várt: ${wantMod ?? "nincs lastmod — a tárban nincs módosítási idő"})`);
     for (const k of LANGS) if (!e.alts[k] || pathOf(e.alts[k]) !== pathOf(langPath(k, p))) bad(`sitemap: ${want} ${k} alternatívája hibás: ${e.alts[k] ?? "—"}`);
     if (!e.alts["x-default"] || pathOf(e.alts["x-default"]) !== pathOf(langPath("hu", p))) bad(`sitemap: ${want} x-default alternatívája hibás`);
   }
@@ -228,4 +244,159 @@ for (const [from, to] of LEGACY) {
   if (fin.status !== 200) bad(`${from} célja (${u.pathname}) → HTTP ${fin.status}`);
 }
 
-report("p6-seo", problems, `${paths.length} nyilvános lap × ${LANGS.length} nyelv, ${fetched.size} megosztási kép letöltve és megmérve, ${NOT_FOUND.length} 404-es cím, ${LEGACY.length} régi cím`);
+/* ---------- javítókör: feltöltött képek leírása és a valódi lastmod (fixture a helyi DB-ben, a végén visszaáll) ---------- */
+const DB = path.join(ROOT, "data/site.json"), FILES = path.join(ROOT, "data/files");
+const adminAuth = process.env.ADMIN_PASSWORD ? { authorization: `Basic ${Buffer.from(`${process.env.ADMIN_USER ?? ""}:${process.env.ADMIN_PASSWORD}`).toString("base64")}` } : {};
+const dbBackup = await fs.readFile(DB, "utf8").catch(() => null);
+const fixtureFiles = [];
+const extra = [];
+try {
+  const sharp = createRequire(path.join(ROOT, "package.json"))("sharp");
+  const tiny = await sharp({ create: { width: 64, height: 48, channels: 3, background: { r: 96, g: 120, b: 80 } } }).webp().toBuffer();
+  const upload = (q) => fetch(`${BASE}/api/admin/upload-image?${new URLSearchParams(q)}`, { method: "POST", headers: { "content-type": "image/webp", ...adminAuth }, body: tiny });
+  const readDb = async () => JSON.parse(await fs.readFile(DB, "utf8").catch(() => fs.readFile(path.join(ROOT, "data/seed.json"), "utf8")));
+  const n0 = (await readDb()).uploads.length;
+  const r0 = await upload({ name: "IMG_9901.jpg" });
+  const j0 = await r0.json().catch(() => null);
+  if (r0.status !== 400 || !/magyar leírást/.test(j0?.error ?? "")) bad(`feltöltés leírás nélkül → HTTP ${r0.status} ${JSON.stringify(j0)} (400 és a leírást kérő üzenet várt)`);
+  if ((await readDb()).uploads.length !== n0) bad("feltöltés leírás nélkül: a kép mégis tárolódott");
+
+  const ALT = { hu: "P6 próbakép: hucul ló a legelőn", en: "P6 test image: Hucul horse on the pasture", de: "P6 Testbild: Huzule auf der Weide" };
+  const r1 = await upload({ alt: ALT.hu, alt_en: ALT.en, alt_de: ALT.de, name: "IMG_9902.jpg" });
+  const j1 = await r1.json().catch(() => null);
+  const upId = j1?.image?.id;
+  if (r1.status !== 200 || !upId) throw new Error(`a háromnyelvű leírású feltöltés nem sikerült: HTTP ${r1.status} ${JSON.stringify(j1)}`);
+  const LEGACY_ID = "u-p6regi01";
+  fixtureFiles.push(path.join(FILES, `${upId}.webp`), path.join(FILES, `${LEGACY_ID}.webp`));
+  const afterUp = await readDb();
+  const stored = afterUp.uploads.find((u) => u.id === upId);
+  if (JSON.stringify(stored?.alt) !== JSON.stringify(ALT)) bad(`a tárolt leírás nem a háromnyelvű: ${JSON.stringify(stored?.alt)}`);
+  if (!afterUp.updatedAt || Math.abs(Date.now() - Date.parse(afterUp.updatedAt)) > 120_000) bad(`a feltöltés mentése nem frissítette a dokumentum updatedAt-ját (${afterUp.updatedAt})`);
+
+  /* A régi feltöltő üres leírásnál a fájlnevet tette alt-nak — ilyen rekord a tárban, sztring formában. */
+  await fs.copyFile(path.join(FILES, `${upId}.webp`), path.join(FILES, `${LEGACY_ID}.webp`));
+  const doc = structuredClone(afterUp);
+  doc.uploads.push({ id: LEGACY_ID, src: `/files/${LEGACY_ID}.webp`, width: stored?.width ?? 64, height: stored?.height ?? 48, alt: "IMG_1234.jpg", uploadedAt: "2025-05-01T10:00:00.000Z" });
+  doc.hero.image = upId;
+  doc.pages.turak.images = [LEGACY_ID, ...doc.pages.turak.images.filter((x) => x !== LEGACY_ID)];
+  const EV = "p6-lastmod-esemeny";
+  doc.events = [{ id: EV, title: { hu: "P6 lastmod-próba", en: "P6 lastmod test", de: "P6 Lastmod-Test" }, date: new Date(Date.now() + 40 * 864e5).toISOString().slice(0, 10), location: "Gyűrűsi Ménes",
+    summary: { hu: "Sitemap-próba.", en: "Sitemap test.", de: "Sitemap-Test." }, published: true, featured: false, registration: false, updatedAt: "2026-09-01T08:00:00.000Z" }, ...(doc.events ?? [])];
+  doc.updatedAt = "2026-09-02T09:30:00.000Z";
+  await fs.writeFile(DB, JSON.stringify(doc, null, 2));
+  await revalidateSite(BASE);
+
+  const imgsWith = async (u, needle) => { const r = await get(u); const html = stripScripts(await r.text()); return { status: r.status, html, imgs: tags(html, "img").filter((i) => `${i.src ?? ""} ${i.srcset ?? ""}`.includes(needle)) }; };
+  let altOk = 0;
+  for (const [l, u] of [["hu", "/"], ["en", "/en"], ["de", "/de"]]) {
+    const { status, imgs } = await imgsWith(u, upId);
+    if (status !== 200 || !imgs.length) { bad(`${u}: a feltöltött nyitókép (${upId}) nincs a lapon (HTTP ${status}) — a leírás-ellenőrzés nem futott`); continue; }
+    for (const i of imgs) { if (i.alt !== ALT[l]) bad(`${u}: a feltöltött kép leírása „${i.alt}” (várt: „${ALT[l]}”)`); else altOk++; }
+  }
+  for (const u of ["/turak", "/en/turak", "/de/turak"]) {
+    const { status, html, imgs } = await imgsWith(u, LEGACY_ID);
+    if (status !== 200 || !imgs.length) { bad(`${u}: a régi feltöltés (${LEGACY_ID}) nincs a lapon (HTTP ${status})`); continue; }
+    if (imgs.some((i) => i.alt === undefined)) bad(`${u}: alt-attribútum nélküli kép`);
+    const shown = tags(html, "img").map((i) => i.alt ?? "");
+    if (shown.some((a) => /IMG_1234\.jpg/.test(a))) bad(`${u}: a fájlnév („IMG_1234.jpg”) képleírásként jelenik meg`);
+    if (u !== "/turak") for (const a of shown) if (a && looksHungarian(a, u.slice(1, 3))) bad(`${u}: magyar képleírás: „${a}”`);
+  }
+
+  const sm = await (await get("/sitemap.xml")).text();
+  const mods = new Map([...sm.matchAll(/<url>([\s\S]*?)<\/url>/g)].map((m) => [pathOf(decode((m[1].match(/<loc>([^<]+)<\/loc>/) ?? [])[1] ?? "")), (m[1].match(/<lastmod>([^<]+)<\/lastmod>/) ?? [])[1]]));
+  for (const [pth, want] of [[`/esemenyek/${EV}`, "2026-09-01"], [`/en/esemenyek/${EV}`, "2026-09-01"], ["/turak", "2026-09-02"], ["/de", "2026-09-02"]]) {
+    if (mods.get(pth) !== want) bad(`sitemap (fixture): ${pth} lastmod „${mods.get(pth) ?? "—"}” (várt: ${want})`);
+  }
+  extra.push(`feltöltött képek: leírás nélkül 400, háromnyelvű leírás ${altOk}/3 nyelven a helyén, fájlnév-alt sehol; lastmod fixture: esemény 2026-09-01, többi 2026-09-02`);
+} catch (e) {
+  bad(`feltöltött képek / lastmod: ${e instanceof Error ? e.message : e}`);
+} finally {
+  if (dbBackup === null) await fs.rm(DB, { force: true }); else await fs.writeFile(DB, dbBackup);
+  for (const f of fixtureFiles) await fs.rm(f, { force: true });
+  try { await revalidateSite(BASE, { required: false }); } catch { /* a jelentés úgyis lefut */ }
+}
+
+/* ---------- javítókör: a régi Huculösvény-aldomain 301-e (Host-fejléccel; a fetch a Host-ot nem engedi felülírni) ---------- */
+try {
+  const hostGet = (p, host) => new Promise((resolve, reject) => {
+    const u = new URL(BASE + p);
+    const req = http.request({ hostname: u.hostname, port: u.port, path: u.pathname, method: "GET", headers: { host, "user-agent": BOT_UA } }, (res) => { res.resume(); resolve({ status: res.statusCode, location: res.headers.location }); });
+    req.on("error", reject); req.setTimeout(20_000, () => req.destroy(new Error("időtúllépés"))); req.end();
+  });
+  const HUC = "https://gyurusimenes.hu/huculosveny";
+  const HUC_PATHS = ["/", "/wp-content/uploads/2023/06/Huculosveny-alapszabaly.pdf", "/kapcsolat/"];
+  for (const p of HUC_PATHS) {
+    const r = await hostGet(p, "huculosveny.gyurusimenes.hu");
+    if (r.status !== 301 || r.location !== HUC) bad(`Host: huculosveny.gyurusimenes.hu ${p} → ${r.status} ${r.location ?? ""} (301 → ${HUC} várt)`);
+  }
+  for (const [p, host] of [["/", new URL(BASE).host], ["/", "gyurusimenes.hu"], [HUC_PATHS[1], "www.gyurusimenes.hu"]]) {
+    const r = await hostGet(p, host);
+    if (r.location === HUC) bad(`kontroll: Host: ${host} ${p} is a huculosveny-aldomain szabályára fut (${r.status})`);
+  }
+  extra.push(`huculosveny-aldomain: ${HUC_PATHS.length} cím 301 → /huculosveny (kontroll: 3 más hoszton nem)`);
+} catch (e) { bad(`huculosveny-aldomain: ${e instanceof Error ? e.message : e}`); }
+
+/* ---------- javítókör: éles domainű próba-build (NEXT_PUBLIC_SITE_URL build-idejű) ---------- */
+{
+  const PROBE_SITE = "https://gyurusimenes.hu", PROBE_DIR = ".next-seo";
+  const runProc = (cmd, args, env, timeout) => new Promise((resolve) => {
+    const c = spawn(cmd, args, { cwd: ROOT, env, stdio: ["ignore", "pipe", "pipe"] });
+    let out = ""; c.stdout.on("data", (d) => { out += d; }); c.stderr.on("data", (d) => { out += d; });
+    const t = setTimeout(() => c.kill("SIGKILL"), timeout);
+    c.on("close", (code) => { clearTimeout(t); resolve({ code, out }); });
+  });
+  const freePort = () => new Promise((resolve, reject) => { const s = net.createServer(); s.on("error", reject); s.listen(0, () => { const { port } = s.address(); s.close(() => resolve(port)); }); });
+  const keep = {};
+  let probe = null;
+  try {
+    for (const f of ["tsconfig.json", "next-env.d.ts"]) keep[f] = await fs.readFile(path.join(ROOT, f), "utf8").catch(() => null);
+    const nextBin = path.join(ROOT, "node_modules/next/dist/bin/next");
+    const buildEnv = { ...process.env, NEXT_DIST_DIR: PROBE_DIR, NEXT_PUBLIC_SITE_URL: PROBE_SITE, URL: "", NEXT_TELEMETRY_DISABLED: "1" };
+    delete buildEnv.PORT;
+    const b = await runProc(process.execPath, [nextBin, "build"], buildEnv, 900_000);
+    if (b.code !== 0) throw new Error(`a próba-build nem sikerült (kód ${b.code}): ${b.out.slice(-800)}`);
+    const port = await freePort();
+    /* Indításkor a változó NINCS a környezetben (a .env.local értéke http://localhost:… lenne): így a beégetett értéket mérjük. */
+    const startEnv = { ...buildEnv, PORT: String(port) };
+    delete startEnv.NEXT_PUBLIC_SITE_URL;
+    probe = spawn(process.execPath, [nextBin, "start", "-p", String(port)], { cwd: ROOT, env: startEnv, stdio: "ignore" });
+    const PB = `http://localhost:${port}`;
+    let up = false;
+    for (let i = 0; i < 120 && !up; i++) { try { up = (await fetch(`${PB}/robots.txt`)).ok; } catch { /* indul */ } if (!up) await new Promise((r) => setTimeout(r, 500)); }
+    if (!up) throw new Error("a próba-szerver nem indult el");
+    const pget = (p) => fetch(PB + p, { redirect: "manual", headers: { "user-agent": BOT_UA } });
+    const robots = await (await pget("/robots.txt")).text();
+    if (!robots.includes(`Sitemap: ${PROBE_SITE}/sitemap.xml`)) bad(`éles domain: a robots.txt Sitemap-sora: ${robots.match(/Sitemap:.*/)?.[0] ?? "—"} (várt: ${PROBE_SITE}/sitemap.xml)`);
+    const origin = (u) => { try { return new URL(u).origin; } catch { return "?"; } };
+    let pagesOk = 0;
+    for (const p of ["/", "/en/turak", "/de/esemenyek"]) {
+      const html = stripScripts(await (await pget(p)).text());
+      const links = tags(html, "link"), metas = tags(html, "meta");
+      const canon = links.find((x) => x.rel === "canonical")?.href;
+      const alts = links.filter((x) => x.rel === "alternate" && x.hreflang).map((x) => x.href);
+      const ogUrl = metas.find((m) => m.property === "og:url")?.content, ogImg = metas.find((m) => m.property === "og:image")?.content;
+      const before = problems.length;
+      if (!canon || origin(canon) !== PROBE_SITE || pathOf(canon) !== p) bad(`éles domain ${p}: canonical ${canon ?? "—"}`);
+      if (alts.length < 4 || alts.some((h) => origin(h) !== PROBE_SITE)) bad(`éles domain ${p}: hreflang ${alts.join(", ") || "—"}`);
+      if (origin(ogUrl) !== PROBE_SITE) bad(`éles domain ${p}: og:url ${ogUrl ?? "—"}`);
+      if (origin(ogImg) !== PROBE_SITE) bad(`éles domain ${p}: og:image ${ogImg ?? "—"}`);
+      if (problems.length === before) pagesOk++;
+    }
+    const psm = await (await pget("/sitemap.xml")).text();
+    const urls = [...[...psm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => decode(m[1])), ...[...psm.matchAll(/<xhtml:link[^>]*href="([^"]+)"/g)].map((m) => decode(m[1]))];
+    const foreign = urls.filter((u) => origin(u) !== PROBE_SITE);
+    if (urls.length < 60 || foreign.length) bad(`éles domain: a sitemap ${urls.length} címéből ${foreign.length} más domainen: ${foreign.slice(0, 3).join(", ")}`);
+    /* Kontroll: a futó (fő) build canonical-ja NEM ez a domain — különben a próba nem tudna elbukni. */
+    const mainCanon = tags(stripScripts(await (await get("/")).text()), "link").find((x) => x.rel === "canonical")?.href;
+    if (!mainCanon || origin(mainCanon) === PROBE_SITE) bad(`kontroll: a fő build canonical-ja is ${mainCanon ?? "—"} — az éles domainű próba így nem bizonyít`);
+    extra.push(`éles domainű próba-build (${PROBE_SITE}, a változó nélkül indítva): robots.txt Sitemap-sor, ${pagesOk}/3 lap canonical+hreflang+og:url+og:image, sitemap ${urls.length} cím mind ezen a domainen; kontroll: a fő build canonical-ja ${origin(mainCanon)}`);
+  } catch (e) {
+    bad(`éles domainű próba-build: ${e instanceof Error ? e.message : e}`);
+  } finally {
+    if (probe) { probe.kill("SIGTERM"); await new Promise((r) => setTimeout(r, 1000)); try { probe.kill("SIGKILL"); } catch { /* már leállt */ } }
+    await fs.rm(path.join(ROOT, PROBE_DIR), { recursive: true, force: true });
+    for (const [f, c] of Object.entries(keep)) if (c !== null) await fs.writeFile(path.join(ROOT, f), c);
+  }
+}
+
+report("p6-seo", problems, `${paths.length} nyilvános lap × ${LANGS.length} nyelv, ${fetched.size} megosztási kép letöltve és megmérve, ${NOT_FOUND.length} 404-es cím, ${LEGACY.length} régi cím; ${extra.join("; ")}`);

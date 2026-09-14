@@ -10,6 +10,9 @@
  *  4. a mock 500-at ad → a látogató mégis 200/ok választ kap, a mock látta a próbálkozást, és az adat a tárban van
  *     (pozitív kontroll: a keresés a sosem küldött jelölőt NEM találja meg)
  *  5. a szolgáltató elérhetetlen (a mock leállítva) → ugyanígy siker és tárolás
+ *  6. egyedi CONTACT_TO és CONTACT_FROM (új szerver): a kapcsolati üzenet és a jelentkezés levelei a megadott címzetthez mennek a
+ *     megadott feladóval, a visszaigazolás válaszcíme a megadott címzett; az admin állapotpanelje ugyanezt mutatja.
+ *     Kontroll: az 1–5. lépés szerverének (változók nélkül) állapotpanelje az alapértelmezett címeket mutatja.
  * A végén a helyi DB visszaáll. Csak ha minden teljesült: PASS: p5-mail
  * A tárolás ellenőrzése tár-függetlenül a data/ könyvtár tartalmában keres (a tár szerkezete változhat).
  */
@@ -119,6 +122,35 @@ try {
   assert(cd.status === 200 && cd.json?.ok, `elérhetetlen szolgáltatónál a kapcsolati üzenet: ${cd.status} ${cd.text.slice(0, 200)}`);
   assert((await scanDir(path.join(ROOT, "data"), [downMsg])).length > 0, "elérhetetlen szolgáltatónál az üzenet nem tárolódott");
   console.log("5. elérhetetlen szolgáltató OK: siker + tárolás");
+
+  /* 6. egyedi CONTACT_TO és CONTACT_FROM */
+  const panelOf = async () => {
+    const r = await api("/admin");
+    const pick = (attr) => (r.text.match(new RegExp(`${attr}(?:="[^"]*")?>([^<]*)<`)) ?? [])[1]?.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    return { status: r.status, to: pick("data-mail-to"), from: pick("data-mail-from") };
+  };
+  const p0 = await panelOf();
+  assert(p0.status === 200 && p0.to === "info@gyurusimenes.hu" && p0.from === "Gyűrűsi Ménes <weboldal@gyurusimenes.hu>", `kontroll: a változók nélküli szerver állapotpanelje: ${JSON.stringify(p0)}`);
+  await server.stop(); server = null;
+  const TO = "masik-cimzett@example.com", FROM = "Próba Feladó <proba-felado@example.com>";
+  mock = await startMockResend({ port: 0, status: 200 });
+  server = await startNext(cleanEnv({ RESEND_API_KEY: "teszt", RESEND_API_BASE: mock.url, CONTACT_TO: TO, CONTACT_FROM: FROM }));
+  const p6 = await panelOf();
+  assert(p6.status === 200 && p6.to === TO && p6.from === FROM, `az állapotpanel nem a beállított címeket mutatja: ${JSON.stringify(p6)}`);
+  const c6 = await api("/api/contact", { method: "POST", headers: { "x-forwarded-for": ip() }, body: { name: "P5 Egyedi", email: "p5-egyedi@example.com", message: `P5-EGYEDI-${RUN} — egyedi címzett.`, page: "Egyesület", lang: "hu" } });
+  assert(c6.status === 200 && c6.json?.ok, `egyedi címekkel a kapcsolati üzenet: ${c6.status} ${c6.text.slice(0, 200)}`);
+  const m6 = await waitFor(() => mock.mails().length >= 1 && mock.mails(), 5000);
+  assert(m6 && m6.length === 1 && JSON.stringify(m6[0].body.to) === JSON.stringify([TO]) && m6[0].body.from === FROM, `egyedi címekkel a kapcsolati levél: ${JSON.stringify(m6 && m6.map((m) => ({ to: m.body.to, from: m.body.from })))}`);
+  mock.clear();
+  const reg6 = `p5-egyedi-${RUN}@example.com`;
+  const r6 = await api("/api/register", { method: "POST", headers: { "x-forwarded-for": ip() }, body: { eventId: EVENT_ID, name: "P5 Egyedi Jelentkező", phone: "+36 30 000 0004", email: reg6, count: "1", note: "", lang: "en" } });
+  assert(r6.status === 200 && r6.json?.ok, `egyedi címekkel a jelentkezés: ${r6.status} ${r6.text.slice(0, 200)}`);
+  const mails6 = await waitFor(() => mock.mails().length >= 2 && mock.mails(), 5000);
+  const n6 = mails6 && mails6.find((m) => m.body.to.includes(TO)), k6 = mails6 && mails6.find((m) => m.body.to.includes(reg6));
+  assert(mails6 && mails6.length === 2 && n6 && k6, `egyedi címekkel a jelentkezés levelei: ${JSON.stringify(mails6 && mails6.map((m) => m.body.to))}`);
+  assert(mails6.every((m) => m.body.from === FROM) && k6.body.reply_to === TO, `feladó és válaszcím egyedi címekkel: ${JSON.stringify(mails6.map((m) => ({ from: m.body.from, reply_to: m.body.reply_to })))}`);
+  assert(!JSON.stringify(mails6.map((m) => [m.body.to, m.body.from, m.body.reply_to])).includes("gyurusimenes.hu"), "egyedi címek mellett is az alapértelmezett cím került a levél fejlécébe");
+  console.log(`6. egyedi CONTACT_TO/CONTACT_FROM OK: kapcsolat és jelentkezés → ${TO}, feladó „${FROM}”, a visszaigazolás válaszcíme ${TO}; az állapotpanel ugyanezt mutatja (kontroll: változók nélkül az alapértelmezést)`);
   passed = true;
 } catch (e) {
   console.error("FAIL:", e instanceof CheckFail ? e.message : e?.stack ?? e);

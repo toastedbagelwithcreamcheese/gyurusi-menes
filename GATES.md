@@ -24,7 +24,7 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   EXPECT: PASS: images
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=dae9e21613683db2ae16c00294ee55d17fde184a76d5449af6d8ef621e1de29a; output-bytes=75
 
-- [x] G5: A tartalom (mindhárom nyelven) nem tartalmaz kitalált tényt; a tulajdonos telefonszáma üresen marad, amíg nem kapjuk meg
+- [x] G5: A tartalom (mindhárom nyelven: a mag, a szótárak, az llms.txt statikus szövege, a levélsablonok és az adatkezelési sablon, megjegyzések nélkül) nem tartalmaz kitalált tényt; a tulajdonos telefonszáma üresen marad, amíg nem kapjuk meg
   CHECK: node scripts/verify.mjs content-no-fabrication
   EXPECT: PASS: content-no-fabrication
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=79259f423b0252201cdb155872f88fec117c121dba3e8b2e09dbbf7d381a0b7f; output-bytes=29
@@ -59,8 +59,9 @@ Scope: Egyszerű főoldal + 5 aloldal (Huculösvény, Túrák, Oktatás, Táboro
   EXPECT: PASS: lighthouse
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=60180bcc1bfc2d7e8ba895cfd7f2333f09efd1880f840ddac1b3bd79b4354b64; output-bytes=63
 
-- [x] G12: Vizuális review desktop és mobil nézetben (Playwright-képek, scripts/shots.mjs): főoldal, egy aloldal, események, esemény-részletek jelentkezési űrlappal, admin; nincs vízszintes görgetés, a nyelvváltó a fejlécben mindkét nézetben elérhető, konzol hibamentes
-  EVIDENCE: scripts/shots.mjs → scratchpad/shots (17 kép, 1440×900 és 390×844): d-/m-home, turak, egyesulet, esemenyek, esemeny, home-en, admin, admin-oldal, m-menu. scrollWidth = innerWidth minden lapon mindkét nézetben (1440/1440, 390/390); konzol-hiba: 0 / 0. Megnézve: főoldal (hero, tulajdonos-blokk, bemutatkozás + fajta-sáv, kiemelt/legutóbbi esemény, 5 csempe, kapcsolat tulajdonos-kártyával elöl), Túrák (képfej, szöveg, képsáv, saját kapcsolat, kapcsolódó), Egyesület (beszámoló-blokk üres állapota), Eseménynaptár, eseményoldal (tények + kapcsolat + kapcsolódó), admin áttekintés, mobil menü a Magyar/English/Deutsch pillekkel (az első képen a menü-stílus rácsúszott a nyelvváltóra — javítva, újra ellenőrizve). A jelentkezési űrlapot a G10/G13 admin-körút tölti ki és küldi el (data-registration blokk, [role=status] visszajelzés).
+- [ ] G12: Vizuális review desktop és mobil nézetben (Playwright-képek, scripts/shots.mjs): főoldal, egy aloldal, események, esemény-részletek jelentkezési űrlappal, admin; nincs vízszintes görgetés, a nyelvváltó a fejlécben mindkét nézetben elérhető, konzol hibamentes
+  CHECK: node scripts/with-server.mjs node scripts/shots.mjs
+  EXPECT: PASS: shots
 
 - [ ] G13: Élesben (Netlify, Blobs-driver): deploy után /, /en, /de, /egyesulet 200; admin-flow ugyanezt a kört a Blobs ellen végigfutja (esemény létrehozás → látszik → törlés), bizonyítva, hogy a tartalom Netlify-on is megmarad
   CHECK: BASE_URL=https://gyurusi-menes-demo.netlify.app node scripts/admin-flow.mjs
@@ -138,7 +139,7 @@ Forrás: docs/review-2026-09-13/ (átnézés, 39 szempont + 12 saját lelet). Az
   EXPECT: PASS: p4-privacy
   EVIDENCE: exit=0; shell=/bin/sh; cwd=/Volumes/Samsung 1TB SSD/Weboldalak/gyurusi-menes; path=400472ccf252/24 entries; EXPECT=matched; output-sha256=6df41f01abcdd594b7d52590712490bbf70ce411fbcbed4bcbc99467457cf5eb; output-bytes=1121
 
-- [ ] G27: Mobil sebesség: Lighthouse mobil (szimulált lassítás) a főoldalon, egy aloldalon, a naptárban és egy eseménylapon Performance legalább 95, LCP legfeljebb 2,5 s, TBT legfeljebb 100 ms, CLS legfeljebb 0,05; a nyilvános lapok gyorsítótárból (statikusan vagy ISR-rel) szolgálódnak ki; mobilon a GSAP nem töltődik le
+- [ ] G27: Mobil sebesség: Lighthouse mobil (szimulált lassítás) a főoldalon, egy aloldalon, a naptárban, egy eseménylapon, valamint egy angol és egy német lapon Performance legalább 95, LCP legfeljebb 2,5 s, TBT legfeljebb 100 ms, CLS legfeljebb 0,05; a nyilvános lapok gyorsítótárból (statikusan vagy ISR-rel) szolgálódnak ki; mobilon a GSAP nem töltődik le
   CHECK: node scripts/with-server.mjs node scripts/checks/p7-speed.mjs
   EXPECT: PASS: p7-speed
 

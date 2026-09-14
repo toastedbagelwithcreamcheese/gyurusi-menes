@@ -136,7 +136,7 @@ export async function migrateLegacyRecords(): Promise<number> {
       const rest = asItems(d[kind]).filter((r) => !moved[kind].has(legacyId(r)));
       if (rest.length) d[kind] = rest; else delete d[kind];
     }
-  });
+  }, { touch: false }); // nem tartalmi változás: a lapok lastmod-ja ne mozduljon
   console.log(`[records] áthelyezve a tartalomdokumentumból: ${moved.registrations.size} jelentkezés, ${moved.messages.size} üzenet`);
   return moved.registrations.size + moved.messages.size;
 }

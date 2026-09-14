@@ -8,6 +8,7 @@
  *       név + profil-link, relatív idő, link a googleMapsUri-ra; mobilon (390 px) vízszintes scroll-snap, nincs oldal-túlcsordulás;
  *       angolul a fordított véleménynél jelölés és az eredeti szöveg
  *     · /api/reviews: no-store; a mock 500-ára a blokk eltűnik
+ *     · IP-nkénti keret (A6): egy címről 5 élő betöltés 24 óra alatt, a 6. kérés 429 Google-hívás nélkül (kontroll: egy másik IP-ről 200)
  *     · a tárban (data/) és a Next gyorsítótárában (.next/server, .next/cache) nincs véleményszöveg és darabszám —
  *       pozitív kontroll: ugyanez a keresés a mock valódi HTTP-válaszát tartalmazó fájlban megtalálja
  *     · a napi számláló a tárban van, és pontosan a hívások számát mutatja
@@ -226,6 +227,18 @@ try {
   const ctrl = await scanDir(scratch, NEEDLES);
   assert(NEEDLES.every((n) => ctrl.some((h) => h.needle === String(n))), `a pozitív kontroll nem találta meg a mock válaszában: ${JSON.stringify(ctrl)}`);
   console.log(`A5) tár: data/google csak számláló (${counter.day}: ${counter.count}); vélemény/darabszám sehol (data/, .next/server, .next/cache); kontroll a mock-válaszban: ${ctrl.length} találat`);
+  /* A6) IP-nkénti keret: egy címről legfeljebb 5 élő betöltés 24 óra alatt — egy ismételgető robot így nem éli fel a közös napi keretet.
+     Az A5 (számláló-állítás) után fut. Kontroll: egy másik IP-ről közben is jön betöltés. */
+  const before6 = (await details()).length;
+  const seq6 = [];
+  for (let i = 0; i < 6; i++) seq6.push(await api("/api/reviews?lang=hu", { headers: { "x-forwarded-for": "198.51.100.77" } }));
+  const after6 = (await details()).length;
+  assert(seq6.slice(0, 5).every((r) => r.status === 200) && seq6[5].status === 429, `egy IP 6 kérése: ${seq6.map((r) => r.status).join(",")} (5×200, majd 429 várt)`);
+  assert(Number(seq6[5].headers.get("retry-after")) > 0 && /no-store/.test(seq6[5].headers.get("cache-control") ?? ""), `a 429-es válasz fejlécei: Retry-After ${seq6[5].headers.get("retry-after")}, Cache-Control ${seq6[5].headers.get("cache-control")}`);
+  assert(after6 - before6 === 5, `az IP-korlát felett is ment Google-hívás (${after6 - before6} új hívás, 5 várt)`);
+  const other6 = await api("/api/reviews?lang=hu", { headers: { "x-forwarded-for": "198.51.100.78" } });
+  assert(other6.status === 200 && (await details()).length === after6 + 1, `kontroll: egy másik IP-ről nem jött betöltés (${other6.status})`);
+  console.log(`A6) IP-korlát: egy címről 5×200, a 6. kérés 429 (Retry-After ${seq6[5].headers.get("retry-after")} s), Google-hívás nélkül; kontroll: másik IP-ről 200`);
   await server.stop(); server = null;
 
   /* ================= B) Blobs-szimulátor, place ID nélkül, keret = 1 ================= */
