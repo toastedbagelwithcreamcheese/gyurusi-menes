@@ -1,16 +1,16 @@
 # Graph Report - gyurusi-menes  (2026-09-14)
 
 ## Corpus Check
-- 150 files · ~329,642 words
+- 150 files · ~331,351 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1075 nodes · 2710 edges · 54 communities (42 shown, 12 thin omitted)
+- 1084 nodes · 2719 edges · 55 communities (43 shown, 12 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 4 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f5a3bccc`
+- Built from commit: `f46f3ad6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -18,7 +18,7 @@
 - blobsAvailable
 - Sections.tsx
 - compilerOptions
-- store.ts
+- actions.ts
 - devDependencies
 - Gyűrűsi Ménes — online kutatási jelentés
 - [slug]/page.tsx
@@ -34,18 +34,18 @@
 - postcss.config.mjs
 - admin-flow.mjs
 - shots.mjs
-- formatRange
+- store.ts
 - AGENTS.md
 - CLAUDE.md
 - GATES-2026-08-30.md
 - GATES.md
-- langPath
+- readSite
 - p6-geo.mjs
 - admin-auth.ts
 - sharp-linux.mjs
 - with-server.mjs
 - db-reset.mjs
-- readSite
+- isLang
 - records.ts
 - p1-maintenance.mjs
 - HeroIntro.tsx
@@ -57,11 +57,12 @@
 - Gyűrűsi Ménes — átnézés a megbízó szempontjai szerint (2026-09-13)
 - admin/layout.tsx
 - r9-google-policy.md
+- [lang]/page.tsx
 - p6-seo.mjs
 - p6-lib.mjs
 - make-icons.mjs
 - P3 — Admin: belépés és egyszerű használat (G19, G20) — bizonyítékok
-- Kapuk
+- P5 — Integrációk szimulációval (e-mail, Google-értékelések) — bizonyítékok
 - P6 — SEO és GEO: bizonyítékok (2026-09-14)
 - p6-lighthouse.mjs
 - Egyesítés — P5 (feat/p5-integraciok) és P6 (feat/p6-seo-geo) a main-be: bizonyítékok (2026-09-14)
@@ -82,35 +83,35 @@
 ## Surprising Connections (you probably didn't know these)
 - `dailyMaintenance()` --calls--> `runMaintenance()`  [EXTRACTED]
   netlify/functions/daily-maintenance.mts → src/lib/maintenance.ts
-- `LegalAdmin()` --calls--> `readSite()`  [EXTRACTED]
-  src/app/[lang]/admin/(panel)/jogi/page.tsx → src/lib/store.ts
 - `RootLayout()` --calls--> `isLang()`  [EXTRACTED]
   src/app/[lang]/layout.tsx → src/content/types.ts
 - `until()` --calls--> `sleep()`  [EXTRACTED]
   scripts/checks/p3-admin-ux.mjs → scripts/checks/_p1-harness.mjs
 - `noisyJpeg()` --calls--> `CheckError`  [EXTRACTED]
   scripts/checks/p2-uploads.mjs → scripts/checks/_p1-harness.mjs
+- `load()` --calls--> `assert()`  [EXTRACTED]
+  scripts/checks/p1-maintenance.mjs → scripts/checks/_p1-harness.mjs
 
 ## Import Cycles
 - None detected.
 
-## Communities (54 total, 12 thin omitted)
+## Communities (55 total, 12 thin omitted)
 
 ### Community 0 - "blobsAvailable"
 Cohesion: 0.06
 Nodes (80): dynamic, POST(), dynamic, POST(), dynamic, FORMATS, POST(), TYPES (+72 more)
 
 ### Community 1 - "Sections.tsx"
-Cohesion: 0.10
-Nodes (26): PagesAdmin(), Params, ContactDock(), ContactForm(), Header(), HeroParallax(), Labels, MapEmbed() (+18 more)
+Cohesion: 0.15
+Nodes (26): PagesAdmin(), EventPage(), P, ContentPage(), HeroParallax(), Labels, MapEmbed(), ContactBlock() (+18 more)
 
 ### Community 2 - "compilerOptions"
 Cohesion: 0.07
 Nodes (28): dom, dom.iterable, esnext, **/*.mts, .next/dev/types/**/*.ts, next-env.d.ts, .next/types/**/*.ts, node_modules (+20 more)
 
-### Community 3 - "store.ts"
-Cohesion: 0.07
-Nodes (76): b(), back(), deleteEvent(), deleteMessage(), deleteRegistration(), deleteReport(), deleteRoute(), deleteUpload() (+68 more)
+### Community 3 - "actions.ts"
+Cohesion: 0.10
+Nodes (58): b(), back(), deleteEvent(), deleteMessage(), deleteRegistration(), deleteReport(), deleteRoute(), deleteUpload() (+50 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.04
@@ -121,8 +122,8 @@ Cohesion: 0.06
 Nodes (31): 0. Összefoglaló, egy bekezdésben, 10.1 huculosveny.gyurusimenes.hu [ÉLŐ, letöltve 2026-08-30], 10.2 gyurusimenes.hu [ARCHÍV 2024-07-18; ma 403], 10.3 gidrangyurus.hu (régi, 2018–2022) [ARCHÍV], 10. A jelenlegi weboldal(ak) menüszerkezete és szövegei — SZÓ SZERINT, 11. Képek témái a régi/mostani oldalakon, 12. Nem igazolt / nem található (összefoglaló lista), 13. Ellentmondások (+23 more)
 
 ### Community 6 - "[slug]/page.tsx"
-Cohesion: 0.09
-Nodes (27): fmtSize(), P, Photo(), PhotoKey, PHOTOS, Reveal(), Footer(), I (+19 more)
+Cohesion: 0.12
+Nodes (18): fmtSize(), P, Reveal(), CONTOURS, FORESTS, RouteMap(), ROUTES, Fact (+10 more)
 
 ### Community 7 - "prep-images.mjs"
 Cohesion: 0.32
@@ -145,8 +146,8 @@ Cohesion: 0.17
 Nodes (11): Adatszerkezet, karbantartás, mentés, Admin: belépés és használat, Ami szándékosan nincs benne, Ellenőrzés, Feltöltések (képek, PDF-beszámolók), Gyűrűsi Ménes — weboldal + admin (demó), Helyi adatbázis és tesztelés, Indítás (+3 more)
 
 ### Community 13 - "types.ts"
-Cohesion: 0.12
-Nodes (22): State, KEYS, LangSwitch(), remember(), NotFoundBody(), RegistrationForm(), State, de (+14 more)
+Cohesion: 0.10
+Nodes (25): Photo(), PhotoKey, PHOTOS, ContactForm(), State, KEYS, LangSwitch(), remember() (+17 more)
 
 ### Community 17 - "admin-flow.mjs"
 Cohesion: 0.33
@@ -156,13 +157,13 @@ Nodes (8): BASE, confirmDelete(), errors, fail(), fetchText(), go(), login(), pu
 Cohesion: 0.50
 Nodes (3): exe, pages, report
 
-### Community 19 - "formatRange"
-Cohesion: 0.25
-Nodes (15): POST(), EventsAdmin(), RegistrationsAdmin(), AdminLayout(), AdminHome(), EventsHome(), addRegistration(), listRegistrations() (+7 more)
+### Community 19 - "store.ts"
+Cohesion: 0.12
+Nodes (28): EventsAdmin(), persons(), RegistrationsAdmin(), AdminHome(), RoutesAdmin(), visibleRoutes(), listRegistrations(), Event (+20 more)
 
-### Community 24 - "langPath"
-Cohesion: 0.20
-Nodes (19): GET(), revalidate, GET(), revalidate, revalidate, sitemap(), buildLlms(), events() (+11 more)
+### Community 24 - "readSite"
+Cohesion: 0.19
+Nodes (19): LegalAdmin(), generateStaticParams(), GET(), revalidate, GET(), revalidate, revalidate, sitemap() (+11 more)
 
 ### Community 25 - "p6-geo.mjs"
 Cohesion: 0.08
@@ -170,7 +171,7 @@ Nodes (29): ADDRESSES, apple, at(), bad(), BOTS, calendarLinks, checkGraph(), co
 
 ### Community 27 - "admin-auth.ts"
 Cohesion: 0.06
-Nodes (63): POST(), lockedMessage(), login(), LoginState, logout(), minutesLeft(), LoginForm(), LoginPage() (+55 more)
+Nodes (67): POST(), lockedMessage(), login(), LoginState, logout(), minutesLeft(), LoginForm(), LoginPage() (+59 more)
 
 ### Community 28 - "sharp-linux.mjs"
 Cohesion: 0.33
@@ -180,13 +181,13 @@ Nodes (4): PKGS, ROOT, sharpPkg, SIDE
 Cohesion: 0.40
 Nodes (4): [cmd, ...args], ROOT, run, srv
 
-### Community 31 - "readSite"
-Cohesion: 0.15
-Nodes (33): generateMetadata(), P, PrivacyPage(), EventPage(), generateMetadata(), generateStaticParams(), P, EventsPage() (+25 more)
+### Community 31 - "isLang"
+Cohesion: 0.14
+Nodes (31): POST(), generateMetadata(), P, PrivacyPage(), generateMetadata(), EventsPage(), generateMetadata(), P (+23 more)
 
 ### Community 32 - "records.ts"
 Cohesion: 0.07
-Nodes (64): config, dailyMaintenance(), dynamic, GET(), dynamic, POST(), persons(), RegTable() (+56 more)
+Nodes (61): config, dailyMaintenance(), dynamic, GET(), dynamic, POST(), RegTable(), MessagesAdmin() (+53 more)
 
 ### Community 33 - "p1-maintenance.mjs"
 Cohesion: 0.06
@@ -205,8 +206,8 @@ Cohesion: 0.20
 Nodes (6): BASE, DB, errors, fail(), go(), ROOT
 
 ### Community 37 - "seo.ts"
-Cohesion: 0.08
-Nodes (32): PageEdit(), fraunces, instrument, Params, RootLayout(), backdrop(), FONT, FULL (+24 more)
+Cohesion: 0.07
+Nodes (34): fraunces, generateMetadata(), instrument, Params, RootLayout(), backdrop(), FONT, FULL (+26 more)
 
 ### Community 38 - "P2 — Valós méretű feltöltések (G18) — bizonyítékok"
 Cohesion: 0.25
@@ -219,6 +220,10 @@ Nodes (6): Amit ez a fázis NEM bizonyít, Futtatott parancsok és eredményük,
 ### Community 40 - "Gyűrűsi Ménes — átnézés a megbízó szempontjai szerint (2026-09-13)"
 Cohesion: 0.29
 Nodes (6): Csiszolás és üzleti, Fontos, Gyűrűsi Ménes — átnézés a megbízó szempontjai szerint (2026-09-13), Kritikus, Rendben (mérve), Ütközés-ellenőrzés az ügyfél kéréseivel (C01–C15)
+
+### Community 43 - "[lang]/page.tsx"
+Cohesion: 0.17
+Nodes (10): Params, ContactDock(), Footer(), I, tel(), Header(), Intro(), Sheen() (+2 more)
 
 ### Community 47 - "p6-seo.mjs"
 Cohesion: 0.11
@@ -233,44 +238,44 @@ Cohesion: 0.28
 Nodes (6): APP, ROOT, round(), scaled(), sizes, square()
 
 ### Community 50 - "P3 — Admin: belépés és egyszerű használat (G19, G20) — bizonyítékok"
-Cohesion: 0.25
-Nodes (7): A negatív állítások kontrolljai, Ismert korlátok (szándékosan így), Kapu-futások, Menet közben talált hiba: az admin szerver-akciói megkerülhették a proxyt, Mi készült, P3 — Admin: belépés és egyszerű használat (G19, G20) — bizonyítékok, Vizuális ellenőrzés (nem kapu)
+Cohesion: 0.17
+Nodes (11): A feladatok a kódban (átnézve), A negatív állítások kontrolljai, Egy javítás: a feladó-sor valótlant mondott, Futtatások (az utolsó forrásváltozás utáni buildön), Ismert korlátok (szándékosan így), Kapu-futások, Menet közben talált hiba: az admin szerver-akciói megkerülhették a proxyt, Mi készült (+3 more)
 
-### Community 51 - "Kapuk"
-Cohesion: 0.25
-Nodes (7): A próbák el tudnak bukni (mutációs kontroll, utána a fájlok bájtra visszaállítva), Egyéb futtatott ellenőrzések (a végleges forráson), G21 — mért lépések (utolsó futás), G22 — mért lépések (utolsó futás), Kapuk, Megjegyzések, P5 — Integrációk szimulációval (e-mail, Google-értékelések) — bizonyítékok
+### Community 51 - "P5 — Integrációk szimulációval (e-mail, Google-értékelések) — bizonyítékok"
+Cohesion: 0.22
+Nodes (8): A próbák el tudnak bukni (mutációs kontroll ebben a futásban; utána `git checkout` a mutált fájlra, `git diff --quiet` → bájtra visszaállítva, a `data/reviews-cache.json` törölve), Egyéb futtatott ellenőrzések (ez a futás), Ennek a futásnak a helyzete (újrafuttatás), G21 — mért lépések (ez a futás, `.env.local` nélkül), G22 — mért lépések (ez a futás), Kapuk, Megjegyzések, P5 — Integrációk szimulációval (e-mail, Google-értékelések) — bizonyítékok
 
 ### Community 52 - "P6 — SEO és GEO: bizonyítékok (2026-09-14)"
-Cohesion: 0.29
-Nodes (6): Előállított eszközök, Kapuk, Közben talált és javított hibák, Mit mér a két kapuszkript, P6 — SEO és GEO: bizonyítékok (2026-09-14), Régi kapuk és ellenőrzések (a végső kóddal)
+Cohesion: 0.25
+Nodes (7): Előállított eszközök, Kapuk, Közben talált és javított hibák, Mit mér a két kapuszkript, P6 — SEO és GEO: bizonyítékok (2026-09-14), Régi kapuk és ellenőrzések (a végső kóddal), Újraellenőrzés friss worktree-ben (2026-09-14, második futás)
 
 ### Community 53 - "p6-lighthouse.mjs"
 Cohesion: 0.33
 Nodes (5): BASE, report(), ROOT, lines, problems
 
 ### Community 54 - "Egyesítés — P5 (feat/p5-integraciok) és P6 (feat/p6-seo-geo) a main-be: bizonyítékok (2026-09-14)"
-Cohesion: 0.40
-Nodes (4): Egyesítés — P5 (feat/p5-integraciok) és P6 (feat/p6-seo-geo) a main-be: bizonyítékok (2026-09-14), Egyesítés utáni integrációs hibák (javítva), Futtatott ellenőrzések (a végső kóddal), Ütközések és feloldásuk
+Cohesion: 0.25
+Nodes (7): Egyesítés — P5 (feat/p5-integraciok) és P6 (feat/p6-seo-geo) a main-be: bizonyítékok (2026-09-14), Egyesítés utáni integrációs hibák (javítva), Futtatott ellenőrzések (a javított `mail.ts`-sel, HEAD ad32594 + a javítás), Futtatott ellenőrzések (a végső kóddal), Integrációs javítás, Második egyesítési kör (2026-09-14 délután) — a P5/P6 újrafuttatási ágak, main a4cb24e-ről, Ütközések és feloldásuk
 
 ## Knowledge Gaps
-- **336 isolated node(s):** `eslintConfig`, `config`, `LEGACY`, `nextConfig`, `name` (+331 more)
+- **343 isolated node(s):** `eslintConfig`, `config`, `LEGACY`, `nextConfig`, `name` (+338 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `readSite()` connect `readSite` to `records.ts`, `Sections.tsx`, `blobsAvailable`, `store.ts`, `seo.ts`, `[slug]/page.tsx`, `formatRange`, `langPath`, `admin-auth.ts`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
-- **Why does `blobsAvailable()` connect `blobsAvailable` to `records.ts`, `google-reviews.ts`, `store.ts`, `admin-auth.ts`, `readSite`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **Why does `t()` connect `Sections.tsx` to `records.ts`, `store.ts`, `seo.ts`, `[slug]/page.tsx`, `formatRange`, `langPath`, `admin-auth.ts`, `readSite`?**
-  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+- **Why does `readSite()` connect `readSite` to `records.ts`, `Sections.tsx`, `blobsAvailable`, `actions.ts`, `seo.ts`, `[slug]/page.tsx`, `[lang]/page.tsx`, `store.ts`, `admin-auth.ts`, `isLang`?**
+  _High betweenness centrality (0.040) - this node is a cross-community bridge._
+- **Why does `blobsAvailable()` connect `blobsAvailable` to `records.ts`, `google-reviews.ts`, `actions.ts`, `store.ts`, `readSite`, `admin-auth.ts`?**
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+- **Why does `t()` connect `Sections.tsx` to `actions.ts`, `seo.ts`, `[slug]/page.tsx`, `[lang]/page.tsx`, `store.ts`, `readSite`, `admin-auth.ts`, `isLang`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **What connects `eslintConfig`, `config`, `LEGACY` to the rest of the system?**
-  _336 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _343 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `blobsAvailable` be split into smaller, more focused modules?**
   _Cohesion score 0.06373626373626373 - nodes in this community are weakly interconnected._
 - **Should `Sections.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.1006006006006006 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.14772727272727273 - nodes in this community are weakly interconnected._
 - **Should `compilerOptions` be split into smaller, more focused modules?**
   _Cohesion score 0.06896551724137931 - nodes in this community are weakly interconnected._
