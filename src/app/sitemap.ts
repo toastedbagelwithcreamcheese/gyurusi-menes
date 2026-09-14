@@ -1,16 +1,23 @@
 import type { MetadataRoute } from "next";
 import { LANGS } from "@/content/types";
-import { langPath } from "@/lib/paths";
-import { readSite, PAGE_KEYS } from "@/lib/store";
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+import { alternatesFor, langPath } from "@/lib/paths";
+import { absUrl, publicPaths } from "@/lib/seo";
+import { readSite } from "@/lib/store";
+
+/** Óránként újragenerálva, hogy az adminban publikált új esemény build nélkül is bekerüljön. */
+export const revalidate = 3600;
+
+/** Minden nyilvános lap mindhárom nyelven, a nyelvi alternatívákkal (hreflang + x-default). */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const s = await readSite();
-  const out: MetadataRoute.Sitemap = [];
-  for (const l of LANGS) {
-    out.push({ url: BASE + langPath(l), changeFrequency: "weekly", priority: l === "hu" ? 1 : 0.8 });
-    for (const k of PAGE_KEYS) out.push({ url: BASE + langPath(l, `/${k}`), changeFrequency: "monthly", priority: 0.8 });
-    out.push({ url: BASE + langPath(l, "/esemenyek"), changeFrequency: "weekly", priority: 0.7 });
-    for (const e of s.events.filter((e) => e.published)) out.push({ url: BASE + langPath(l, `/esemenyek/${e.id}`), lastModified: e.date, changeFrequency: "yearly", priority: 0.6 });
-  }
-  return out;
+  const site = await readSite();
+  /* A tartalomtárban nincs lapszintű módosítási idő: a lastmod a generálás napja (óránkénti újragenerálással). */
+  const lastModified = new Date().toISOString().slice(0, 10);
+  const weight = (p: string) => (p === "/" ? 1 : p.startsWith("/esemenyek/") ? 0.6 : p === "/adatkezeles" || p === "/impresszum" ? 0.3 : 0.8);
+  return publicPaths(site).flatMap((p) => {
+    const languages = Object.fromEntries(Object.entries(alternatesFor(p)).map(([l, href]) => [l, absUrl(href)]));
+    return LANGS.map((l) => ({
+      url: absUrl(langPath(l, p)), lastModified, alternates: { languages },
+      changeFrequency: p === "/" || p === "/esemenyek" ? ("weekly" as const) : ("monthly" as const), priority: weight(p),
+    }));
+  });
 }

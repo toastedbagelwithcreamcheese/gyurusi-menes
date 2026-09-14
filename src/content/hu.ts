@@ -3,6 +3,7 @@ import type { Dictionary } from "./types";
 export const hu: Dictionary = {
   lang: "hu", name: "Magyar", locale: "hu-HU", ogLocale: "hu_HU",
   meta: { title: "Gyűrűsi Ménes – hucul, gidrán és shagya arab ménes Zalában", titleTemplate: "%s · Gyűrűsi Ménes", description: "Vörös József ménese a zalai dombok között: hucul, gidrán és shagya arab lovak, lovasoktatás, túrák, gyerektáborok és a Gyűrűsi Lovas Napok." },
+  seo: { place: "Gyűrűsi Ménes, Gyűrűs, Zala vármegye.", events: "A Gyűrűsi Ménes eseménynaptára: huculösvény-versenyek, lovastúrák, gyerektáborok és a Gyűrűsi Lovas Napok — közelgő és korábbi események Gyűrűsön.", privacy: "Adatkezelési tájékoztató a Gyűrűsi Ménes weboldalához: a kapcsolati űrlapon és az eseményjelentkezéskor megadott adatok kezelése.", imprint: "A Gyűrűsi Ménes weboldalának impresszuma: üzemeltető, képviselő, cím, elérhetőség és tárhelyszolgáltató.", notFound: "Az oldal nem található · Gyűrűsi Ménes", llms: { facts: "Tények", pages: "Oldalak", breeds: "Fajták", texts: "A lapok szövege", full: "a lapok teljes szövege mindhárom nyelven" } },
   nav: { huculosveny: "Huculösvény", turak: "Túrák", oktatas: "Oktatás", taborok: "Táborok", egyesulet: "Egyesület", esemenyek: "Események", kapcsolat: "Kapcsolat", menuOpen: "Menü megnyitása", menuClose: "Menü bezárása", call: "Hívás", home: "Gyűrűsi Ménes – főoldal", mainMenu: "Fő menü", mobileMenu: "Mobil menü", place: "Gyűrűs, Zala" },
   lang_: { label: "Nyelv" },
   hero: { note: "Gyűrűs, Zala vármegye", ctaPrimary: "Események", ctaSecondary: "Kapcsolat", scroll: "Görgess" },

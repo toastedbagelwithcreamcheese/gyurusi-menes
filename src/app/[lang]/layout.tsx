@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { isLang, LANGS } from "@/content/types";
 import { DICTS, getDict } from "@/lib/i18n";
 import { ScrollTop } from "@/components/ScrollTop";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import "../globals.css";
 
 /* Betűk build-időben letöltve, saját domainről (nincs futásidejű Google-kapcsolat).
@@ -17,8 +18,6 @@ const fraunces = localFont({
 });
 const instrument = Instrument_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-instrument", display: "swap", weight: ["400", "500", "600"] });
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
 /** Gyökér-layout: minden lap az app/[lang]/ alatt él, ezért a <html lang> innen kapja a nyelvet.
  *  Szándékosan nincs dynamicParams=false (Next 16: az admin route-jai NoFallbackError-t dobnának). */
 export function generateStaticParams() { return LANGS.map((lang) => ({ lang })); }
@@ -29,13 +28,15 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { lang } = await params;
   if (!isLang(lang)) return {};
   const d = getDict(lang);
+  /* Alapértékek (pl. az admin lapjaihoz). A nyilvános lapok a seo.ts metadataFor()-jával teljes készletet adnak:
+     lapfüggő címet, leírást, canonicalt, hreflangot és megosztási képet. */
   return {
-    metadataBase: new URL(SITE),
+    metadataBase: new URL(SITE_URL),
     title: { default: d.meta.title, template: d.meta.titleTemplate },
     description: d.meta.description,
-    openGraph: { type: "website", locale: d.ogLocale, alternateLocale: LANGS.filter((l) => l !== lang).map((l) => DICTS[l].ogLocale), siteName: "Gyűrűsi Ménes",
-      images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: d.meta.title }] },
-    twitter: { card: "summary_large_image", images: ["/opengraph-image"] },
+    applicationName: SITE_NAME,
+    openGraph: { type: "website", locale: d.ogLocale, alternateLocale: LANGS.filter((l) => l !== lang).map((l) => DICTS[l].ogLocale), siteName: SITE_NAME },
+    twitter: { card: "summary_large_image" },
   };
 }
 

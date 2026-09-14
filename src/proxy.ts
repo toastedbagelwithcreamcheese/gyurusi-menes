@@ -57,5 +57,5 @@ function adminGate(req: NextRequest): NextResponse | null {
 }
 
 export const config = {
-  matcher: ["/((?!_next|api|files|images|uploads|fonts|favicon\\.ico|robots\\.txt|sitemap\\.xml|opengraph-image|icon|apple-icon|.*\\.(?:png|jpg|jpeg|webp|svg|ico|woff2?|txt|xml)$).*)"],
+  matcher: ["/((?!_next|api|files|og/|images|uploads|fonts|favicon\\.ico|robots\\.txt|sitemap\\.xml|opengraph-image|icon|apple-icon|.*\\.(?:png|jpg|jpeg|webp|svg|ico|woff2?|txt|xml)$).*)"],
 };

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLang, LANGS } from "@/content/types";
 import { getDict } from "@/lib/i18n";
-import { alternatesFor, langPath } from "@/lib/paths";
+import { langPath } from "@/lib/paths";
+import { ldFor, ldHtml, metadataFor, notFoundMetadata } from "@/lib/seo";
 import { readSite, isPageKey, PAGE_KEYS, t, formatDate } from "@/lib/store";
 import { resolveImage } from "@/lib/images";
 import { SubPage } from "@/components/site/SubPage";
@@ -17,10 +18,8 @@ export function generateStaticParams() { return LANGS.flatMap((lang) => PAGE_KEY
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const { lang, slug } = await params;
-  if (!isLang(lang) || !isPageKey(slug)) return {};
-  const site = await readSite(); const p = site.pages[slug]; const im = resolveImage(p.images[0], site);
-  return { title: t(p.title, lang), description: t(p.lead, lang), alternates: { canonical: langPath(lang, `/${slug}`), languages: alternatesFor(`/${slug}`) },
-    openGraph: { title: t(p.title, lang), description: t(p.lead, lang), images: im ? [{ url: im.src, width: im.width, height: im.height, alt: im.alt }] : undefined } };
+  if (!isLang(lang)) return {};
+  return isPageKey(slug) ? metadataFor(await readSite(), lang, `/${slug}`) : notFoundMetadata(lang);
 }
 
 const fmtSize = (b: number) => (b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
@@ -57,11 +56,15 @@ export default async function ContentPage({ params }: P) {
     );
   }
 
+  const ld = ldFor(site, lang, `/${slug}`);
   return (
-    <SubPage site={site} lang={lang} d={d} rest={`/${slug}`} eyebrow={d.nav[slug]} title={t(p.title, lang)} image={head ?? null} strip={rest.slice(0, 3)}
-      contact={p.contact} related={related} back={{ href: langPath(lang), label: "Gyűrűsi Ménes" }} after={after}>
-      <p className="lead">{t(p.lead, lang)}</p>
-      <Paragraphs text={t(p.body, lang)} />
-    </SubPage>
+    <>
+      <SubPage site={site} lang={lang} d={d} rest={`/${slug}`} eyebrow={d.nav[slug]} title={t(p.title, lang)} image={head ?? null} strip={rest.slice(0, 3)}
+        contact={p.contact} related={related} back={{ href: langPath(lang), label: "Gyűrűsi Ménes" }} after={after}>
+        <p className="lead">{t(p.lead, lang)}</p>
+        <Paragraphs text={t(p.body, lang)} />
+      </SubPage>
+      {ld && <script type="application/ld+json" dangerouslySetInnerHTML={ldHtml(ld)} />}
+    </>
   );
 }

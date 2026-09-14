@@ -2,7 +2,8 @@ import type { Dictionary } from "./types";
 
 export const en: Dictionary = {
   lang: "en", name: "English", locale: "en-GB", ogLocale: "en_GB",
-  meta: { title: "Gyűrűsi Ménes – Hucul, Gidran and Shagya Arabian stud in Zala, Hungary", titleTemplate: "%s · Gyűrűsi Ménes", description: "József Vörös's stud farm in the hills of Zala: Hucul, Gidran and Shagya Arabian horses, riding lessons, trail rides, children's camps and the Gyűrűs Horse Days." },
+  meta: { title: "Gyűrűsi Ménes – Hucul, Gidran & Shagya Arabian stud in Zala", titleTemplate: "%s · Gyűrűsi Ménes", description: "József Vörös's stud farm in the hills of Zala: Hucul, Gidran and Shagya Arabian horses, riding lessons, trail rides, children's camps and the Gyűrűs Horse Days." },
+  seo: { place: "Gyűrűsi Ménes, Gyűrűs, Zala County, Hungary.", events: "Event calendar of the Gyűrűsi Ménes stud: Hucul Trail competitions, trail rides, children's camps and the Gyűrűs Horse Days — upcoming and past events.", privacy: "Privacy notice for the Gyűrűsi Ménes website: how the data given in the contact form and in event registrations is handled.", imprint: "Imprint of the Gyűrűsi Ménes website: operator, representative, address, contact details and hosting provider.", notFound: "Page not found · Gyűrűsi Ménes", llms: { facts: "Facts", pages: "Pages", breeds: "Breeds", texts: "Page texts", full: "full text of the pages in all three languages" } },
   nav: { huculosveny: "Hucul Trail", turak: "Trail rides", oktatas: "Lessons", taborok: "Camps", egyesulet: "Association", esemenyek: "Events", kapcsolat: "Contact", menuOpen: "Open menu", menuClose: "Close menu", call: "Call", home: "Gyűrűsi Ménes – home", mainMenu: "Main menu", mobileMenu: "Mobile menu", place: "Gyűrűs, Zala" },
   lang_: { label: "Language" },
   hero: { note: "Gyűrűs, Zala County, Hungary", ctaPrimary: "Events", ctaSecondary: "Contact", scroll: "Scroll" },
