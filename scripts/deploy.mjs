@@ -7,8 +7,10 @@
  *
  *   node scripts/deploy.mjs            draft deploy → .netlify/draft.json, .netlify/draft-url.txt
  *   node scripts/deploy.mjs --prod     production deploy → .netlify/prod.json
+ * Build előtt ellenőrzi a sharp Linux x64 binárisait is (a képfeltöltés a Netlify-függvényben ezekkel fut): egy `npm uninstall` / `npm prune`
+ * kitakarítja őket a node_modules-ból (az npm nem tud róluk) — ilyenkor a scripts/sharp-linux.mjs visszahozza, és ha így sincs meg, nem deployol.
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readdirSync, renameSync, writeFileSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +20,14 @@ const PROD = process.argv.includes("--prod");
 const HOLD = ".deploy-hold";
 const SECRET_FILES = [".env", ".env.local", ".env.production", ".env.production.local", ".env.development.local"];
 const FUNC_DIR = path.join(ROOT, ".netlify/functions-internal");
+
+const LINUX_SHARP = ["@img/sharp-linux-x64", "@img/sharp-libvips-linux-x64"];
+const linuxSharpOk = () => LINUX_SHARP.every((p) => existsSync(path.join(ROOT, "node_modules", p, "package.json")));
+if (!linuxSharpOk()) {
+  console.log("a sharp Linux-binárisai hiányoznak a node_modules-ból → scripts/sharp-linux.mjs");
+  const r = spawnSync(process.execPath, [path.join(ROOT, "scripts/sharp-linux.mjs")], { cwd: ROOT, stdio: "inherit" });
+  if (r.status !== 0 || !linuxSharpOk()) { console.error("FAIL: deploy — a sharp Linux-binárisai nélkül a képfeltöltés élesben elbukna (sharp.libvipsVersion is not a function)"); process.exit(1); }
+}
 
 const stale = readdirSync(ROOT).filter((n) => n.endsWith(HOLD));
 if (stale.length) {
