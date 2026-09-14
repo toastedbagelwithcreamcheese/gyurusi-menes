@@ -881,3 +881,26 @@ main.sub > .sub-head:first-child, main.sub > .legal:first-child { padding-top: c
 .rev-who small { color: var(--color-dust); font-size: 0.78rem; }
 .rev-text { margin: 0; color: var(--color-ink-soft); font-size: 0.97rem; display: -webkit-box; -webkit-line-clamp: 6; line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
 .rev-more { margin: clamp(20px, 3vw, 32px) 0 0; }
+
+/* ---- Google-értékelések, élő betöltés: váz, „Google Maps" jelzés, fotós avatar, fordítás-jelölés, mobil lapozó ---- */
+.rev-skel { display: grid; gap: 14px; }
+.rev-skel-line { display: block; height: 14px; width: 160px; border-radius: 999px; background: rgb(29 27 23 / 0.07); }
+.rev-skel-title { height: clamp(34px, 5vw, 52px); width: min(420px, 80%); margin-bottom: clamp(12px, 3vw, 28px); }
+.rev-skel-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.rev-skel-cards > span { display: block; height: 220px; border-radius: var(--radius-lg); background: rgb(29 27 23 / 0.04); border: 1px solid var(--color-line); }
+.rev-skel-line, .rev-skel-cards > span { animation: rev-pulse 1.6s ease-in-out infinite; }
+@keyframes rev-pulse { 50% { opacity: 0.55; } }
+img.rev-avatar { display: block; object-fit: cover; background: var(--color-bone-2); }
+/* A Google szövegjelzése: Roboto (tartalék: a törzsbetű), 400-as, normál, 12–16 px, szürke #5E5E5E (≥4.5:1 a csontszínen), nem tördelhető. */
+.rev-attr { font-family: Roboto, var(--font-sans), sans-serif; font-size: 14px; font-weight: 400; font-style: normal; letter-spacing: normal; text-transform: none; line-height: 1.4; white-space: nowrap; color: #5e5e5e; text-decoration: none; }
+.rev-attr:hover { color: #1f1f1f; }
+.rev-tr { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.78rem; color: var(--color-dust); }
+.rev-tr-btn { font: inherit; color: var(--color-sky); background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+@media (max-width: 640px) {
+  .rev-grid, .rev-skel-cards { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; padding-bottom: 8px; }
+  .rev-grid > li, .rev-skel-cards > span { flex: 0 0 min(86%, 340px); scroll-snap-align: start; }
+  .rev-attr, .rev-count, .rev-tr-btn, .rev-who a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rev-skel-line, .rev-skel-cards > span { animation: none; }
+}

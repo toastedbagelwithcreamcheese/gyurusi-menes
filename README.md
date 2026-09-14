@@ -47,3 +47,27 @@ npm run dev        # http://localhost:3000 — admin: http://localhost:3000/admi
 ```
 
 Amit az adminban helyben felviszel, az csak a gépeden van. Ha valamit a magba akarsz tenni (hogy élesbe is menjen a következő deployjal), másold a `data/site.json` tartalmát a `data/seed.json`-ba, és commitold.
+
+## Integrációk (környezeti változók) és helyi szimuláció
+
+Kulcs nélkül minden integráció csendben kikapcsol — az oldal és az admin ugyanúgy működik.
+
+| Változó | Mire | Alap |
+|---|---|---|
+| `RESEND_API_KEY` | e-mail küldés (kapcsolati üzenet, jelentkezési értesítő + visszaigazolás) | nincs → nem küld, csak az adminban látszik |
+| `CONTACT_TO` | a ménes címzett-címe | `info@gyurusimenes.hu` |
+| `CONTACT_FROM` | feladó (a domaint a Resendben hitelesíteni kell: SPF/DKIM) | `Gyűrűsi Ménes <weboldal@gyurusimenes.hu>` |
+| `RESEND_API_BASE` | a szolgáltató címe (helyi mockhoz) | `https://api.resend.com` |
+| `GOOGLE_PLACES_KEY` | Google-értékelések a főoldalon (Places API New) | nincs → se blokk, se hívás |
+| `GOOGLE_PLACE_ID` | a cégprofil azonosítója | nincs → egyszeri keresés, az azonosító eltárolva |
+| `GOOGLE_REVIEWS_DAILY_CAP` | napi betöltési keret (felette 429, a blokk eltűnik) | `30` |
+| `GOOGLE_PLACES_API_BASE` | a Places címe (helyi mockhoz) | `https://places.googleapis.com` |
+
+A Google szabályai szerint a vélemény és az értékelés **nem tárolható** (se Blobs, se ISR): a főoldal csak egy üres vázat ad, a böngésző a blokk közelében (600 px) kéri a `GET /api/reviews`-t, ami élőben kérdez (`Cache-Control: no-store`). Tárolva csak a place ID és a napi számláló van (Blobs „google”, helyben `data/google/`). A `GOOGLE_PLACES_KEY` a build idején is legyen beállítva (a váz a lap renderelésekor dől el).
+
+```bash
+node scripts/mock-resend.mjs --port 4010   # RESEND_API_KEY=teszt RESEND_API_BASE=http://127.0.0.1:4010
+node scripts/mock-places.mjs --port 4020   # GOOGLE_PLACES_KEY=teszt GOOGLE_PLACES_API_BASE=http://127.0.0.1:4020 GOOGLE_PLACE_ID=p5-mock-place-id
+node scripts/checks/p5-mail.mjs            # G21 (saját build + next start a 3041-es porton)
+node scripts/checks/p5-reviews.mjs         # G22 (két build: kulccsal és nélküle; Blobs-szimulátorral is)
+```

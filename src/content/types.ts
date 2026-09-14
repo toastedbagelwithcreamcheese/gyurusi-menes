@@ -44,7 +44,7 @@ export interface Dictionary {
     send: string; sending: string; okTitle: string; okBody: string; err: string; closed: string;
     errName: string; errPhone: string; errCount: string; errEmail: string; errRate: string;
   };
-  reviews: { eyebrow: string; title: string; count: string; more: string; on: string; stars: string };
+  reviews: { eyebrow: string; title: string; count: string; more: string; on: string; stars: string; loading: string; listLabel: string; translated: string; showOriginal: string; showTranslation: string };
   reports: { eyebrow: string; title: string; lead: string; none: string; open: string; size: string };
   footer: { blurb: string; contact: string; follow: string; admin: string; owner: string; tagline: string; taglineAccent: string; cta: string; colPages: string; colInfo: string; privacy: string; imprint: string; rights: string; credit: string; madeIn: string; events: string };
   zoom: { open: string; close: string; prev: string; next: string; of: string };
