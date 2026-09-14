@@ -25,7 +25,10 @@ export const assert = (cond, m) => { if (!cond) fail(m); };
 /** A folyamat környezete a próbához: a gépen beállított integrációs változók NEM szivároghatnak be. */
 export function cleanEnv(extra = {}) {
   const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(GOOGLE_|RESEND_|CONTACT_|NETLIFY|ADMIN_|BASE_URL$|NEXT_PUBLIC_SITE_URL$)/.test(k)));
-  return { ...env, ...extra, PORT };
+  /* A Next a .env.local-ból csak a folyamatban NEM létező kulcsot tölti be — a törlés tehát nem elég, a fő repóban a
+     .env.local CONTACT_TO/CONTACT_FROM értéke beszivárogna. Üres érték = beállítatlan (a kód mindenhol `?.trim() ||`-t használ). */
+  const blank = Object.fromEntries(["RESEND_API_KEY", "RESEND_API_BASE", "RESEND_API_URL", "CONTACT_TO", "CONTACT_FROM", "GOOGLE_PLACES_KEY", "GOOGLE_PLACE_ID", "GOOGLE_PLACES_API_BASE", "ADMIN_USER", "ADMIN_PASSWORD", "ADMIN_SESSION_SECRET"].map((k) => [k, ""]));
+  return { ...env, ...blank, ...extra, PORT };
 }
 
 /** Friss production build a megadott környezettel (a `P5_SKIP_BUILD=1` csak fejlesztés közbeni gyors ismétléshez). */
