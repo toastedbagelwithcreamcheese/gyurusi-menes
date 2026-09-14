@@ -9,11 +9,12 @@ import { Footer } from "@/components/site/Footer";
 import { ContactForm } from "@/components/site/ContactForm";
 import { ContactDock } from "@/components/site/ContactDock";
 import { Sheen } from "@/components/site/Sheen";
-import { Hero, Owner, Intro, EventsHome, Tiles, ContactBlock, Reviews } from "@/components/site/Sections";
-import { getGoogleReviews } from "@/lib/google-reviews";
+import { Hero, Owner, Intro, EventsHome, Tiles, ContactBlock } from "@/components/site/Sections";
+import { Reviews } from "@/components/site/Reviews";
+import { reviewsEnabled } from "@/lib/google-reviews";
 
-/** A Google-értékelések naponta frissülnek: az oldal legfeljebb egy napig marad a gyorsítótárban. */
-export const revalidate = 86400;
+/* Szándékosan nincs Google-adat a lapban (és nincs hozzá kötött revalidate): a vélemény és az értékelés
+   a Google szabálya szerint nem tárolható, ISR-be sütve sem — a <Reviews> a böngészőben, élőben tölti be. */
 
 type Params = Promise<{ lang: string }>;
 
@@ -28,14 +29,12 @@ export default async function Home({ params }: { params: Params }) {
   if (!isLang(lang)) notFound();
   const d = getDict(lang);
   const site = await readSite();
-  const reviews = await getGoogleReviews(lang);
   const up = upcoming(site.events);
   const ld = {
     "@context": "https://schema.org", "@type": "LocalBusiness", name: "Gyűrűsi Ménes", description: d.meta.description,
     founder: { "@type": "Person", name: site.owner.name }, telephone: site.owner.phone || site.contact.phone, email: site.contact.email,
     address: { "@type": "PostalAddress", streetAddress: "Petőfi Sándor u. 2.", postalCode: "8932", addressLocality: "Gyűrűs", addressRegion: "Zala", addressCountry: "HU" },
-    sameAs: [site.contact.facebook, site.contact.instagram, reviews?.url].filter(Boolean),
-    ...(reviews?.rating ? { aggregateRating: { "@type": "AggregateRating", ratingValue: reviews.rating, reviewCount: reviews.count, bestRating: 5 } } : {}),
+    sameAs: [site.contact.facebook, site.contact.instagram].filter(Boolean),
     image: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/opengraph-image`,
     event: up.map((e) => ({ "@type": "Event", name: t(e.title, lang), startDate: e.date, endDate: e.endDate ?? e.date, location: { "@type": "Place", name: e.location ?? "Gyűrűsi Ménes", address: "8932 Gyűrűs, Petőfi Sándor u. 2." } })),
   };
@@ -48,7 +47,7 @@ export default async function Home({ params }: { params: Params }) {
         <Intro site={site} lang={lang} d={d} />
         <EventsHome site={site} lang={lang} d={d} />
         <Tiles site={site} lang={lang} d={d} />
-        <Reviews data={reviews} lang={lang} d={d} />
+        {reviewsEnabled() && <Reviews lang={lang} locale={d.locale} d={d.reviews} />}
         <ContactBlock site={site} lang={lang} d={d} form={<ContactForm d={d.form} lang={lang} />} />
       </main>
       <Footer site={site} lang={lang} d={d} />

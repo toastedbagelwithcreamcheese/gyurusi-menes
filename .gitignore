@@ -64,5 +64,7 @@ graphify-out.bak*/
 # helyi adatbázis (a mag a data/seed.json; visszaállítás: npm run db:reset)
 /data/site.json
 
-# helyi gyorsítótár (Google-értékelések) – élesben Netlify Blobs „cache”
+# Google-értékelések állapota: csak place ID + napi hívásszámláló, vélemény SOHA – élesben Netlify Blobs „google”
+/data/google
+# a régi (szabályba ütköző) vélemény-gyorsítótár maradéka, ha egy régi futásból itt maradt
 /data/cache

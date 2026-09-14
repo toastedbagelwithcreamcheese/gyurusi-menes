@@ -383,7 +383,7 @@ try {
   const ot = (await okFlash.locator("span").innerText()).trim();
   assert(ot.includes("Próba e-mail elküldve") && ot.includes("info@gyurusimenes.hu"), `E2: a sikeres próba üzenete: „${ot}”`);
   const hit = mockHits[0];
-  assert(mockHits.length === 1 && hit.method === "POST" && hit.auth === `Bearer ${KEY}` && canon(hit.body?.to) === canon(["info@gyurusimenes.hu"]) && hit.body?.from === "Gyűrűsi Ménes <onboarding@resend.dev>" && /Próba/.test(hit.body?.subject ?? ""), `E2: a Resend-mock ezt kapta: ${JSON.stringify(mockHits)}`);
+  assert(mockHits.length === 1 && hit.method === "POST" && hit.auth === `Bearer ${KEY}` && canon(hit.body?.to) === canon(["info@gyurusimenes.hu"]) && hit.body?.from === "Gyűrűsi Ménes <weboldal@gyurusimenes.hu>" && /Próba/.test(hit.body?.subject ?? ""), `E2: a Resend-mock ezt kapta: ${JSON.stringify(mockHits)}`);
   await page2.close();
   log(`  E: panel 3 csoporttal és 7 változó nevével; kulcs nélkül a próba → „${et.slice(0, 110)}…”; kontroll-szerver kamu kulcsokkal: „Beállítva”, a kulcsok értéke nincs a HTML-ben, a próba a mockhoz ment (Bearer kulcs, címzett info@gyurusimenes.hu, feladó az alapértelmezés) → „${ot}”`);
 
