@@ -156,8 +156,8 @@
     "semantic_hash": ""
   },
   "tsconfig.json": {
-    "mtime": 1789401858.1850932,
-    "seen": 1789403432.6622238,
+    "mtime": 1789404043.0813177,
+    "seen": 1789409097.2181911,
     "ast_hash": "ee17fd1c97c735e9f3564e3f5251f125",
     "semantic_hash": "ee17fd1c97c735e9f3564e3f5251f125"
   },
@@ -318,9 +318,9 @@
     "semantic_hash": ""
   },
   "GATES.md": {
-    "mtime": 1789401632.1060188,
-    "seen": 1789403432.662227,
-    "ast_hash": "3e459b00a6f35e61e896709e408443cd",
+    "mtime": 1789404416.6536224,
+    "seen": 1789409097.2181928,
+    "ast_hash": "b784b04b9c8fdd62d10f321d02b03ae2",
     "semantic_hash": ""
   },
   "README.md": {
@@ -1134,9 +1134,9 @@
     "semantic_hash": ""
   },
   "scripts/checks/final-live.mjs": {
-    "mtime": 1789399496.878611,
-    "seen": 1789403432.662165,
-    "ast_hash": "b93ac54eac579fec12e33c95a29aa79d",
+    "mtime": 1789406358.1679423,
+    "seen": 1789409097.2181382,
+    "ast_hash": "ec53a4329c73436d36f3a7fa2a254453",
     "semantic_hash": ""
   },
   "scripts/checks/p7-speed.mjs": {
@@ -1182,9 +1182,15 @@
     "semantic_hash": ""
   },
   "docs/gates/Ellenorzes.md": {
-    "mtime": 1789397902.789289,
-    "seen": 1789403432.66223,
-    "ast_hash": "f68f3c709789c14ede75c72651bdea7e",
+    "mtime": 1789408938.4932187,
+    "seen": 1789409097.218195,
+    "ast_hash": "bc34b79d015da2349dcf819e56667d5f",
+    "semantic_hash": ""
+  },
+  "docs/gates/Javitokor.md": {
+    "mtime": 1789404549.1853547,
+    "seen": 1789409097.218196,
+    "ast_hash": "9f2216d73cd2e43fc0d03daa5868b837",
     "semantic_hash": ""
   }
 }

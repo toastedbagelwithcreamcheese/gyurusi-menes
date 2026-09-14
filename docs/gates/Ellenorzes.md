@@ -91,3 +91,9 @@ Admin: a megbízó döntésére a Netlify-on `ADMIN_PASSWORD=admin` minden konte
 - **Production deploy** `6aa834dcf9910964657328e9`: 11 útvonal smoke rendben (200 / 401 / 307), a főoldalon nincs tesztesemény, az impresszumban az új cím.
 - **G13 élesben:** `ADMIN_FLOW_OK`. A tár pillanatképe előtte és utána: csak az `updatedAt` változott. A 4b lépés megjegyzése szerint egy törölt feltöltött kép a `/files` alatt a CDN-ből legfeljebb 1 óráig még elérhető (a tárból törölve).
 - **Régi Google-cache:** `netlify blobs:delete cache google-reviews-hu|en|de` → a `cache` tár üres.
+- **A kapusor újrafuttatása (`gate-check.mjs --approve --timeout 900 GATES.md`) kétszer leállt**, mert a gépen elfogyott a memória (közben Lightroom, egy virtuális gép és más munkamenetek is futottak). Egyik futás sem írt eredményt, ezért a ledger továbbra is 25/28-at mutat, a régi bizonyítékkal. A fenti közvetlen mérések szerint:
+  - G13 élesben PASS (`ADMIN_FLOW_OK`, a tár diffje tiszta);
+  - G28 FAIL, csak az 5) lépés miatt;
+  - G27 FAIL (LCP).
+
+  Mindkét leállás után a közös tár tiszta volt (nincs FINAL-LIVE vagy gate-maradék), és árva folyamat sem maradt.
