@@ -42,6 +42,16 @@ const toRow = (kind, rec) => Object.fromEntries(COLUMNS[kind].filter(([f]) => re
 const KEY_RE = /^[a-z0-9][a-z0-9-]{2,64}\.(webp|pdf|jpg|png)$/;
 const TYPES = { webp: "image/webp", pdf: "application/pdf", jpg: "image/jpeg", png: "image/png" };
 const sha = (b) => createHash("sha256").update(b).digest("hex");
+/* A Postgres jsonb a kulcsokat átrendezi (hossz, majd betűrend szerint): a tartalmi egyezést kulcssorrendtől függetlenül nézzük. */
+const canon = (v) => (Array.isArray(v) ? v.map(canon) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canon(v[k])])) : v);
+const same = (a, b) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
+function firstDiff(a, b, p = "$") {
+  if (same(a, b)) return null;
+  if (a && b && typeof a === "object" && typeof b === "object" && Array.isArray(a) === Array.isArray(b)) {
+    for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) { const d = firstDiff(a[k], b[k], `${p}.${k}`); if (d) return d; }
+  }
+  return `${p}: ${JSON.stringify(a)?.slice(0, 80)} ≠ ${JSON.stringify(b)?.slice(0, 80)}`;
+}
 const problems = [];
 const bad = (m) => { problems.push(m); console.log(`  ✗ ${m}`); };
 const DRY = flag("--dry-run");
@@ -117,13 +127,13 @@ async function importData() {
   if (!existing) {
     console.log("3) tartalomdokumentum: a tábla üres → beszúrás");
     if (!DRY) { const r = await rest("POST", "/rest/v1/site_content?on_conflict=id", { id: "site", data: site }, "resolution=ignore-duplicates,return=representation"); if (!r.ok || r.j?.length !== 1) bad(`a dokumentum beszúrása: HTTP ${r.status} ${r.t.slice(0, 160)}`); }
-  } else if (JSON.stringify(existing.data) === JSON.stringify(site)) {
+  } else if (same(existing.data, site)) {
     console.log("3) tartalomdokumentum: már ugyanez van a táblában");
   } else if (flag("--force")) {
     console.log(`3) tartalomdokumentum: eltér a táblában lévőtől → felülírás (--force), verzió ${existing.version} → ${existing.version + 1}`);
     if (!DRY) { const r = await rest("PATCH", `/rest/v1/site_content?id=eq.site&version=eq.${existing.version}`, { data: site, version: existing.version + 1, updated_at: new Date().toISOString() }, "return=representation"); if (!r.ok || r.j?.length !== 1) bad(`a dokumentum felülírása: HTTP ${r.status} (közben változott?)`); }
   } else {
-    bad("a site_content táblában már van ETTŐL ELTÉRŐ dokumentum (pl. az oldal az első betöltéskor a magot tette bele) — nézd meg, és ha a forrás a helyes, futtasd újra --force-szal");
+    bad(`a site_content táblában már van ETTŐL ELTÉRŐ dokumentum (első eltérés: ${firstDiff(existing.data, site)})` + " (pl. az oldal az első betöltéskor a magot tette bele) — nézd meg, és ha a forrás a helyes, futtasd újra --force-szal");
   }
 
   /* rekordok */
@@ -154,7 +164,7 @@ async function importData() {
   /* visszaolvasás */
   if (!DRY) {
     const doc = (await rest("GET", "/rest/v1/site_content?id=eq.site&select=data")).j?.[0]?.data;
-    if (JSON.stringify(doc) !== JSON.stringify(site) && !problems.length) bad("a visszaolvasott dokumentum nem egyezik a forrással");
+    if (!same(doc, site) && !problems.length) bad(`a visszaolvasott dokumentum nem egyezik a forrással (első eltérés: ${firstDiff(doc, site)})`);
     for (const [kind, list] of [["registrations", regs], ["messages", msgs]]) {
       const ids = new Set(((await rest("GET", `/rest/v1/${kind}?select=id&limit=10000`)).j ?? []).map((x) => x.id));
       const missing = list.filter((x) => !ids.has(x.id));
