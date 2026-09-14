@@ -756,9 +756,9 @@
     "semantic_hash": ""
   },
   "scripts/checks/p3-admin-ux.mjs": {
-    "mtime": 1789377996.0067217,
-    "seen": 1789378651.510731,
-    "ast_hash": "d047fef148e4216bded63aad2ac84052",
+    "mtime": 1789382397.4202032,
+    "seen": 1789382553.513598,
+    "ast_hash": "30508d2b87e03fb687137965e2d2b4c5",
     "semantic_hash": ""
   },
   "scripts/checks/p3-auth.mjs": {
@@ -888,9 +888,9 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/admin/(panel)/page.tsx": {
-    "mtime": 1789375729.4973657,
-    "seen": 1789377559.949271,
-    "ast_hash": "8bba26ef060f38293df5094227ce3a39",
+    "mtime": 1789382359.2008326,
+    "seen": 1789382553.513618,
+    "ast_hash": "c51a2bce7f1af704f994cb94d50499dc",
     "semantic_hash": ""
   },
   "src/app/[lang]/admin/(panel)/tartalom/page.tsx": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "docs/gates/P2.md": {
-    "mtime": 1789374063.095638,
-    "seen": 1789377559.949302,
-    "ast_hash": "218ac3765ba68835de6d929a5ead7e1b",
+    "mtime": 1789382184.984676,
+    "seen": 1789382553.513654,
+    "ast_hash": "0958dee1ac99dbe934018514f06a74a7",
     "semantic_hash": ""
   },
   "scripts/checks/_p5-harness.mjs": {

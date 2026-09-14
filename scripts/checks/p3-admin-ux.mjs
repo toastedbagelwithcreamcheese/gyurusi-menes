@@ -377,6 +377,11 @@ try {
   const set2 = Object.fromEntries(await Promise.all(ENV.map(async (n) => [n, await panel2.locator(`[data-env="${n}"]`).getAttribute("data-env-set")])));
   assert(set2.RESEND_API_KEY === "1" && set2.GOOGLE_PLACES_KEY === "1" && set2.CONTACT_TO === "0" && set2.ADMIN_PASSWORD === "0", `E2: a panel állapota: ${JSON.stringify(set2)}`);
   assert((await panel2.locator("[data-mail-to]").innerText()).trim() === "info@gyurusimenes.hu", "E2: CONTACT_TO nélkül nem az info@gyurusimenes.hu a címzett");
+  /* A panel a feladóról is igazat mondjon: a kiírt cím az, amivel a levél ténylegesen megy (lent a mock méri), és a
+     megjegyzés nem nevezheti a Resend tesztcímének (a P5-ös egyesítés óta az alapértelmezés a gyurusimenes.hu-s cím). */
+  const fromShown = (await panel2.locator("[data-mail-from]").innerText()).trim();
+  const fromRow = (await panel2.locator('[data-env="CONTACT_FROM"]').innerText()).replace(/\s+/g, " ");
+  assert(!/tesztcím|resend\.dev/i.test(fromRow) && /hitelesítve/.test(fromRow), `E2: a feladó-sor megjegyzése félrevezető: „${fromRow}”`);
   await Promise.all([page2.waitForURL(/\/admin\?/, { timeout: 20_000 }), panel2.locator("[data-test-mail]").click()]);
   const okFlash = page2.locator('[data-flash="ok"]');
   await okFlash.waitFor({ timeout: 10_000 });
@@ -384,6 +389,7 @@ try {
   assert(ot.includes("Próba e-mail elküldve") && ot.includes("info@gyurusimenes.hu"), `E2: a sikeres próba üzenete: „${ot}”`);
   const hit = mockHits[0];
   assert(mockHits.length === 1 && hit.method === "POST" && hit.auth === `Bearer ${KEY}` && canon(hit.body?.to) === canon(["info@gyurusimenes.hu"]) && hit.body?.from === "Gyűrűsi Ménes <weboldal@gyurusimenes.hu>" && /Próba/.test(hit.body?.subject ?? ""), `E2: a Resend-mock ezt kapta: ${JSON.stringify(mockHits)}`);
+  assert(fromShown === hit.body.from, `E2: a panelen kiírt feladó („${fromShown}”) nem az, amivel a levél ment („${hit.body.from}”)`);
   await page2.close();
   log(`  E: panel 3 csoporttal és 7 változó nevével; kulcs nélkül a próba → „${et.slice(0, 110)}…”; kontroll-szerver kamu kulcsokkal: „Beállítva”, a kulcsok értéke nincs a HTML-ben, a próba a mockhoz ment (Bearer kulcs, címzett info@gyurusimenes.hu, feladó az alapértelmezés) → „${ot}”`);
 

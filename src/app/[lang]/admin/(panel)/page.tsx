@@ -39,7 +39,7 @@ function StatusPanel() {
           ? "A kulcs be van állítva. A próba e-maillel ellenőrizheted, hogy a Resend tényleg elküldi-e a levelet."
           : "Amíg nincs beállítva, a kapcsolati üzenetek és a jelentkezések csak itt, az adminban látszanak — e-mail nem megy ki, a jelentkezők visszaigazolást sem kapnak. A kulcsot a resend.com fiókban lehet létrehozni (API Keys)."}</EnvRow>
         <EnvRow name="CONTACT_TO">Címzett: <strong data-mail-to>{to}</strong>{envSet("CONTACT_TO") ? "" : " (alapértelmezés)"}. Ide érkeznek a kapcsolati üzenetek és a jelentkezések.</EnvRow>
-        <EnvRow name="CONTACT_FROM">Feladó: <strong data-mail-from>{from}</strong>{envSet("CONTACT_FROM") ? "" : " — ez a Resend tesztcíme (alapértelmezés), csak a Resend-fiók saját címére tud küldeni. Élesben egy gyurusimenes.hu-s cím kell, a domain DNS-rekordjaival (SPF, DKIM), amelyeket a Resend ad meg."}</EnvRow>
+        <EnvRow name="CONTACT_FROM">Feladó: <strong data-mail-from>{from}</strong>{envSet("CONTACT_FROM") ? "" : " (alapértelmezés)"}. <span data-mail-from-note>A Resend csak akkor küld erről a címről, ha a domainje hitelesítve van a Resend-fiókban: a Resend által megadott DNS-rekordokat (SPF, DKIM) be kell állítani.</span></EnvRow>
         <form action={sendTestEmail} className="actions">
           <button type="submit" className="btn btn-outline btn-sm" data-test-mail>Próba e-mail küldése</button>
           <span className="hint">A próba ide megy: {to}</span>
