@@ -38,8 +38,8 @@ const Pic = ({ im, sizes, quality }: { im: ImageMeta; sizes: string; quality: nu
 function TrailCard({ route, n, site, lang, d }: { route: TrailRoute; n: number; site: SiteContent; lang: Lang; d: Dictionary }) {
   const name = t(route.name, lang);
   const summary = t(route.summary, lang);
-  const map = resolveImage(route.mapImage, site);
-  const photos = route.photos.map((id) => resolveImage(id, site)).filter((x): x is ImageMeta => !!x);
+  const map = resolveImage(route.mapImage, site, lang);
+  const photos = route.photos.map((id) => resolveImage(id, site, lang)).filter((x): x is ImageMeta => !!x);
   /* Térképkép nélkül az első fotó kerül a nagy helyre. */
   const main = map ?? photos[0] ?? null;
   const strip = map ? photos : photos.slice(1);

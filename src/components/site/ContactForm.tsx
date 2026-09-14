@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Dictionary, Lang } from "@/content/types";
+import { langPath } from "@/lib/paths";
 
 type State = { s: "idle" | "sending" | "ok" | "err"; msg?: string; field?: string };
 
@@ -37,6 +38,7 @@ export function ContactForm({ d, page, pageLabel, lang = "hu" }: { d: Dictionary
       <div className="hidden" aria-hidden="true"><label>{d.website}<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
       {st.s === "err" && <p role="alert" className="form-err">{st.msg}</p>}
       <div><button className="btn btn-primary" disabled={st.s === "sending"}>{st.s === "sending" ? d.sending : d.send}</button></div>
+      <p className="form-privacy" data-form-privacy>{d.privacy.pre}<a href={langPath(lang, "/adatkezeles")} className="link">{d.privacy.link}</a>{d.privacy.post}</p>
     </form>
   );
 }

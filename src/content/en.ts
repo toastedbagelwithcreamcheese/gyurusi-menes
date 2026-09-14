@@ -16,6 +16,7 @@ export const en: Dictionary = {
       { name: "Shagya Arabian", origin: "Bábolna", text: "The breed of Hungarian Arabian breeding: noble, enduring, versatile." },
     ],
     photoCaption: "A foal in the stable · horses of the stud",
+    readMore: "Read more", readLess: "Show less",
   },
   events: {
     eyebrow: "Events", title: "Event calendar", featured: "Featured event", next: "Next event", upcoming: "Upcoming events", past: "Past events",
@@ -29,7 +30,7 @@ export const en: Dictionary = {
     sub: { title: "Have a question?", note: "Call or write — we arrange times by prior appointment.", write: "Write to us", call: "Call", formTitle: "Write to us", formLead: "A question, a date, how many of you — tell us and we call or write back.", pageRef: "Which page you are writing from" },
     mapBox: { title: "How to find us", load: "Load map", note: "The button loads Google Maps — Google may then set its own cookies and process data.", route: "Directions", loaded: "Google Maps" },
   },
-  form: { name: "Name", email: "E-mail", phone: "Phone", phoneOptional: "(optional)", message: "Message", messagePh: "When would you come, how many of you, what are you interested in?", send: "Send message", sending: "Sending…", okTitle: "We received your message.", okBody: "We'll reply soon. If it's urgent, call us.", err: "Could not send.", website: "Website", errName: "Please enter your name (at least 2 letters).", errEmail: "This e-mail address does not look valid — check the @ and the dot.", errMessage: "Please write a few words in the message (at least 10 characters).", errRate: "Two messages were sent too quickly. Wait a few seconds and try again.", errServer: "We could not receive your message right now. Please call us or send an e-mail directly." },
+  form: { name: "Name", email: "E-mail", phone: "Phone", phoneOptional: "(optional)", message: "Message", messagePh: "When would you come, how many of you, what are you interested in?", send: "Send message", sending: "Sending…", okTitle: "We received your message.", okBody: "We'll reply soon. If it's urgent, call us.", err: "Could not send.", website: "Website", errName: "Please enter your name (at least 2 letters).", errEmail: "This e-mail address does not look valid — check the @ and the dot.", errMessage: "Please write a few words in the message (at least 10 characters).", errRate: "Two messages were sent too quickly. Wait a few seconds and try again.", errServer: "We could not receive your message right now. Please call us or send an e-mail directly.", privacy: { pre: "We handle the data you enter in this form as described in our ", link: "privacy notice", post: "." } },
   reg: {
     title: "Registration", lead: "Tell us how many of you would come — this is not a final booking yet, we'll arrange everything with you by phone.",
     name: "Name", phone: "Phone", email: "E-mail", emailOptional: "(optional — if given, we send a confirmation)", count: "How many of you?", countHint: "people", note: "Note", notePh: "e.g. children's ages, riding experience",
@@ -42,7 +43,7 @@ export const en: Dictionary = {
   zoom: { open: "Enlarge image", close: "Close", prev: "Previous image", next: "Next image", of: "/" },
   route: { eyebrow: "Trail routes", title: "Where the rides go", lead: "Rides set out from the stud along forest tracks, among pastures and ridges.", note: "Illustration, not an exact map.", start: "Gyűrűs stud", legend: [{ name: "Forest loop" }, { name: "Ridge loop" }, { name: "Pasture loop" }] },
   trails: { eyebrow: "Trail routes", title: "Where the rides go", lead: "Maps of the routes and photos taken along them. Click a picture to enlarge it.", number: "Route {n}", map: "map", photos: "Photos from the route" },
-  legal: { privacyTitle: "Privacy notice", imprintTitle: "Imprint", operator: "Operator", person: "Representative", address: "Address", email: "E-mail", phone: "Phone", taxId: "Tax number", regNo: "Registration number", hosting: "Hosting", updated: "Last updated" },
+  legal: { privacyTitle: "Privacy notice", imprintTitle: "Imprint", operator: "Operator", person: "Representative", address: "Address", email: "E-mail", phone: "Phone", taxId: "Tax number", regNo: "Registration number", hosting: "Hosting", updated: "Last updated", controllerMissing: "The controller's details have not been provided yet." },
   notFound: { eyebrow: "404", title: "This page doesn't exist.", body: "It may have moved, or the address was mistyped.", back: "Back to the home page" },
   months: "en-GB",
 };

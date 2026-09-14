@@ -24,7 +24,8 @@ export interface Dictionary {
   lang_: { label: string };
   hero: { note: string; ctaPrimary: string; ctaSecondary: string; scroll: string };
   owner: { eyebrow: string; call: string; write: string };
-  intro: { breedsEyebrow: string; breeds: { name: string; origin: string; text: string }[]; photoCaption: string };
+  /** `readMore` / `readLess`: a főoldali bemutatkozás törzsszövegének lenyitója (a szöveg a HTML-ben marad). */
+  intro: { breedsEyebrow: string; breeds: { name: string; origin: string; text: string }[]; photoCaption: string; readMore: string; readLess: string };
   events: {
     eyebrow: string; title: string; featured: string; next: string; upcoming: string; past: string; none: string;
     details: string; all: string; register: string; registrationClosed: string; pastEvent: string; upcomingEvent: string;
@@ -40,6 +41,8 @@ export interface Dictionary {
     name: string; email: string; phone: string; phoneOptional: string; message: string; messagePh: string; send: string; sending: string;
     okTitle: string; okBody: string; err: string; website: string;
     errName: string; errEmail: string; errMessage: string; errRate: string; errServer: string;
+    /** Az űrlapok alatti sor: `pre` + link az adatkezelési tájékoztatóra (`link`) + `post`. A jelentkezési űrlap is ezt kapja. */
+    privacy: { pre: string; link: string; post: string };
   };
   reg: {
     title: string; lead: string; name: string; phone: string; email: string; emailOptional: string; count: string; countHint: string; note: string; notePh: string;
@@ -54,7 +57,8 @@ export interface Dictionary {
   route: { eyebrow: string; title: string; lead: string; note: string; start: string; legend: { name: string }[] };
   /** A Túrák lap útvonal-kártyái (az adminban felvett, közzétett útvonalak); `number`: „{n}. útvonal”. */
   trails: { eyebrow: string; title: string; lead: string; number: string; map: string; photos: string };
-  legal: { privacyTitle: string; imprintTitle: string; operator: string; person: string; address: string; email: string; phone: string; taxId: string; regNo: string; hosting: string; updated: string };
+  /** `controllerMissing`: az adatkezelési tájékoztató adatkezelő-része, ha az impresszum egyetlen mezője sincs kitöltve. */
+  legal: { privacyTitle: string; imprintTitle: string; operator: string; person: string; address: string; email: string; phone: string; taxId: string; regNo: string; hosting: string; updated: string; controllerMissing: string };
   notFound: { eyebrow: string; title: string; body: string; back: string };
   months: string;
 }

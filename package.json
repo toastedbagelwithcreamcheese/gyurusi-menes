@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "node scripts/sharp-linux.mjs",
-    "db:reset": "node scripts/db-reset.mjs"
+    "db:reset": "node scripts/db-reset.mjs",
+    "db:demo": "node scripts/db-demo.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^11.0.3",

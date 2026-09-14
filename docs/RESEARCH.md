@@ -308,3 +308,12 @@ Saját: https://huculosveny.gyurusimenes.hu/ ; https://gyurusimenes.hu/ (403; Wa
 Sajtó: zaol.hu 2014/2018/2023 (fent) ; greenfo.hu ; agrarunio.hu ; magyarmezogazdasag.hu 2017 & 2025 ; allattenyesztok.hu ; agraragazat.hu ; agroinform.hu ; juniorlovas.hu ; turistamagazin.hu
 Szövetségi/naptár: ponieskislo.hu (2024, 2024-eredmények, 2025, 2026, az-egyesuletrol) ; mlosz.hu/esemenyek/huculosveny-sportversenyek-2026
 Adatbázisok: kereso.lovasok.hu ; gyeresportolni.hu ; nyitvatartas24.hu ; allevents.in (VIII, IX) ; gocsejzalamente.hu ; hunmix.hu ; hu.wikipedia.org/wiki/Gyűrűs ; gyurus.hu/tortenet (Wayback) ; ceginformacio.hu/cr9310205678
+
+## 15. Az adatkezelési tájékoztatóhoz: hatóság, adatfeldolgozók (ellenőrizve 2026-09-14)
+A tájékoztató (data/seed.json `legal.privacy`) csak ezeket a külső adatokat használja; a ménes saját adatkezelői adatait NEM innen, hanem az impresszum mezőiből tölti ki (src/lib/privacy.ts).
+- **NAIH** — Nemzeti Adatvédelmi és Információszabadság Hatóság, székhely: 1055 Budapest, Falk Miksa utca 9-11.; levelezési cím: 1363 Budapest, Pf.: 9.; e-mail: ugyfelszolgalat@naih.hu; telefon: +36 (1) 391 1400 — https://www.naih.hu/ (lábléc) [ÉLŐ]
+- **Netlify** (tárhely, Netlify Blobs): „Netlify, Inc. 101 2nd Street San Francisco, CA 94105”; adattovábbítás: az Európai Bizottság 2021/914 határozata szerinti általános szerződési feltételek, valamint „Netlify, Inc. … comply with the EU-U.S. Data Privacy Framework (EU-U.S. DPF)” — https://www.netlify.com/privacy/ [ÉLŐ]. (A korábbi impresszum-cím, „512 2nd Street, Suite 200”, elavult.)
+- **Resend** (e-mail-küldés): jogi név „Plus Five Five, Inc.”, cím „2261 Market Street #5039 San Francisco, CA 94114”; „primary processing operations take place in the United States”; EU SCC-k a DPA-ban, és „complies with the EU-U.S. Data Privacy Framework” — https://resend.com/legal/dpa [ÉLŐ]
+- **Google** (kattintásra betöltött térkép, értékelések): az EGT felhasználói számára az adatkezelő „Google Ireland Limited … Gordon House, Barrow Street, Dublin 4, Ireland” — https://policies.google.com/privacy [ÉLŐ]
+- **Megőrzési idők**: nem külső adat, hanem a kód állandói (src/lib/maintenance.ts: REGISTRATION_RETENTION_DAYS, MESSAGE_RETENTION_DAYS, BACKUPS_KEPT); a tájékoztató ezekből tölti ki a számokat.
+- **Jogalapok** (GDPR 6. cikk (1) a), b), f)): a weboldal működéséből levezetett besorolás, nem jogi vélemény — az admin /admin/jogi lapja jogi átnézést javasol.

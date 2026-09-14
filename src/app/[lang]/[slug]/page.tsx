@@ -30,7 +30,7 @@ export default async function ContentPage({ params }: P) {
   const { lang, slug } = await params;
   if (!isLang(lang) || !isPageKey(slug)) notFound();
   const d = getDict(lang); const site = await readSite(); const p = site.pages[slug];
-  const [head, ...rest] = p.images.map((id) => resolveImage(id, site)).filter((x): x is NonNullable<typeof x> => !!x);
+  const [head, ...rest] = p.images.map((id) => resolveImage(id, site, lang)).filter((x): x is NonNullable<typeof x> => !!x);
   const related = PAGE_KEYS.filter((k) => k !== slug).slice(0, 3).map((k) => ({ href: langPath(lang, `/${k}`), title: t(site.pages[k].title, lang), image: site.pages[k].images[0] }));
 
   let after: React.ReactNode = null;
@@ -39,15 +39,16 @@ export default async function ContentPage({ params }: P) {
     const routes = visibleRoutes(site);
     after = routes.length > 0 ? <TrailRoutes routes={routes} site={site} lang={lang} d={d} /> : <RouteMap d={d.route} />;
   }
-  if (slug === "egyesulet") {
-    const reports = site.reports.filter((r) => r.published).sort((a, b) => b.date.localeCompare(a.date));
+  /* A beszámoló-blokk csak közzétett beszámolóval jelenik meg — üresen („Még nincs feltöltött beszámoló”) nem ad hozzá semmit. */
+  const reports = slug === "egyesulet" ? site.reports.filter((r) => r.published).sort((a, b) => b.date.localeCompare(a.date)) : [];
+  if (reports.length > 0) {
     const years = [...new Set(reports.map((r) => r.year))].sort((a, b) => b - a);
     after = (
       <section className="reports" id="beszamolok" data-reports>
         <Reveal as="p" className="eyebrow">{d.reports.eyebrow}</Reveal>
         <Reveal as="h2" className="h1 mask" delay={60}>{d.reports.title}</Reveal>
         <Reveal as="p" className="lead" delay={100} >{d.reports.lead}</Reveal>
-        {reports.length === 0 ? <Reveal as="p" className="note" delay={120}>{d.reports.none}</Reveal> : years.map((y) => (
+        {years.map((y) => (
           <Reveal key={y} className="rep-year" delay={80}>
             <h3 className="h2">{y}</h3>
             <ul className="rep-list" role="list">

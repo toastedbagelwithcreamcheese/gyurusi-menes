@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEFAULT_LANG, isLang, type Lang } from "@/content/types";
 import { LANG_COOKIE } from "@/lib/paths";
-import { isBot, negotiate } from "@/lib/negotiate";
+import { isBot, preferredLang } from "@/lib/negotiate";
 import { LOGIN_PATH, isAdmin } from "@/lib/admin-auth";
 
 /**
@@ -50,7 +50,8 @@ export async function proxy(req: NextRequest) {
   const cookie = req.cookies.get(LANG_COOKIE)?.value;
   let target: Lang = DEFAULT_LANG;
   if (isLang(cookie)) target = cookie;
-  else if (!isBot(req.headers.get("user-agent"))) target = negotiate(req.headers.get("accept-language")) ?? DEFAULT_LANG;
+  /* Ismeretlen böngészőnyelvre (pl. lengyel, francia) angol; üres vagy `*` fejlécre és robotnak magyar. */
+  else if (!isBot(req.headers.get("user-agent"))) target = preferredLang(req.headers.get("accept-language")) ?? DEFAULT_LANG;
 
   if (target !== DEFAULT_LANG) {
     return NextResponse.redirect(new URL(`/${target}${rest === "/" ? "" : rest}${search}`, req.url), { status: 302, headers: vary });

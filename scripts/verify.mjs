@@ -23,6 +23,8 @@ if (which === "images") {
   if (total > 8 * 1024 * 1024) fail(`összes ${(total/1024/1024).toFixed(1)} MB > 8 MB`);
   const manifest = await readJson("src/content/photos.json");
   for (const k of Object.keys(manifest)) if (!manifest[k].alt || manifest[k].alt.length < 12) fail(`hiányzó/rövid alt: ${k}`);
+  /* P4: a képleírás az oldal nyelvén jelenik meg — minden kurált fotónak kell angol és német leírás is. */
+  for (const k of Object.keys(manifest)) for (const f of ["alt_en", "alt_de"]) if (!manifest[k][f] || manifest[k][f].length < 12 || manifest[k][f] === manifest[k].alt) fail(`hiányzó/rövid/lefordítatlan ${f}: ${k}`);
   const site = await readJson("data/seed.json");
   const ids = new Set([...Object.keys(manifest), ...site.uploads.map((u) => u.id)]);
   const used = [site.hero.image, site.owner.image, ...Object.values(site.pages).flatMap((p) => p.images), ...site.events.map((e) => e.image)].filter(Boolean);
@@ -76,7 +78,9 @@ if (which === "css-motion") {
   if (/transition:\s*all\b/.test(css)) fail("transition: all a CSS-ben");
   if (!css.includes("prefers-reduced-motion")) fail("nincs prefers-reduced-motion");
   /* Osztály-lefedettség: az új komponensek osztályai tényleg ott vannak (egy rossz blokk-csere levághatja a fájl végét). */
-  const required = [".map-ph", ".hdr-pill", ".hero-line", ".sub-contact", ".grain", ".lang ", ".owner-grid", ".tiles", ".tile-card", ".ev-feat", ".evc", ".reg-grid", ".rep-year", ".sub-strip", ".contact-card", ".breed-strip", ".mnav", ".dock", ".sub-hero", ".zoom", ".route-map", ".sub-form", ".ev-grid", ".ftr2", ".legal-dl", ".trails", ".trail-card", ".trail-photos"];
+  const required = [".map-ph", ".hdr-pill", ".hero-line", ".sub-contact", ".grain", ".lang ", ".owner-grid", ".tiles", ".tile-card", ".ev-feat", ".evc", ".reg-grid", ".rep-year", ".sub-strip", ".contact-card", ".breed-strip", ".mnav", ".dock", ".sub-hero", ".zoom", ".route-map", ".sub-form", ".ev-grid", ".ftr2", ".legal-dl", ".trails", ".trail-card", ".trail-photos",
+    /* P4: nyelvi lenyíló, lenyitható bemutatkozás, évenkénti korábbi események, adatkezelési sor és tájékoztató — a fájl végén */
+    ".lang-menu", ".intro-more", ".ev-year", ".form-privacy", ".legal-list"];
   for (const c of required) if (!css.includes(c)) fail(`hiányzó osztály a globals.css-ből: ${c}`);
   for (const gone of [".lb ", ".gal ", ".marquee"]) if (css.includes(gone)) fail(`ott maradt a kivett blokk: ${gone}`);
   console.log(`${required.length} kötelező osztály megvan, a galéria/marquee CSS ki`);
@@ -142,7 +146,8 @@ if (which === "http") {
     must(html, ['data-page-contact="true"', "<h1", "sub-strip"], `${l}/${key}`);
     if ((html.match(/<h1/g) || []).length !== 1) fail(`${l}/${key}: nem pontosan egy H1`);
     ownerFirst(html, `${l}/${key}`);
-    if (key === "egyesulet" && !html.includes("data-reports")) fail(`${l}/egyesulet: nincs beszámoló-blokk`);
+    /* P4: a beszámoló-blokk csak közzétett beszámolóval jelenik meg — üres blokk nem lehet (a feltöltött beszámolót a G10 méri). */
+    if (key === "egyesulet" && html.includes("data-reports") && !html.includes('class="rep-row"')) fail(`${l}/egyesulet: üres beszámoló-blokk`);
     if (key === "taborok" && !html.includes("gyurus.lovastabor@gmail.com")) fail(`${l}/taborok: nem a tábor saját e-mailje áll a kapcsolatnál`);
     must(html, ['data-page-form', 'data-contact-form="' + key + '"', 'data-zoom="0"', 'data-footer', 'data-credit'], `${l}/${key}`);
     if (key === "turak" && !html.includes("data-route-map")) fail(`${l}/turak: nincs útvonaltérkép`);

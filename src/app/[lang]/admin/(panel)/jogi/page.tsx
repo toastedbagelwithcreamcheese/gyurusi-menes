@@ -22,7 +22,8 @@ export default async function LegalAdmin() {
         </div>
         <div className="card form">
           <h2>Adatkezelési tájékoztató</h2>
-          <LField name="privacy" label="Szöveg" value={site.legal.privacy} textarea rows={14} hint="Üres sor = új bekezdés. A szöveg azt írja le, ami az oldalon valóban történik: űrlap, jelentkezés, egy nyelvi süti, Netlify tárhely." />
+          <p className="hint" data-legal-review><strong>Jogi átnézés javasolt.</strong> A szöveg azt írja le, ami az oldalon ténylegesen történik (űrlap, jelentkezés és azok automatikus törlése, napi mentés, nyelvi süti, kattintásra betöltött Google Térkép, Google-értékelések, Netlify és Resend), de a jogalapok besorolása nem jogi vélemény: élesítés előtt nézze át adatvédelemben jártas szakember (jogász).</p>
+          <LField name="privacy" label="Szöveg" value={site.legal.privacy} textarea rows={14} hint="Üres sor = új bekezdés; „## ” kezdetű sor = alcím; „- ” kezdetű sor = felsorolás. Kitöltendő jelölők: {{controller}} = a fenti impresszum kitöltött mezői, {{contactEmail}} = az impresszum e-mail-címe, {{registrationDays}} / {{messageDays}} / {{backupDays}} = az automatikus törlés és a mentések napjai (a weboldal ezekkel a számokkal töröl — ne írd át őket számmal)." />
         </div>
         <div className="actions"><button className="btn btn-primary">Mentés</button></div>
       </form>

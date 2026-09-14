@@ -42,7 +42,7 @@ for (const p of PHOTOS) {
   total += bytes;
   manifest[p.slug] = {
     src: `/images/photos/${p.slug}.webp`,
-    width: meta.width, height: meta.height, alt: p.alt, bytes,
+    width: meta.width, height: meta.height, alt: p.alt, alt_en: p.alt_en, alt_de: p.alt_de, bytes,
     blur: `data:image/webp;base64,${tiny.toString("base64")}`,
     color: `rgb(${dominant.r},${dominant.g},${dominant.b})`,
   };

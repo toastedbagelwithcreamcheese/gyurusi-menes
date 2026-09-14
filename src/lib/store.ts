@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getStore } from "@netlify/blobs";
@@ -130,7 +131,29 @@ function withDefaults(data: Partial<SiteContent>): SiteContent {
   if (!out.legal?.imprint || !out.legal?.privacy) out.legal = structuredClone(seed.legal);
   if (!out.owner) out.owner = structuredClone(seed.owner);
   for (const k of PAGE_KEYS) if (!out.pages?.[k]) out.pages = { ...structuredClone(seed.pages), ...(out.pages ?? {}) };
+  migrateLegacyContent(out, seed);
   return out;
+}
+
+/* A korábbi magból (2026-08/09) a már feltöltött tárakba (Netlify Blobs, helyi site.json) került, azóta hibásnak talált tartalom.
+   Csak a SZÓ SZERINT változatlan régi alapértéket cseréljük: amit az admin átírt, azt nem bántjuk. */
+const LEGACY_PRIVACY_SHA256 = "0df2c56f8a8eabac2d6e2ace791ee519fbd5738df186e864ecbcdb64f6babbff";
+const LEGACY_EXAMPLE_EVENTS: Record<string, string> = { "oszi-lovastura-2026-09-19": "Őszi lovastúra a Zalai-dombságban", "oszi-szuneti-lovastabor-2026": "Őszi szüneti lovastábor" };
+const legacyHash = (l: L) => createHash("sha256").update([l.hu, l.en, l.de].join(String.fromCharCode(0))).digest("hex");
+
+/**
+ *  · a régi adatkezelési szöveg valótlant ígért („a jelentkezéseket az esemény után töröljük” — kód nélkül), és hiányzott belőle
+ *    az adatkezelő, a jogalap és a NAIH → a változatlan régi szöveg helyére az új, szerkezetes sablon kerül;
+ *  · a két kitalált példaesemény (időpont, időtartam, program nem igazolt) → kikerül, ha az azonosítója ÉS a magyar címe is a régi.
+ *    A helyi kipróbáláshoz az `npm run db:demo` más azonosítóval teszi vissza őket.
+ * Csak olvasáskor hat; a következő mentés tartósan így írja vissza.
+ */
+function migrateLegacyContent(out: SiteContent, seed: SiteContent) {
+  const p = out.legal?.privacy;
+  if (p && typeof p.hu === "string" && legacyHash(p) === LEGACY_PRIVACY_SHA256) out.legal = { ...out.legal, privacy: structuredClone(seed.legal.privacy) };
+  if (out.events.some((e) => LEGACY_EXAMPLE_EVENTS[e.id] !== undefined && e.title?.hu === LEGACY_EXAMPLE_EVENTS[e.id])) {
+    out.events = out.events.filter((e) => !(LEGACY_EXAMPLE_EVENTS[e.id] !== undefined && e.title?.hu === LEGACY_EXAMPLE_EVENTS[e.id]));
+  }
 }
 
 export async function readSite(): Promise<SiteContent> {

@@ -16,6 +16,7 @@ export const hu: Dictionary = {
       { name: "Shagya arab", origin: "Bábolna", text: "A magyar arab tenyésztés fajtája: nemes, kitartó, sokoldalú." },
     ],
     photoCaption: "Csikó az istállóban · a ménes lovai",
+    readMore: "Tovább olvasom", readLess: "Kevesebb",
   },
   events: {
     eyebrow: "Események", title: "Eseménynaptár", featured: "Kiemelt esemény", next: "Következő esemény", upcoming: "Közelgő események", past: "Korábbi események",
@@ -29,7 +30,7 @@ export const hu: Dictionary = {
     sub: { title: "Kérdésed van?", note: "Hívj, vagy írj — előzetes egyeztetéssel adunk időpontot.", write: "Üzenetet írok", call: "Hívás", formTitle: "Írj nekünk", formLead: "Kérdés, időpont, létszám — írd meg, és visszahívunk vagy válaszolunk.", pageRef: "Melyik oldalról írsz" },
     mapBox: { title: "Így találsz ide", load: "Térkép betöltése", note: "A gombbal a Google Térkép töltődik be — ekkor a Google saját sütiket és adatokat kezelhet.", route: "Útvonalterv", loaded: "Google Térkép" },
   },
-  form: { name: "Név", email: "E-mail", phone: "Telefon", phoneOptional: "(nem kötelező)", message: "Üzenet", messagePh: "Mikor jönnétek, hányan, mi érdekel?", send: "Üzenet küldése", sending: "Küldés…", okTitle: "Megkaptuk az üzeneted.", okBody: "Hamarosan válaszolunk. Ha sürgős, hívj minket telefonon.", err: "Nem sikerült elküldeni.", website: "Weboldal", errName: "Add meg a neved (legalább 2 betű).", errEmail: "Ez az e-mail-cím nem tűnik érvényesnek — ellenőrizd a @ és a pont helyét.", errMessage: "Írj pár szót az üzenetbe (legalább 10 karakter).", errRate: "Túl gyorsan küldtél két üzenetet egymás után. Várj néhány másodpercet, és próbáld újra.", errServer: "Most nem tudtuk fogadni az üzenetet. Kérjük, hívj minket telefonon, vagy írj közvetlenül e-mailt." },
+  form: { name: "Név", email: "E-mail", phone: "Telefon", phoneOptional: "(nem kötelező)", message: "Üzenet", messagePh: "Mikor jönnétek, hányan, mi érdekel?", send: "Üzenet küldése", sending: "Küldés…", okTitle: "Megkaptuk az üzeneted.", okBody: "Hamarosan válaszolunk. Ha sürgős, hívj minket telefonon.", err: "Nem sikerült elküldeni.", website: "Weboldal", errName: "Add meg a neved (legalább 2 betű).", errEmail: "Ez az e-mail-cím nem tűnik érvényesnek — ellenőrizd a @ és a pont helyét.", errMessage: "Írj pár szót az üzenetbe (legalább 10 karakter).", errRate: "Túl gyorsan küldtél két üzenetet egymás után. Várj néhány másodpercet, és próbáld újra.", errServer: "Most nem tudtuk fogadni az üzenetet. Kérjük, hívj minket telefonon, vagy írj közvetlenül e-mailt.", privacy: { pre: "Az űrlapon megadott adatokat az ", link: "adatkezelési tájékoztató", post: " szerint kezeljük." } },
   reg: {
     title: "Jelentkezés", lead: "Add meg, hányan jönnétek — ez még nem végleges foglalás, telefonon mindent egyeztetünk veled.",
     name: "Név", phone: "Telefon", email: "E-mail", emailOptional: "(nem kötelező — ha megadod, visszaigazolást küldünk)", count: "Hányan jöttök?", countHint: "fő", note: "Megjegyzés", notePh: "pl. gyerekek életkora, lovas tapasztalat",
@@ -42,7 +43,7 @@ export const hu: Dictionary = {
   zoom: { open: "Kép nagyítása", close: "Bezárás", prev: "Előző kép", next: "Következő kép", of: "/" },
   route: { eyebrow: "Túraútvonalak", title: "Merre visznek a túrák", lead: "A túrák a ménestől indulnak, erdei utakon, legelők és dombhátak között.", note: "Illusztráció, nem pontos térkép.", start: "Gyűrűsi Ménes", legend: [{ name: "Erdei kör" }, { name: "Dombháti kör" }, { name: "Legelős kör" }] },
   trails: { eyebrow: "Túraútvonalak", title: "Merre visznek a túrák", lead: "Az útvonalak térképe és a rajtuk készült képek. Kattints egy képre a nagyításhoz.", number: "{n}. útvonal", map: "térkép", photos: "Képek az útvonalról" },
-  legal: { privacyTitle: "Adatkezelési tájékoztató", imprintTitle: "Impresszum", operator: "Üzemeltető", person: "Képviselő", address: "Cím", email: "E-mail", phone: "Telefon", taxId: "Adószám", regNo: "Nyilvántartási szám", hosting: "Tárhely", updated: "Utoljára frissítve" },
+  legal: { privacyTitle: "Adatkezelési tájékoztató", imprintTitle: "Impresszum", operator: "Üzemeltető", person: "Képviselő", address: "Cím", email: "E-mail", phone: "Telefon", taxId: "Adószám", regNo: "Nyilvántartási szám", hosting: "Tárhely", updated: "Utoljára frissítve", controllerMissing: "Az adatkezelő adatai még nincsenek megadva." },
   notFound: { eyebrow: "404", title: "Ez az oldal nincs meg.", body: "Lehet, hogy elköltözött, vagy elgépelted a címet.", back: "Vissza a főoldalra" },
   months: "hu-HU",
 };

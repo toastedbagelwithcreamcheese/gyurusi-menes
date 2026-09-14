@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Dictionary, Lang } from "@/content/types";
+import { langPath } from "@/lib/paths";
 
 type State = { s: "idle" | "sending" | "ok" | "err"; msg?: string; field?: string };
 
@@ -9,7 +10,7 @@ type State = { s: "idle" | "sending" | "ok" | "err"; msg?: string; field?: strin
  * Jelentkezés egy eseményre — csak igényfelmérés: név, telefon, létszám (e-mail nem kötelező).
  * A jelentkezés az adminban jelenik meg; a részleteket telefonon egyeztetik — ahogy a megbízó kérte.
  */
-export function RegistrationForm({ d, eventId, lang }: { d: Dictionary["reg"]; eventId: string; lang: Lang }) {
+export function RegistrationForm({ d, privacy, eventId, lang }: { d: Dictionary["reg"]; privacy: Dictionary["form"]["privacy"]; eventId: string; lang: Lang }) {
   const [st, setSt] = useState<State>({ s: "idle" });
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -41,6 +42,7 @@ export function RegistrationForm({ d, eventId, lang }: { d: Dictionary["reg"]; e
       <div className="hidden" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
       {st.s === "err" && <p role="alert" className="form-err">{st.msg}</p>}
       <div><button className="btn btn-primary" disabled={st.s === "sending"}>{st.s === "sending" ? d.sending : d.send}</button></div>
+      <p className="form-privacy" data-form-privacy>{privacy.pre}<a href={langPath(lang, "/adatkezeles")} className="link">{privacy.link}</a>{privacy.post}</p>
     </form>
   );
 }

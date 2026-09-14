@@ -5,6 +5,7 @@
  *  C) sok esemény: +5 közelgő az adatbázisban → rács, egyetlen kiemelt; nincs esemény → „nincs kitűzött” szöveg
  *  D) admin: PDF helyett .txt → részletes hiba a Flash-sáv stílusában, már a böngészőben (feltöltési kérés nélkül, kontroll-PDF-fel);
  *     mentés → „mentve” visszajelzés; hiányzó cím → hiba
+ * A példaeseményeket (közelgő túra + tábor) a db:demo teszi a helyi DB-be — a mag szándékosan nem tartalmazza őket.
  * A végén a helyi DB visszaáll (db:reset). QA_FLOW_OK a siker jele.
  */
 import { chromium } from "playwright-core";
@@ -30,6 +31,7 @@ const readRecords = async (kind) => {
 };
 
 spawnSync("node", [path.join(ROOT, "scripts/db-reset.mjs")], { stdio: "ignore" });
+{ const demo = spawnSync("node", [path.join(ROOT, "scripts/db-demo.mjs")], { encoding: "utf8" }); if (demo.status !== 0) fail("db:demo: " + demo.stderr); }
 const browser = await chromium.launch({ executablePath: exe, headless: true });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "hu-HU" });
 const page = await ctx.newPage();
@@ -59,8 +61,8 @@ try {
   const msrc = await page.locator("iframe.map-frame").getAttribute("src"); if (!/maps\.google\.com\/maps\?q=.*output=embed/.test(msrc ?? "")) fail("a térkép iframe src hibás: " + msrc);
   console.log("A3) térkép kattintásra betöltődik OK");
 
-  /* B) jelentkezés a példa-túrára */
-  await go("/esemenyek/oszi-lovastura-2026-09-19");
+  /* B) jelentkezés a példa-túrára (db:demo) */
+  await go("/esemenyek/pelda-lovastura");
   const r = '[data-testid="registration-form"]';
   await page.fill(`${r} #r-name`, "Teszt Elek"); await page.fill(`${r} #r-phone`, "12"); await page.click(`${r} button`);
   t = await alertText(); if (!/telefon/i.test(t)) fail("rossz telefon: nem a telefon-hiba jött: " + t);

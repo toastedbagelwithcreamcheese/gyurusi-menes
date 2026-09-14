@@ -10,6 +10,8 @@ import type { Dictionary, Lang } from "@/content/types";
 import { langPath } from "@/lib/paths";
 import { formatRange, formatDate, featuredEvent, upcoming, past, t, PAGE_KEYS, type Event, type SiteContent } from "@/lib/store";
 
+/** Lenyitó-nyíl a <details> összefoglalóihoz (bemutatkozás, korábbi évek); a forgatás CSS-ből. */
+const Chevron = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 export const Arrow = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 const tel = (p: string) => `tel:${p.replace(/\s/g, "")}`;
 
@@ -26,7 +28,7 @@ type P = { site: SiteContent; lang: Lang; d: Dictionary };
 
 /* ---------------- HERO (a kép az adminból cserélhető) ---------------- */
 export function Hero({ site, lang, d }: P) {
-  const im = resolveImage(site.hero.image, site);
+  const im = resolveImage(site.hero.image, site, lang);
   const lines = splitTitle(t(site.hero.title, lang));
   return (
     <section id="top" className="hero on-dark" aria-label={t(site.hero.title, lang)}>
@@ -61,7 +63,7 @@ function splitTitle(tt: string): string[] {
 /* ---------------- A TULAJDONOS — elöl ---------------- */
 export function Owner({ site, lang, d }: P) {
   const o = site.owner;
-  const im = resolveImage(o.image, site);
+  const im = resolveImage(o.image, site, lang);
   return (
     <section id="tulajdonos" className="section owner" data-owner>
       <div className="wrap owner-grid">
@@ -90,14 +92,21 @@ export function Intro({ site, lang, d }: P) {
           <Reveal as="p" className="eyebrow">{t(site.intro.eyebrow, lang)}</Reveal>
           <Reveal as="h2" className="h1 mask" delay={60}>{t(site.intro.title, lang)}</Reveal>
           <Reveal as="p" className="lead" delay={120}>{t(site.intro.lead, lang)}</Reveal>
-          <Reveal delay={180} className="intro-body"><Paragraphs text={t(site.intro.body, lang)} /></Reveal>
+          {/* A főoldal ne nőjön (C02): a kiemelt bekezdés és a fajta-sáv látszik, a törzsszöveg lenyitható. A <details> tartalma
+              a HTML-ben marad (kereső, oldalon belüli keresés), és JS nélkül is nyílik. */}
+          <Reveal delay={160} className="intro-more-wrap">
+            <details className="intro-more" data-intro-more>
+              <summary><span className="intro-more-open">{d.intro.readMore}</span><span className="intro-more-close">{d.intro.readLess}</span><Chevron /></summary>
+              <div className="intro-body"><Paragraphs text={t(site.intro.body, lang)} /></div>
+            </details>
+          </Reveal>
           <Reveal delay={220} className="breed-strip">
             {d.intro.breeds.map((b) => <div key={b.name}><p className="caption">{b.origin}</p><h3 className="h3">{b.name}</h3><p>{b.text}</p></div>)}
           </Reveal>
         </div>
         <div className="intro-photos">
-          <Reveal variant="unveil" as="figure" className="photo ph-a"><Photo id="csiko-portre" sizes="(max-width: 900px) 60vw, 360px" /></Reveal>
-          <Reveal variant="unveil" as="figure" className="photo ph-b" delay={150}><Photo id="lo-es-no-bokeh" sizes="(max-width: 900px) 90vw, 520px" /></Reveal>
+          <Reveal variant="unveil" as="figure" className="photo ph-a"><Photo id="csiko-portre" lang={lang} sizes="(max-width: 900px) 60vw, 360px" /></Reveal>
+          <Reveal variant="unveil" as="figure" className="photo ph-b" delay={150}><Photo id="lo-es-no-bokeh" lang={lang} sizes="(max-width: 900px) 90vw, 520px" /></Reveal>
           <p className="caption ph-cap">{d.intro.photoCaption}</p>
         </div>
       </div>
@@ -106,15 +115,17 @@ export function Intro({ site, lang, d }: P) {
 }
 
 /* ---------------- ESEMÉNYEK a főoldalon: kiemelt nagyban + a következők ---------------- */
-export function EventCard({ e, site, lang, d, tag }: { e: Event; site: SiteContent; lang: Lang; d: Dictionary; tag: string }) {
-  const im = resolveImage(e.image, site);
+/** `level`: a kártya címének szintje — a főoldalon a szekció H2-je alatt H3, az eseménynaptárban közvetlenül a H1 alatt H2. */
+export function EventCard({ e, site, lang, d, tag, level = 3 }: { e: Event; site: SiteContent; lang: Lang; d: Dictionary; tag: string; level?: 2 | 3 }) {
+  const title = t(e.title, lang);
+  const im = resolveImage(e.image, site, lang);
   return (
     <Link href={langPath(lang, `/esemenyek/${e.id}`)} className="ev-feat" data-featured-event>
       <figure className="photo ev-feat-ph"><Img im={im} sizes="(max-width: 800px) 100vw, 55vw" /></figure>
       <div className="ev-feat-body">
-        <span className="ev-feat-tag">{tag}</span>
+        <span className="ev-feat-tag" data-event-tag>{tag}</span>
         <p className="caption">{formatRange(e, lang)}{e.location ? ` · ${e.location}` : ""}</p>
-        <h3 className="h2">{t(e.title, lang)}</h3>
+        {level === 2 ? <h2 className="h2">{title}</h2> : <h3 className="h2">{title}</h3>}
         <p className="lead">{t(e.summary, lang)}</p>
         <span className="btn btn-primary">{e.registration ? d.events.register : d.events.details} <Arrow /></span>
       </div>
@@ -122,7 +133,8 @@ export function EventCard({ e, site, lang, d, tag }: { e: Event; site: SiteConte
   );
 }
 
-export function EventList({ list, lang, d, pastList = false }: { list: Event[]; lang: Lang; d: Dictionary; pastList?: boolean }) {
+export function EventList({ list, lang, d, pastList = false, level = 3 }: { list: Event[]; lang: Lang; d: Dictionary; pastList?: boolean; level?: 3 | 4 }) {
+  const H = level === 4 ? "h4" : "h3";
   return (
     <ul className={`evc ${pastList ? "past" : ""}`} role="list">
       {list.map((e) => (
@@ -130,7 +142,7 @@ export function EventList({ list, lang, d, pastList = false }: { list: Event[]; 
           <Link href={langPath(lang, `/esemenyek/${e.id}`)}>
             <span className="evc-date"><b>{e.date.slice(8).replace(/^0/, "")}</b><span>{formatDate(e.date, lang, { month: "short", year: pastList ? "numeric" : undefined })}</span></span>
             <span>
-              <h3 className="evc-title">{t(e.title, lang)}{e.registration && !pastList && <span className="evc-reg">{d.events.register}</span>}</h3>
+              <H className="evc-title">{t(e.title, lang)}{e.registration && !pastList && <span className="evc-reg">{d.events.register}</span>}</H>
               <p className="evc-sum">{t(e.summary, lang)}</p>
               {e.location && <p className="evc-meta">{e.location}</p>}
             </span>
@@ -145,7 +157,7 @@ export function EventList({ list, lang, d, pastList = false }: { list: Event[]; 
 export function EventGrid({ list, site, lang, d }: { list: Event[]; site: SiteContent; lang: Lang; d: Dictionary }) {
   return (
     <ul className="ev-grid" role="list">
-      {list.map((e) => { const im = resolveImage(e.image, site); return (
+      {list.map((e) => { const im = resolveImage(e.image, site, lang); return (
         <li key={e.id}>
           <Link href={langPath(lang, `/esemenyek/${e.id}`)} className="ev-card">
             <figure className="photo ev-card-ph">{im && <Image src={im.src} alt={im.alt} fill sizes="(max-width: 640px) 100vw, 33vw" quality={62} placeholder={im.blur ? "blur" : "empty"} blurDataURL={im.blur} style={{ objectFit: "cover", backgroundColor: im.color }} />}
@@ -163,6 +175,21 @@ export function EventGrid({ list, site, lang, d }: { list: Event[]; site: SiteCo
   );
 }
 
+/** Korábbi események évenként, a legutóbbi két év nyitva — a lista évről évre nő. <details>: JS nélkül is nyitható. */
+export function PastEvents({ list, lang, d }: { list: Event[]; lang: Lang; d: Dictionary }) {
+  const years = [...new Set(list.map((e) => e.date.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
+  return (
+    <div className="ev-years">
+      {years.map((y, i) => (
+        <details key={y} className="ev-year" open={i < 2} data-past-year={y}>
+          <summary><h3 className="ev-year-title">{y}</h3><Chevron /></summary>
+          <EventList list={list.filter((e) => e.date.startsWith(y))} lang={lang} d={d} pastList level={4} />
+        </details>
+      ))}
+    </div>
+  );
+}
+
 export function EventsHome({ site, lang, d }: P) {
   const feat = featuredEvent(site.events);
   const up = upcoming(site.events).filter((e) => e.id !== feat?.id).slice(0, 3);
@@ -172,7 +199,8 @@ export function EventsHome({ site, lang, d }: P) {
       <div className="wrap">
         <div className="sec-head">
           <Reveal as="p" className="eyebrow">{d.events.eyebrow}</Reveal>
-          <Reveal as="h2" className="h1 mask" delay={60}>{feat ? (feat.featured ? d.events.featured : d.events.next) : d.events.title}</Reveal>
+          {/* A szekció címe mindig az „Eseménynaptár”: a kiemelést a kártya címkéje mondja ki (korábban kétszer állt ott, hogy „Kiemelt esemény”). */}
+          <Reveal as="h2" className="h1 mask" delay={60} data-events-title>{d.events.title}</Reveal>
         </div>
         {feat ? <Reveal><EventCard e={feat} site={site} lang={lang} d={d} tag={feat.featured ? d.events.featured : d.events.next} /></Reveal>
           : <>
@@ -197,7 +225,7 @@ export function Tiles({ site, lang, d }: P) {
         </div>
         <div className="tiles" data-tiles>
           {PAGE_KEYS.map((k, i) => {
-            const p = site.pages[k]; const im = resolveImage(p.images[0], site);
+            const p = site.pages[k]; const im = resolveImage(p.images[0], site, lang);
             return (
               <Reveal as="div" key={k} delay={(i % 5) * 70} className="tile-wrap">
                 <Link href={langPath(lang, `/${k}`)} className="tile-card">

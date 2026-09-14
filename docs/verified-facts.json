@@ -1,6 +1,12 @@
 {
   "_comment": "Igazolt adatok (docs/RESEARCH.md) és tiltott minták a tartalomban. A scripts/verify.mjs content-no-fabrication ezt ellenőrzi a data/site.json ellen.",
-  "mustContain": ["+36 70 591 8762", "info@gyurusimenes.hu", "8932 Gyűrűs, Petőfi Sándor u. 2.", "Varga-Kovács Emese", "Vörös József"],
+  "mustContain": [
+    "+36 70 591 8762",
+    "info@gyurusimenes.hu",
+    "8932 Gyűrűs, Petőfi Sándor u. 2.",
+    "Varga-Kovács Emese",
+    "Vörös József"
+  ],
   "forbiddenPatterns": [
     "\\d[\\d .]*\\s?Ft",
     "hektár",
@@ -11,6 +17,15 @@
     "Magyar Hucul Lótenyésztők",
     "nyitva\\s?tartás",
     "\\b\\d{1,2}:\\d{2}\\s?[–-]\\s?\\d{1,2}:\\d{2}\\b",
-    "szállás"
+    "szállás",
+    "pelda-lovastura",
+    "pelda-lovastabor",
+    "oszi-lovastura-2026",
+    "oszi-szuneti-lovastabor",
+    "egy hétre",
+    "for a week",
+    "für eine Woche",
+    "reggel 9 órakor",
+    "A jelentkezéseket az esemény után töröljük"
   ]
 }

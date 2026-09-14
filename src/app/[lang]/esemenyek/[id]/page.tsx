@@ -32,14 +32,14 @@ export default async function EventPage({ params }: P) {
     <section className="reg" id="jelentkezes" data-registration>
       <Reveal as="h2" className="h2">{d.reg.title}</Reveal>
       <Reveal as="p" className="lead" delay={60}>{d.reg.lead}</Reveal>
-      <Reveal delay={100}><RegistrationForm d={d.reg} eventId={e.id} lang={lang} /></Reveal>
+      <Reveal delay={100}><RegistrationForm d={d.reg} privacy={d.form.privacy} eventId={e.id} lang={lang} /></Reveal>
     </section>
   ) : e.registration && over ? <p className="note" style={{ marginTop: 24 }}>{d.reg.closed}</p> : null;
   const ld = ldFor(site, lang, `/esemenyek/${id}`);
   return (
     <>
     {ld && <script type="application/ld+json" dangerouslySetInnerHTML={ldHtml(ld)} />}
-    <SubPage site={site} lang={lang} d={d} rest={`/esemenyek/${id}`} eyebrow={over ? d.events.pastEvent : d.events.upcomingEvent} title={t(e.title, lang)} meta={when} image={resolveImage(e.image, site)}
+    <SubPage site={site} lang={lang} d={d} rest={`/esemenyek/${id}`} eyebrow={over ? d.events.pastEvent : d.events.upcomingEvent} title={t(e.title, lang)} meta={when} image={resolveImage(e.image, site, lang)}
       facts={[{ k: d.events.when, v: <>{when}{e.time ? <><br />{e.time}</> : null}</> }, { k: d.events.where, v: e.location ?? "Gyűrűsi Ménes, Gyűrűs" }, { k: d.events.address, v: site.contact.address }]}
       related={others} relatedTitle={d.events.more} back={{ href: langPath(lang, "/esemenyek"), label: d.events.back }} after={after}>
       <p className="lead">{t(e.summary, lang)}</p>

@@ -3,7 +3,7 @@ import os from "node:os"; import path from "node:path";
 const BASE="http://localhost:3012"; const OUT=process.argv[2];
 const exe=path.join(os.homedir(),"Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing");
 const b=await chromium.launch({executablePath:exe});
-const pages=[["/","home"],["/turak","turak"],["/esemenyek","esemenyek"],["/esemenyek/oszi-lovastura-2026-09-19","esemeny"],["/impresszum","impresszum"],["/admin/jogi","admin-jogi"]];
+const pages=[["/","home"],["/turak","turak"],["/esemenyek","esemenyek"],["/esemenyek/pelda-lovastura","esemeny"],["/impresszum","impresszum"],["/admin/jogi","admin-jogi"]];
 const report=[];
 for (const [w,h,tag] of [[1440,900,"d"],[390,844,"m"]]) {
   const ctx=await b.newContext({viewport:{width:w,height:h},deviceScaleFactor:1,locale:"hu-HU"}); const p=await ctx.newPage();

@@ -16,6 +16,7 @@ export const de: Dictionary = {
       { name: "Shagya-Araber", origin: "Bábolna", text: "Die Rasse der ungarischen Araberzucht: edel, ausdauernd, vielseitig." },
     ],
     photoCaption: "Ein Fohlen im Stall · Pferde des Gestüts",
+    readMore: "Weiterlesen", readLess: "Weniger anzeigen",
   },
   events: {
     eyebrow: "Veranstaltungen", title: "Veranstaltungskalender", featured: "Hervorgehobene Veranstaltung", next: "Nächste Veranstaltung", upcoming: "Kommende Veranstaltungen", past: "Vergangene Veranstaltungen",
@@ -29,7 +30,7 @@ export const de: Dictionary = {
     sub: { title: "Haben Sie eine Frage?", note: "Rufen Sie an oder schreiben Sie uns — Termine nach vorheriger Absprache.", write: "Schreiben Sie uns", call: "Anrufen", formTitle: "Schreiben Sie uns", formLead: "Eine Frage, ein Termin, die Personenzahl — schreiben Sie uns, wir rufen zurück oder antworten.", pageRef: "Von welcher Seite Sie schreiben" },
     mapBox: { title: "So finden Sie uns", load: "Karte laden", note: "Die Schaltfläche lädt Google Maps — Google kann dann eigene Cookies setzen und Daten verarbeiten.", route: "Route planen", loaded: "Google Maps" },
   },
-  form: { name: "Name", email: "E-Mail", phone: "Telefon", phoneOptional: "(optional)", message: "Nachricht", messagePh: "Wann würden Sie kommen, wie viele Personen, was interessiert Sie?", send: "Nachricht senden", sending: "Wird gesendet…", okTitle: "Wir haben Ihre Nachricht erhalten.", okBody: "Wir antworten in Kürze. Wenn es dringend ist, rufen Sie uns an.", err: "Senden fehlgeschlagen.", website: "Website", errName: "Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben).", errEmail: "Diese E-Mail-Adresse scheint ungültig zu sein — prüfen Sie das @ und den Punkt.", errMessage: "Bitte schreiben Sie ein paar Worte (mindestens 10 Zeichen).", errRate: "Zwei Nachrichten wurden zu schnell nacheinander gesendet. Warten Sie einige Sekunden und versuchen Sie es erneut.", errServer: "Wir konnten Ihre Nachricht gerade nicht entgegennehmen. Bitte rufen Sie uns an oder schreiben Sie direkt eine E-Mail." },
+  form: { name: "Name", email: "E-Mail", phone: "Telefon", phoneOptional: "(optional)", message: "Nachricht", messagePh: "Wann würden Sie kommen, wie viele Personen, was interessiert Sie?", send: "Nachricht senden", sending: "Wird gesendet…", okTitle: "Wir haben Ihre Nachricht erhalten.", okBody: "Wir antworten in Kürze. Wenn es dringend ist, rufen Sie uns an.", err: "Senden fehlgeschlagen.", website: "Website", errName: "Bitte geben Sie Ihren Namen an (mindestens 2 Buchstaben).", errEmail: "Diese E-Mail-Adresse scheint ungültig zu sein — prüfen Sie das @ und den Punkt.", errMessage: "Bitte schreiben Sie ein paar Worte (mindestens 10 Zeichen).", errRate: "Zwei Nachrichten wurden zu schnell nacheinander gesendet. Warten Sie einige Sekunden und versuchen Sie es erneut.", errServer: "Wir konnten Ihre Nachricht gerade nicht entgegennehmen. Bitte rufen Sie uns an oder schreiben Sie direkt eine E-Mail.", privacy: { pre: "Wir verarbeiten die hier eingegebenen Daten gemäß unseren ", link: "Datenschutzhinweisen", post: "." } },
   reg: {
     title: "Anmeldung", lead: "Sagen Sie uns, wie viele Personen kommen würden — das ist noch keine endgültige Buchung, wir besprechen alles telefonisch mit Ihnen.",
     name: "Name", phone: "Telefon", email: "E-Mail", emailOptional: "(optional — wenn angegeben, senden wir eine Bestätigung)", count: "Wie viele Personen?", countHint: "Personen", note: "Anmerkung", notePh: "z. B. Alter der Kinder, Reiterfahrung",
@@ -42,7 +43,7 @@ export const de: Dictionary = {
   zoom: { open: "Bild vergrößern", close: "Schließen", prev: "Vorheriges Bild", next: "Nächstes Bild", of: "/" },
   route: { eyebrow: "Ausrittrouten", title: "Wohin die Ausritte führen", lead: "Die Ausritte beginnen am Gestüt und führen über Waldwege, zwischen Weiden und Hügelrücken.", note: "Illustration, keine genaue Karte.", start: "Gestüt Gyűrűs", legend: [{ name: "Waldrunde" }, { name: "Höhenrunde" }, { name: "Weidenrunde" }] },
   trails: { eyebrow: "Ausrittrouten", title: "Wohin die Ausritte führen", lead: "Karten der Routen und Bilder von unterwegs. Klicken Sie auf ein Bild, um es zu vergrößern.", number: "Route {n}", map: "Karte", photos: "Bilder von der Route" },
-  legal: { privacyTitle: "Datenschutzhinweise", imprintTitle: "Impressum", operator: "Betreiber", person: "Vertreter", address: "Adresse", email: "E-Mail", phone: "Telefon", taxId: "Steuernummer", regNo: "Registernummer", hosting: "Hosting", updated: "Zuletzt aktualisiert" },
+  legal: { privacyTitle: "Datenschutzhinweise", imprintTitle: "Impressum", operator: "Betreiber", person: "Vertreter", address: "Adresse", email: "E-Mail", phone: "Telefon", taxId: "Steuernummer", regNo: "Registernummer", hosting: "Hosting", updated: "Zuletzt aktualisiert", controllerMissing: "Die Angaben zum Verantwortlichen sind noch nicht hinterlegt." },
   notFound: { eyebrow: "404", title: "Diese Seite gibt es nicht.", body: "Sie ist vielleicht umgezogen, oder die Adresse wurde falsch eingegeben.", back: "Zurück zur Startseite" },
   months: "de-DE",
 };

@@ -87,10 +87,21 @@ Az oldal helyben **fájl-alapú adatbázissal** fut, adatbázis-szerver nélkül
 
 ```bash
 npm run db:reset   # helyi adatbázis vissza a magra (data/site.json ← data/seed.json; feltöltések, jelentkezések, üzenetek, mentések törölve)
+npm run db:demo    # + két példaesemény a helyi adatbázisba (közelgő túra kiemelve, tábor), jelentkezés nyitva — a dátumok a mai naphoz igazodnak
 npm run dev        # http://localhost:3000 — admin: http://localhost:3000/admin (helyben jelszó nélkül)
 ```
 
-Amit az adminban helyben felviszel, az csak a gépeden van. Ha valamit a magba akarsz tenni (hogy élesbe is menjen a következő deployjal), másold a `data/site.json` tartalmát a `data/seed.json`-ba, és commitold.
+Amit az adminban helyben felviszel, az csak a gépeden van. Ha valamit a magba akarsz tenni (hogy élesbe is menjen a következő deployjal), másold a `data/site.json` tartalmát a `data/seed.json`-ba, és commitold — a példaeseményeket (`pelda-lovastura`, `pelda-lovastabor`) előbb vedd ki: kitalált időpontot és programot tartalmaznak, a `node scripts/verify.mjs content-no-fabrication` meg is fogja őket.
+
+**A mag nem tartalmaz kitalált eseményt.** A korábbi két példaesemény (őszi lovastúra, őszi szüneti tábor) és a Táborok „egy hétre” kitétele kikerült; a már feltöltött tárakból (Netlify Blobs, régi `site.json`) a `store.ts` `migrateLegacyContent`-je olvasáskor kiveszi a két régi eseményt (csak ha az azonosítója és a magyar címe is a régi), és a szó szerint változatlan régi adatkezelési szöveget az újra cseréli.
+
+## Nyilvános lapok: nyelv, adatkezelés, mobil
+
+- **Nyelvválasztás** (`src/lib/negotiate.ts` `preferredLang`, `src/proxy.ts`): a süti dönt; ha nincs, az `Accept-Language` első támogatott nyelve (hu/en/de); ha a böngésző csak más nyelvet kér (pl. pl, sk, cs, fr, it), **angol**; üres vagy `*` fejlécre és robotnak magyar.
+- **Képleírások** nyelvenként: `src/content/photos.json` `alt` / `alt_en` / `alt_de` (forrás: `scripts/images.config.mjs`); `resolveImage(id, site, lang)`, `<Photo lang>`. A feltöltött képek leírása egynyelvű (amit a feltöltő megad).
+- **Adatkezelési tájékoztató** (`src/lib/privacy.ts`): a `legal.privacy` szöveg sablon — `## ` = alcím, `- ` = felsorolás; `{{controller}}` = az impresszum kitöltött mezői, `{{contactEmail}}`, és `{{registrationDays}}` / `{{messageDays}}` / `{{backupDays}}` a `src/lib/maintenance.ts` állandóiból, így a számok mindig azok, amelyekkel a karbantartás töröl. A külső adatok (NAIH, Netlify, Resend, Google) forrása: `docs/RESEARCH.md` 15. pont. Az `/admin/jogi` lap jogi átnézést javasol.
+- **Mobil és fejléc:** a 900–1240 px-es sávban a nyelvkódok lenyílóba kerülnek (`LangMenu`); mobilon minden önálló érintési cél legalább 44 px; a főoldali bemutatkozás törzsszövege „Tovább olvasom” lenyitással; a korábbi események évenként (a legutóbbi két év nyitva); az Egyesület beszámoló-blokkja csak közzétett beszámolóval jelenik meg; mindkét űrlap alatt link az adatkezelési tájékoztatóra.
+- **Tesztek:** `node scripts/with-server.mjs node scripts/checks/p4-public.mjs` (G25: 11 lap × 3 nyelv × 7 szélesség túlcsordulás, fejléc, érintési célok, nyelvválasztás, űrlapok, seed) és `node scripts/checks/p4-privacy.mjs` (G26: saját szerverrel; kötelező részek, impresszumból kitöltött adatkezelő, a megőrzési számok a kód állandóiból) — előtte `npm run build`.
 
 ## Admin: belépés és használat
 

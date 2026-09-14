@@ -5,7 +5,7 @@ import { getDict } from "@/lib/i18n";
 import { ldFor, ldHtml, metadataFor } from "@/lib/seo";
 import { readSite, upcoming, past, featuredEvent } from "@/lib/store";
 import { Shell } from "@/components/site/SubPage";
-import { EventCard, EventList, EventGrid } from "@/components/site/Sections";
+import { EventCard, EventGrid, PastEvents } from "@/components/site/Sections";
 import { Reveal } from "@/components/Reveal";
 
 type P = { params: Promise<{ lang: string }> };
@@ -15,7 +15,11 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   return metadataFor(await readSite(), lang, "/esemenyek");
 }
 
-/** Eseménynaptár: kiemelt nagyban, közelgők listában, korábbiak halványabban. */
+/**
+ * Eseménynaptár: kiemelt nagyban, közelgők rácsban, korábbiak évenként (a legutóbbi két év nyitva).
+ * Címsor-sorrend: H1 → a kiemelt esemény címe (H2) → „Közelgő” és „Korábbi események” (H2, felirat-stílusban) →
+ * a kártyák és az évek (H3) → az év eseményei (H4). A látvány ugyanaz, csak a szintek helyesek.
+ */
 export default async function EventsPage({ params }: P) {
   const { lang } = await params; if (!isLang(lang)) notFound();
   const d = getDict(lang); const site = await readSite();
@@ -31,10 +35,10 @@ export default async function EventsPage({ params }: P) {
         <Reveal as="h1" className="h1 mask" trigger="mount" delay={80}>{d.events.title}</Reveal>
       </div>
       <div className="wrap">
-        {feat ? <Reveal trigger="mount" delay={140}><EventCard e={feat} site={site} lang={lang} d={d} tag={feat.featured ? d.events.featured : d.events.next} /></Reveal>
+        {feat ? <Reveal trigger="mount" delay={140}><EventCard e={feat} site={site} lang={lang} d={d} tag={feat.featured ? d.events.featured : d.events.next} level={2} /></Reveal>
           : <Reveal as="p" className="lead" trigger="mount" delay={140}>{d.events.none}</Reveal>}
-        {up.length > 0 && <Reveal className="ev-section"><p className="eyebrow" style={{ marginBottom: 12 }}>{d.events.upcoming}</p><EventGrid list={up} site={site} lang={lang} d={d} /></Reveal>}
-        {pst.length > 0 && <Reveal className="ev-section"><p className="eyebrow" style={{ marginBottom: 12 }}>{d.events.past}</p><EventList list={pst} lang={lang} d={d} pastList /></Reveal>}
+        {up.length > 0 && <Reveal className="ev-section"><h2 className="eyebrow ev-sec-title">{d.events.upcoming}</h2><EventGrid list={up} site={site} lang={lang} d={d} /></Reveal>}
+        {pst.length > 0 && <Reveal className="ev-section" data-past-events><h2 className="eyebrow ev-sec-title">{d.events.past}</h2><PastEvents list={pst} lang={lang} d={d} /></Reveal>}
       </div>
     </Shell>
   );
