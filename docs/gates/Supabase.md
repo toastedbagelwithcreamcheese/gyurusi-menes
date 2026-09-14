@@ -69,9 +69,33 @@ A megbízó létrehozta a Supabase-projektet és a Resend-fiókot, a kulcsokat a
 - **Nem futtattam újra** (az adatréteget nem érintik): G11 lighthouse, G12 shots, G23 p6-seo, G24 p6-geo, G27 p7-speed (ismert LCP-korlát).
 - **Ez előtt a teljes kapusor kétszer leállt memóriahiány miatt** (lásd `Ellenorzes.md` 6. pont), ezért a kapuk egyenként futottak.
 
-## 5. Élesítés — a megbízó SQL-futtatására vár
+## 5. Élesítés (2026-09-14, 22:00–23:10)
 
-1. **Előfeltétel:** a megbízó lefuttatja a `supabase/migrations/20260914200000_adatreteg.sql`-t a Supabase SQL Editorban. A `node scripts/supabase-import.mjs --check` (G29) az utolsó futáskor még 8 hibát adott: a 6 tábla és a 2 tároló hiányzik.
-2. `node scripts/supabase-import.mjs --from-url https://gyurusi-menes-demo.netlify.app --dry-run`, majd ugyanez `--dry-run` nélkül. Ennek még a Blobs-os élő kód idején kell futnia. Az élő tartalom 4 esemény, feltöltés, beszámoló, jelentkezés és üzenet nincs; mentés a scratchpadban.
-3. `node scripts/deploy.mjs` (draft), majd a draft ellen `ADMIN_PASSWORD=… node scripts/checks/final-live.mjs` (G28) és `BASE_URL=<draft> node scripts/checks/supabase-live.mjs` (G30). Ha a draft kontextusában hiányzik a titkos kulcs, ez itt kiderül.
-4. `node scripts/deploy.mjs --prod`, majd G13 (`admin-flow` élesben) és G30 (`supabase-live`).
+1. **Séma:** a megbízó lefuttatta az SQL-t. **G29** `node scripts/supabase-import.mjs --check` → PASS: mind a 6 tábla és a 2 privát tároló megvan, az anon kulcs nem olvas és nem ír.
+2. **Adatátvitel** a még Blobs-os élő oldalról (`--from-url`), előtte próbafutással:
+   - átkerült a tartalomdokumentum (4 esemény; feltöltés, beszámoló, jelentkezés és üzenet nem volt);
+   - az első visszaolvasás hamis riasztást adott, mert a jsonb átrendezi a kulcsokat. A szkript azóta kulcssorrendtől függetlenül vet össze, és kiírja az első eltérést; újrafuttatva PASS.
+3. **Draft 1** (`6aa85e9d`):
+   - G30 PASS: az állapotpanel Supabase, a tartalom egyezik, a karbantartás a kv és a backups táblába írt; a titkos kulcs tehát a draft kontextusában is elérhető;
+   - G28 FAIL a 4. lépésben: a képfeltöltés a függvényben „sharp.libvipsVersion is not a function” hibával állt meg. Ok: az `npm uninstall @netlify/blobs` kitörölte a node_modules-ból az `npm pack`-kel bemásolt sharp Linux-binárisokat;
+   - a próbaadatok törlődtek.
+   - **Javítás:** a `scripts/sharp-linux.mjs` visszahozta a binárisokat, és a `scripts/deploy.mjs` build előtt ellenőrzi őket (commit 328b49d).
+4. **Draft 2** (`6aa85fe3`), **G28 PASS** (128 s):
+   - 20/20 jelentkezés tárolva;
+   - a 9,2 MB-os fotóból 360 KB-os WebP lett (7,9 s);
+   - a 12 MB-os PDF bájtra egyezik (30,1 s — lassabb, mint Blobs-szal: 11–20 s);
+   - admin-mentés után 1,2 s alatt friss a lap;
+   - TTFB 33 / 40 ms, Lighthouse mobil 97 (LCP 2,49 s);
+   - takarítás rendben. Az 5) lépés bemelegítésekor megint megjelent a korábban hibás durable-cache minta (`"Netlify Durable"; fwd=stale; stored`), a frissülés mégis 1,2 s alatt megtörtént.
+5. **Deploy előtti összevetés** (az élő Blobs-tartalom és a Supabase-sor):
+   - csak a `legal.privacy.hu/en/de` és az `updatedAt` tért el. A draft-próba mentései a régi tájékoztatót olvasáskor az új, Supabase-t megnevező magra cserélték; ez szó szerint egyezik a maggal;
+   - minden más azonos, élő módosítás nem veszett el.
+6. **Production** `6aa86148e03dbf04f13d824b` (`node scripts/deploy.mjs --prod`, a csomagban nincs .env):
+   - 8 útvonal rendben (200 / 401 / 307), a tájékoztató mindhárom nyelven megnevezi a Supabase Pte. Ltd.-t;
+   - **G30 PASS** élesben: az állapotpanel Supabase, a tartalom egyezik, a karbantartás (3,1 s) a kv táblába írt, a mai mentés megvan;
+   - **G13 ADMIN_FLOW_OK** élesben: esemény, 3 fős jelentkezés, PDF, nyitókép-csere, képfeltöltés WebP-re, takarítás. A Supabase-tartalom (nyitókép, események, beszámolók, feltöltések, jelentkezések száma) előtte és utána azonos.
+
+**Nyitva:**
+- a Resend-domain hitelesítése — az ügyfél DNS-ére vár, addig levél nem megy ki;
+- a G27 LCP (ismert korlát);
+- a kapusor ledger-bejegyzései. A G13, G28, G29 és G30 egyenként, közvetlenül futott, mert a teljes `gate-check` a gépen kétszer memóriahiánnyal leállt.
