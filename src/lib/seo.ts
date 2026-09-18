@@ -236,6 +236,12 @@ export function ldFor(site: SiteContent, lang: Lang, path: string): Node | null 
   if (x.kind !== "home") nodes.push(breadcrumbLd(lang, x.trail));
   if (x.kind === "events") { const list = calendar(site); if (list.length) nodes.push(itemListLd(lang, list)); }
   if (x.kind === "event" && x.event) nodes.push(eventLd(site, lang, x, x.event));
+  if (x.kind === "page") {
+    const key = x.path.slice(1);
+    const faq = isPageKey(key) ? site.pages[key].faq ?? [] : [];
+    if (faq.length) nodes.push({ "@type": "FAQPage", "@id": `${absUrl(langPath(lang, x.path))}#gyik`, inLanguage: lang,
+      mainEntity: faq.map((f) => ({ "@type": "Question", name: t(f.q, lang), acceptedAnswer: { "@type": "Answer", text: t(f.a, lang) } })) });
+  }
   return { "@context": "https://schema.org", "@graph": nodes };
 }
 

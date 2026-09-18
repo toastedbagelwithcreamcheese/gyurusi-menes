@@ -1126,3 +1126,20 @@ img.rev-avatar { display: block; object-fit: cover; background: var(--color-bone
      aláhúzás nélkül) — teljes átlátszóság és aláhúzás. */
 .sub-contact .sub-contact-mail { color: inherit; }
 .sub-hero-plain .eyebrow .sub-back { opacity: 1; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+
+/* ---------- Aloldali kiegészítők: külső link, kapcsolódó események, GYIK (2026-09-19) ---------- */
+.page-link { margin-top: 28px; }
+.page-link .btn svg { width: 18px; height: 18px; }
+.page-events, .faq { margin-top: clamp(40px, 6vw, 72px); }
+.page-events .ev-grid { margin-top: 24px; }
+.faq-list { margin-top: 20px; max-width: 72ch; border-bottom: 1px solid var(--color-line); }
+.faq-item { border-top: 1px solid var(--color-line); }
+.faq-item > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding: 14px 0; cursor: pointer; }
+.faq-item > summary::-webkit-details-marker { display: none; }
+.faq-q { margin: 0; font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; line-height: 1.3; }
+.faq-item > summary svg { width: 20px; height: 20px; flex: 0 0 auto; color: var(--color-dust); transition: transform 240ms var(--ease-out); }
+.faq-item[open] > summary svg { transform: rotate(180deg); }
+.faq-item > summary:focus-visible { outline: 2px solid var(--color-sky); outline-offset: 2px; }
+.faq-a { padding-bottom: 18px; }
+.faq-a p { margin: 0 0 10px; }
+@media (prefers-reduced-motion: reduce) { .faq-item > summary svg { transition: none; } }

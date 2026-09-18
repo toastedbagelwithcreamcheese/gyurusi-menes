@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { writeSite, uid, isPageKey, sortRoutes, ROUTE_PHOTOS_MAX, type Event, type L, type TrailRoute } from "@/lib/store";
+import { writeSite, uid, isPageKey, sortRoutes, ROUTE_PHOTOS_MAX, FAQ_MAX, type Event, type FaqItem, type L, type TrailRoute } from "@/lib/store";
 import * as records from "@/lib/records";
 import { deleteFile } from "@/lib/files";
 import { LOGIN_PATH, isAdmin } from "@/lib/admin-auth";
@@ -32,6 +32,7 @@ export async function saveEvent(fd: FormData) {
     id, title: lf(fd, "title"), date: s(fd, "date"), endDate: s(fd, "endDate") || undefined, time: s(fd, "time") || undefined,
     location: s(fd, "location") || undefined, summary: lf(fd, "summary"), image: s(fd, "image") || undefined,
     published: b(fd, "published"), featured: b(fd, "featured"), registration: b(fd, "registration"),
+    pages: [...new Set(fd.getAll("pages").map(String))].filter(isPageKey),
     updatedAt: new Date().toISOString(), // az eseménylap sitemap lastmod-ja
   };
   const body = lf(fd, "body"); if (body.hu || body.en || body.de) ev.body = body;
@@ -90,12 +91,31 @@ export async function savePage(fd: FormData) {
   if (!title.hu) back(`/admin/oldalak/${key}`, { hiba: "A magyar cím kötelező." });
   if (!lead.hu) back(`/admin/oldalak/${key}`, { hiba: "A magyar bevezető kötelező — ez látszik a csempén." });
   if (!s(fd, "image1")) back(`/admin/oldalak/${key}`, { hiba: "Válassz egy fejlécképet (1. kép)." });
+  /* Külső link: csak teljes http(s) cím; felirat nélkül nem menthető (a gombon üres szöveg lenne). */
+  const linkUrl = s(fd, "link.url"), linkLabel = lf(fd, "link.label");
+  if (linkUrl) {
+    let ok = false; try { const u = new URL(linkUrl); ok = u.protocol === "https:" || u.protocol === "http:"; } catch { /* hibás cím */ }
+    if (!ok) back(`/admin/oldalak/${key}`, { hiba: `A külső link címe nem érvényes: „${linkUrl}”. Teljes címet adj meg, https://-sel kezdve.` });
+    if (!linkLabel.hu) back(`/admin/oldalak/${key}`, { hiba: "A külső linkhez add meg a gomb magyar feliratát (pl. „Tovább a Huculösvény oldalára”)." });
+  }
+  /* GYIK: sorban olvassuk (faq.0, faq.1 …); a teljesen üres sort kihagyjuk, a félig kitöltöttet nem mentjük el csendben. */
+  const faq: FaqItem[] = [];
+  for (let i = 0; i < 100 && fd.has(`faq.${i}.q.hu`); i++) {
+    const q = lf(fd, `faq.${i}.q`), a = lf(fd, `faq.${i}.a`);
+    const any = [q.hu, q.en, q.de, a.hu, a.en, a.de].some(Boolean);
+    if (!any) continue;
+    if (!q.hu || !a.hu) back(`/admin/oldalak/${key}`, { hiba: `A(z) ${i + 1}. kérdésnél a magyar kérdés és a magyar válasz is kötelező (vagy távolítsd el a sort).` });
+    faq.push({ q, a });
+  }
+  if (faq.length > FAQ_MAX) back(`/admin/oldalak/${key}`, { hiba: `Legfeljebb ${FAQ_MAX} kérdés lehet.` });
   try {
     await writeSite((site) => {
       const p = site.pages[key];
       p.title = title; p.lead = lead; p.body = lf(fd, "body");
       p.images = [s(fd, "image1"), s(fd, "image2"), s(fd, "image3")].filter(Boolean);
       p.contact = { person: s(fd, "contact.person"), phone: s(fd, "contact.phone"), email: s(fd, "contact.email"), note: lf(fd, "contact.note") };
+      p.faq = faq;
+      if (linkUrl) p.link = { url: linkUrl, label: linkLabel }; else delete p.link;
     });
   } catch (e) { back(`/admin/oldalak/${key}`, { hiba: `A mentés nem sikerült: ${errMsg(e)}` }); }
   refresh(); back("/admin/oldalak", { ok: `„${title.hu}” mentve.` });

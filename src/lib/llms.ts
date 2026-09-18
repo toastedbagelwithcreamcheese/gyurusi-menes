@@ -77,6 +77,8 @@ function texts(site: SiteContent, lang: Lang): string[] {
   for (const k of PAGE_KEYS) {
     const p = site.pages[k];
     block(t(p.title, lang), u(`/${k}`), [...para(t(p.lead, lang)), ...para(t(p.body, lang)),
+      ...(p.faq ?? []).flatMap((f) => [`**${t(f.q, lang)}**`, ...para(t(f.a, lang))]),
+      ...(p.link ? [`${t(p.link.label, lang) || p.link.url}: ${p.link.url}`] : []),
       `${d.contact.contactPerson}: ${p.contact.person} · ${d.contact.phone}: ${p.contact.phone} · ${d.contact.email}: ${p.contact.email}. ${t(p.contact.note, lang)}`]);
   }
   for (const e of events(site)) {

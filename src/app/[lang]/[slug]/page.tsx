@@ -4,7 +4,7 @@ import { isLang } from "@/content/types";
 import { getDict } from "@/lib/i18n";
 import { langPath } from "@/lib/paths";
 import { ldFor, ldHtml, metadataFor, notFoundMetadata } from "@/lib/seo";
-import { readSite, isPageKey, PAGE_KEYS, t, formatDate } from "@/lib/store";
+import { readSite, isPageKey, PAGE_KEYS, t, formatDate, eventsForPage } from "@/lib/store";
 import { resolveImage } from "@/lib/images";
 import { SubPage } from "@/components/site/SubPage";
 import { Paragraphs } from "@/components/site/Sections";
@@ -12,6 +12,7 @@ import { Reveal } from "@/components/Reveal";
 import { fileUrl } from "@/lib/files";
 import { RouteMap } from "@/components/site/RouteMap";
 import { TrailRoutes, visibleRoutes } from "@/components/site/TrailRoutes";
+import { PageEvents, PageFaq, PageLinkButton } from "@/components/site/PageExtras";
 
 type P = { params: Promise<{ lang: string; slug: string }> };
 
@@ -64,13 +65,21 @@ export default async function ContentPage({ params }: P) {
     );
   }
 
+  /* Adminból szerkeszthető kiegészítők (üresen nem jelennek meg): az aloldalhoz rendelt közelgő események és a GYIK. */
+  const pageEvents = eventsForPage(site.events, slug);
+  const faq = p.faq ?? [];
+  const extras = after || pageEvents.length || faq.length
+    ? <>{after}<PageEvents list={pageEvents} site={site} lang={lang} d={d} /><PageFaq items={faq} lang={lang} d={d} /></>
+    : null;
+
   const ld = ldFor(site, lang, `/${slug}`);
   return (
     <>
       <SubPage site={site} lang={lang} d={d} rest={`/${slug}`} eyebrow={d.nav[slug]} title={t(p.title, lang)} image={head ?? null} strip={rest.slice(0, 3)}
-        contact={p.contact} related={related} back={{ href: langPath(lang), label: "Gyűrűsi Ménes" }} after={after}>
+        contact={p.contact} related={related} back={{ href: langPath(lang), label: "Gyűrűsi Ménes" }} after={extras}>
         <p className="lead">{t(p.lead, lang)}</p>
         <Paragraphs text={t(p.body, lang)} />
+        {p.link && <PageLinkButton link={p.link} lang={lang} d={d} />}
       </SubPage>
       {ld && <script type="application/ld+json" dangerouslySetInnerHTML={ldHtml(ld)} />}
     </>

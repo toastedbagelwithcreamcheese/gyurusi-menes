@@ -26,10 +26,17 @@ export type PageKey = (typeof PAGE_KEYS)[number];
 export const isPageKey = (v: string): v is PageKey => (PAGE_KEYS as readonly string[]).includes(v);
 
 export type PageContact = { person: string; phone: string; email: string; note: L };
-export type Page = { key: PageKey; title: L; lead: L; body: L; images: string[]; contact: PageContact };
+/** GYIK / tudnivaló: kérdés és válasz háromnyelvűen (a magyar kötelező). */
+export type FaqItem = { q: L; a: L };
+export const FAQ_MAX = 12;
+/** Külső hivatkozás az aloldal szövege alatt (pl. a Huculösvény saját oldala): csak http(s) cím, felirat háromnyelvűen. */
+export type PageLink = { url: string; label: L };
+export type Page = { key: PageKey; title: L; lead: L; body: L; images: string[]; contact: PageContact; faq?: FaqItem[]; link?: PageLink };
 export type Event = {
   id: string; title: L; date: string; endDate?: string; time?: string; location?: string;
   summary: L; body?: L; image?: string; published: boolean; featured: boolean; registration: boolean;
+  /** Mely aloldalak „Kapcsolódó események” blokkjában jelenjen meg (közelgőként). */
+  pages?: PageKey[];
   /** Az esemény utolsó mentése (ISO) — az eseménylap sitemap lastmod-ja. */
   updatedAt?: string;
 };
@@ -131,6 +138,15 @@ function withDefaults(data: Partial<SiteContent>): SiteContent {
   if (!out.owner) out.owner = structuredClone(base.owner);
   for (const k of PAGE_KEYS) if (!out.pages?.[k]) out.pages = { ...structuredClone(base.pages), ...(out.pages ?? {}) };
   out.uploads = out.uploads.map(normalizeUpload);
+  /* Az aloldalak új, választható mezői: hiányzó vagy hibás érték → üres (a blokk nem jelenik meg). */
+  const L0 = (v: unknown): L => { const o = (v && typeof v === "object" ? v : {}) as Partial<L>; return { hu: String(o.hu ?? ""), en: String(o.en ?? ""), de: String(o.de ?? "") }; };
+  for (const k of PAGE_KEYS) {
+    const p = out.pages[k];
+    p.faq = Array.isArray(p.faq) ? p.faq.filter((x) => x && typeof x === "object").map((x) => ({ q: L0(x.q), a: L0(x.a) })).filter((x) => x.q.hu && x.a.hu).slice(0, FAQ_MAX) : [];
+    if (p.link && (typeof p.link.url !== "string" || !/^https?:\/\//i.test(p.link.url))) delete p.link;
+    else if (p.link) p.link = { url: p.link.url, label: L0(p.link.label) };
+  }
+  out.events = out.events.map((e) => ({ ...e, pages: Array.isArray(e.pages) ? e.pages.filter((k): k is PageKey => isPageKey(String(k))) : [] }));
   migrateLegacyContent(out, base);
   return out;
 }
@@ -241,6 +257,10 @@ export function past(events: Event[], now = new Date()) {
   return events.filter((e) => e.published && isPast(e, now)).sort((a, b) => b.date.localeCompare(a.date));
 }
 /** A kiemelt esemény: ami kiemeltnek van jelölve és még nem múlt el; ha nincs ilyen, a legközelebbi. */
+/** Egy aloldalhoz rendelt, közzétett, még el nem múlt események időrendben. */
+export function eventsForPage(events: Event[], key: PageKey, now = new Date()) {
+  return upcoming(events, now).filter((e) => e.pages?.includes(key));
+}
 export function featuredEvent(events: Event[], now = new Date()): Event | undefined {
   const up = upcoming(events, now);
   return up.find((e) => e.featured) ?? up[0];

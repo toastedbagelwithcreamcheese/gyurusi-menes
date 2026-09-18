@@ -161,3 +161,12 @@ A megbízó döntése: az adatréteg Netlify Blobs helyett Supabase (tábla + St
   CHECK: node scripts/checks/supabase-live.mjs
   EXPECT: PASS: supabase-live
   EVIDENCE: pending
+
+## Aloldali kiegészítők (2026-09-19)
+
+A megbízó jóváhagyta: kapcsolódó események, GYIK / tudnivalók, külső link gomb — mind adminból szerkeszthetően, üresen rejtve.
+
+- [ ] G31: Az aloldal-szerkesztőben külső link (csak http(s), háromnyelvű felirat, új lapon, noopener) és GYIK-lista (hozzáadás, törlés, sorrend, háromnyelvű, félig kitöltött sor hibát ad, üres sor kimarad), az esemény-szerkesztőben aloldal-választó; a nyilvános lapon hu/en/de mindhárom megjelenik (csak közelgő, közzétett esemény; FAQPage JSON-LD), üresen egyik sem; mobilon nincs túlcsordulás
+  CHECK: node scripts/with-server.mjs node scripts/checks/p8-extras.mjs
+  EXPECT: PASS: p8-extras
+  EVIDENCE: pending

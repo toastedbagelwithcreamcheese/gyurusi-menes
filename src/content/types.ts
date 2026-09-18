@@ -51,6 +51,7 @@ export interface Dictionary {
   };
   reviews: { eyebrow: string; title: string; count: string; more: string; on: string; stars: string; loading: string; listLabel: string; translated: string; showOriginal: string; showTranslation: string };
   reports: { eyebrow: string; title: string; lead: string; none: string; open: string; size: string };
+  extras: { eventsEyebrow: string; eventsTitle: string; faqEyebrow: string; faqTitle: string; external: string };
   footer: { blurb: string; contact: string; follow: string; owner: string; tagline: string; taglineAccent: string; cta: string; colPages: string; colInfo: string; privacy: string; imprint: string; rights: string; credit: string; madeIn: string; events: string };
   zoom: { open: string; close: string; prev: string; next: string; of: string };
   /** Az illusztrált túratérkép — amíg nincs közzétett útvonal. A jelmagyarázat csak neveket ad (időtartam, nehézség nem igazolt). */

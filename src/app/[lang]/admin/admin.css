@@ -180,3 +180,11 @@
 .tile .tag.hero { min-height: 0; display: inline-block; overflow: visible; align-items: normal; }
 /* Keskeny kijelzőn a sorok gombjai új sorba törnek (a kiemelt esemény „Kiemelés le” gombjával 390 px-en kilógott). */
 @media (max-width: 860px) { .row .ops { flex-wrap: wrap; } }
+
+/* GYIK-szerkesztő, aloldal-választó (2026-09-19) */
+.faq-editor { display: grid; gap: 16px; }
+.faq-edit-row { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--color-line); border-radius: 12px; }
+.faq-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.faq-edit-ops { display: flex; gap: 6px; }
+.page-checks { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.faq-editor > .btn { justify-self: start; }

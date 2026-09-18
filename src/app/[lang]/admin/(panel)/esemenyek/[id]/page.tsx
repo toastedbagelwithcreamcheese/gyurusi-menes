@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { readSite } from "@/lib/store";
+import { readSite, PAGE_KEYS, t } from "@/lib/store";
 import { pickerImages } from "@/lib/images";
 import { ImagePicker } from "../../ImagePicker";
 import { LField } from "../../LField";
@@ -27,6 +27,10 @@ export default async function EventEdit({ params }: { params: Promise<{ id: stri
         <LField name="summary" label="Rövid leírás (ez jelenik meg a listában és a főoldalon)" value={ev?.summary} textarea rows={2} required />
         <LField name="body" label="Részletek (opcionális)" value={ev?.body} textarea rows={8} hint="Üres sor = új bekezdés." />
         <div className="field"><label>Kép</label><ImagePicker name="image" images={pickerImages(site)} value={ev?.image} /></div>
+        <fieldset className="field" data-event-pages>
+          <legend>Melyik aloldalon jelenjen meg (a „Kapcsolódó események” blokkban, amíg közelgő)</legend>
+          <div className="page-checks">{PAGE_KEYS.map((k) => <label key={k} className="check"><input type="checkbox" name="pages" value={k} defaultChecked={ev?.pages?.includes(k) ?? false} />{t(site.pages[k].title, "hu")}</label>)}</div>
+        </fieldset>
         <label className="check"><input type="checkbox" name="published" defaultChecked={ev?.published ?? true} />Közzététel az oldalon</label>
         <label className="check"><input type="checkbox" name="featured" defaultChecked={ev?.featured ?? false} />Kiemelt esemény (nagyban a főoldalon — egyszerre csak egy lehet)</label>
         <label className="check"><input type="checkbox" name="registration" defaultChecked={ev?.registration ?? false} />Jelentkezés nyitva (igényfelmérés: név, telefon, létszám — csak itt, az adminban látszik)</label>
