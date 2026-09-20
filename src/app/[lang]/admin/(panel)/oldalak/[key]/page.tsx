@@ -42,10 +42,11 @@ export default async function PageEdit({ params }: { params: Promise<{ key: stri
         </div>
         <div className="card form">
           <h2>Képek</h2>
-          <p className="hint" style={{ marginTop: -8 }}>Az első a nagy fejléckép (és a csempe képe a főoldalon); a másik kettő a szöveg alatti képsávba kerül. Elég pár kép — ne legyen sok.</p>
+          <p className="hint" style={{ marginTop: -8 }}>Az első a nagy fejléckép (és a csempe képe a főoldalon); a többi a szöveg alatti, nagyítható képsávba kerül. Elég pár kép — ne legyen sok.</p>
           <div className="field"><label>1. kép (fejléc)</label><ImagePicker name="image1" images={images} value={p.images[0]} allowEmpty={false} /></div>
           <div className="field"><label>2. kép</label><ImagePicker name="image2" images={images} value={p.images[1]} /></div>
           <div className="field"><label>3. kép</label><ImagePicker name="image3" images={images} value={p.images[2]} /></div>
+          <div className="field"><label>4. kép</label><ImagePicker name="image4" images={images} value={p.images[3]} /></div>
         </div>
         <div className="card form">
           <h2>Az oldal saját kapcsolata</h2>

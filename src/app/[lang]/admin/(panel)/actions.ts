@@ -112,7 +112,7 @@ export async function savePage(fd: FormData) {
     await writeSite((site) => {
       const p = site.pages[key];
       p.title = title; p.lead = lead; p.body = lf(fd, "body");
-      p.images = [s(fd, "image1"), s(fd, "image2"), s(fd, "image3")].filter(Boolean);
+      p.images = [s(fd, "image1"), s(fd, "image2"), s(fd, "image3"), s(fd, "image4")].filter(Boolean);
       p.contact = { person: s(fd, "contact.person"), phone: s(fd, "contact.phone"), email: s(fd, "contact.email"), note: lf(fd, "contact.note") };
       p.faq = faq;
       if (linkUrl) p.link = { url: linkUrl, label: linkLabel }; else delete p.link;
