@@ -32,18 +32,20 @@ export default async function EventsPage({ params }: P) {
   const pst = past(site.events);
   const ld = ldFor(site, lang, "/esemenyek");
   return (
-    <Shell site={site} lang={lang} d={d} rest="/esemenyek">
+    <>
       {ld && <script type="application/ld+json" dangerouslySetInnerHTML={ldHtml(ld)} />}
-      <div className="wrap sub-head">
-        <Reveal as="p" className="eyebrow" trigger="mount">{d.events.eyebrow}</Reveal>
-        <Reveal as="h1" className="h1 mask" trigger="mount" delay={80}>{d.events.title}</Reveal>
-      </div>
-      <div className="wrap">
-        {feat ? <Reveal trigger="mount" delay={140}><EventCard e={feat} site={site} lang={lang} d={d} tag={feat.featured ? d.events.featured : d.events.next} level={2} preload /></Reveal>
-          : <Reveal as="p" className="lead" trigger="mount" delay={140}>{d.events.none}</Reveal>}
-        {up.length > 0 && <Reveal className="ev-section"><h2 className="eyebrow ev-sec-title">{d.events.upcoming}</h2><EventGrid list={up} site={site} lang={lang} d={d} /></Reveal>}
-        {pst.length > 0 && <Reveal className="ev-section" data-past-events><h2 className="eyebrow ev-sec-title">{d.events.past}</h2><PastEvents list={pst} lang={lang} d={d} /></Reveal>}
-      </div>
-    </Shell>
+      <Shell site={site} lang={lang} d={d} rest="/esemenyek">
+        <div className="wrap sub-head">
+          <Reveal as="p" className="eyebrow" trigger="mount">{d.events.eyebrow}</Reveal>
+          <Reveal as="h1" className="h1 mask" trigger="mount" delay={80}>{d.events.title}</Reveal>
+        </div>
+        <div className="wrap">
+          {feat ? <Reveal trigger="mount" delay={140}><EventCard e={feat} site={site} lang={lang} d={d} tag={feat.featured ? d.events.featured : d.events.next} level={2} preload /></Reveal>
+            : <Reveal as="p" className="lead" trigger="mount" delay={140}>{d.events.none}</Reveal>}
+          {up.length > 0 && <Reveal className="ev-section"><h2 className="eyebrow ev-sec-title">{d.events.upcoming}</h2><EventGrid list={up} site={site} lang={lang} d={d} /></Reveal>}
+          {pst.length > 0 && <Reveal className="ev-section" data-past-events><h2 className="eyebrow ev-sec-title">{d.events.past}</h2><PastEvents list={pst} lang={lang} d={d} /></Reveal>}
+        </div>
+      </Shell>
+    </>
   );
 }

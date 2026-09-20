@@ -27,15 +27,17 @@ export default async function ImprintPage({ params }: P) {
   ];
   const ld = ldFor(site, lang, "/impresszum");
   return (
-    <Shell site={site} lang={lang} d={d} rest="/impresszum">
+    <>
       {ld && <script type="application/ld+json" dangerouslySetInnerHTML={ldHtml(ld)} />}
-      <div className="wrap-narrow legal">
-        <Reveal as="p" className="eyebrow" trigger="mount">{d.footer.colInfo}</Reveal>
-        <Reveal as="h1" className="h1 mask" trigger="mount" delay={80}>{d.legal.imprintTitle}</Reveal>
-        <Reveal trigger="mount" delay={160}>
-          <dl className="legal-dl">{rows.filter(([, v]) => v).map(([k, v]) => <div key={k}><dt className="eyebrow">{k}</dt><dd>{v}</dd></div>)}</dl>
-        </Reveal>
-      </div>
-    </Shell>
+      <Shell site={site} lang={lang} d={d} rest="/impresszum">
+        <div className="wrap-narrow legal">
+          <Reveal as="p" className="eyebrow" trigger="mount">{d.footer.colInfo}</Reveal>
+          <Reveal as="h1" className="h1 mask" trigger="mount" delay={80}>{d.legal.imprintTitle}</Reveal>
+          <Reveal trigger="mount" delay={160}>
+            <dl className="legal-dl">{rows.filter(([, v]) => v).map(([k, v]) => <div key={k}><dt className="eyebrow">{k}</dt><dd>{v}</dd></div>)}</dl>
+          </Reveal>
+        </div>
+      </Shell>
+    </>
   );
 }

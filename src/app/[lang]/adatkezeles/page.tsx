@@ -35,17 +35,19 @@ export default async function PrivacyPage({ params }: P) {
   const blocks = renderPrivacy(site, lang);
   const ld = ldFor(site, lang, "/adatkezeles");
   return (
-    <Shell site={site} lang={lang} d={d} rest="/adatkezeles">
+    <>
       {ld && <script type="application/ld+json" dangerouslySetInnerHTML={ldHtml(ld)} />}
-      <div className="wrap-narrow legal">
-        <Reveal as="p" className="eyebrow" trigger="mount">{d.footer.colInfo}</Reveal>
-        <Reveal as="h1" className="h1 mask" trigger="mount" delay={80}>{d.legal.privacyTitle}</Reveal>
-        <Reveal trigger="mount" delay={160} className="legal-body" data-privacy>
-          {blocks.map((b, i) => b.kind === "h2" ? <h2 key={i} className="legal-h">{b.text}</h2>
-            : b.kind === "ul" ? <ul key={i} className="legal-list">{b.items.map((it, k) => <li key={k}><Linkify text={it} /></li>)}</ul>
-            : <p key={i}><Linkify text={b.text} /></p>)}
-        </Reveal>
-      </div>
-    </Shell>
+      <Shell site={site} lang={lang} d={d} rest="/adatkezeles">
+        <div className="wrap-narrow legal">
+          <Reveal as="p" className="eyebrow" trigger="mount">{d.footer.colInfo}</Reveal>
+          <Reveal as="h1" className="h1 mask" trigger="mount" delay={80}>{d.legal.privacyTitle}</Reveal>
+          <Reveal trigger="mount" delay={160} className="legal-body" data-privacy>
+            {blocks.map((b, i) => b.kind === "h2" ? <h2 key={i} className="legal-h">{b.text}</h2>
+              : b.kind === "ul" ? <ul key={i} className="legal-list">{b.items.map((it, k) => <li key={k}><Linkify text={it} /></li>)}</ul>
+              : <p key={i}><Linkify text={b.text} /></p>)}
+          </Reveal>
+        </div>
+      </Shell>
+    </>
   );
 }
